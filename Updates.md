@@ -1,6 +1,6 @@
 # TheraPlay
 - PROGRAMMING AND CREATION OF THE WEBSITE (May start as soon as possible)
-- 
+
 • @Frent Yvan Raz (Main Front-End Developer)
 
 • @Jon-Ace Sabar (Main Back-End Developer)
