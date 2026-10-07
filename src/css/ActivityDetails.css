@@ -1,0 +1,190 @@
+.activity-details-page {
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+
+/* Navigation */
+
+.navbar {
+    height: 70px;
+    padding: 0 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background-color: white;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.navbar-logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 30px;
+}
+
+.navbar-links a {
+    text-decoration: none;
+    color: #333;
+}
+
+.logout-button {
+    text-decoration: none;
+    color: #333;
+}
+
+
+/* Main Content */
+
+.activity-details-content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 30px;
+}
+
+
+/* Back Link */
+
+.back-link {
+    display: inline-block;
+
+    margin-bottom: 25px;
+
+    text-decoration: none;
+    color: #333;
+
+    font-size: 14px;
+}
+
+
+/* Main Card */
+
+.activity-details-card {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 30px;
+
+    padding: 30px;
+
+    background-color: white;
+
+    border: 1px solid #e1e5ea;
+    border-radius: 12px;
+}
+
+
+/* Image */
+
+.activity-details-image {
+    height: 220px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: #e9eef3;
+
+    border-radius: 8px;
+
+    color: #8a96a3;
+}
+
+
+/* Information */
+
+.activity-information h1 {
+    font-size: 28px;
+    margin-bottom: 12px;
+}
+
+
+/* Tags */
+
+.activity-tags {
+    display: flex;
+    gap: 10px;
+
+    margin-bottom: 30px;
+}
+
+.activity-tags span {
+    padding: 5px 10px;
+
+    background-color: #f1f3f5;
+
+    border-radius: 5px;
+
+    font-size: 13px;
+}
+
+
+/* Sections */
+
+.details-section {
+    margin-bottom: 25px;
+}
+
+.details-section h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.details-section p {
+    color: #666;
+    line-height: 1.5;
+}
+
+.details-section ol,
+.details-section ul {
+    padding-left: 20px;
+
+    color: #555;
+
+    line-height: 1.8;
+}
+
+
+/* Complete Button */
+
+.complete-button {
+    width: 100%;
+
+    padding: 12px;
+
+    border: none;
+    border-radius: 6px;
+
+    background-color: #333;
+    color: white;
+
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+.complete-button:hover {
+    background-color: #222;
+}
+
+
+/* Not Found */
+
+.activity-not-found {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 15px;
+}
+
+.activity-not-found a {
+    color: #333;
+}

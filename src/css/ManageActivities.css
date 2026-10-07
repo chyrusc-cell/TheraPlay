@@ -1,0 +1,258 @@
+.manage-activities-page {
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+
+/* Navigation */
+
+.navbar {
+    height: 70px;
+    padding: 0 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background-color: white;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.navbar-logo {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 30px;
+}
+
+.navbar-links a {
+    text-decoration: none;
+    color: #333;
+}
+
+.logout-button {
+    text-decoration: none;
+    color: #333;
+}
+
+
+/* Main Content */
+
+.manage-activities-content {
+    max-width: 1100px;
+    margin: 0 auto;
+
+    padding: 50px 30px;
+}
+
+
+/* Header */
+
+.page-header {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.page-header p {
+    color: #666;
+}
+
+
+/* Add Button */
+
+.add-activity-button {
+    padding: 11px 18px;
+
+    border: none;
+    border-radius: 6px;
+
+    background-color: #333;
+    color: white;
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+.add-activity-button:hover {
+    background-color: #222;
+}
+
+
+/* Form */
+
+.activity-form {
+    padding: 25px;
+
+    margin-bottom: 25px;
+
+    background-color: white;
+
+    border: 1px solid #e1e5ea;
+    border-radius: 10px;
+}
+
+.activity-form h2 {
+    font-size: 20px;
+
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    margin-bottom: 7px;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    padding: 11px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-size: 14px;
+}
+
+.form-actions {
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 20px;
+}
+
+.save-button,
+.cancel-button {
+    padding: 10px 18px;
+
+    border-radius: 6px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+}
+
+.save-button {
+    border: none;
+
+    background-color: #333;
+    color: white;
+}
+
+.cancel-button {
+    border: 1px solid #ccc;
+
+    background-color: white;
+    color: #333;
+}
+
+
+/* Table */
+
+.activities-table-container {
+    background-color: white;
+
+    border: 1px solid #e1e5ea;
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+.activities-table {
+    width: 100%;
+
+    border-collapse: collapse;
+}
+
+.activities-table th,
+.activities-table td {
+    padding: 16px;
+
+    text-align: left;
+
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.activities-table th {
+    background-color: #f1f3f5;
+
+    font-size: 13px;
+}
+
+.activities-table td {
+    font-size: 14px;
+}
+
+.activities-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* Difficulty */
+
+.difficulty-badge {
+    display: inline-block;
+
+    padding: 5px 9px;
+
+    background-color: #f1f3f5;
+
+    border-radius: 5px;
+
+    font-size: 12px;
+}
+
+
+/* Actions */
+
+.table-actions {
+    display: flex;
+
+    gap: 8px;
+}
+
+.edit-button,
+.delete-button {
+    padding: 7px 11px;
+
+    border-radius: 5px;
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+.edit-button {
+    border: 1px solid #ccc;
+
+    background-color: white;
+    color: #333;
+}
+
+.delete-button {
+    border: 1px solid #ddd;
+
+    background-color: #f5f5f5;
+    color: #333;
+}
