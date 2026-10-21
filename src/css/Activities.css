@@ -191,3 +191,14 @@ body {
 .activity-link:hover {
     color: #666;
 }
+
+.activities-status {
+    color: #666;
+    font-size: 15px;
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.activities-error {
+    color: #d93025;
+}
