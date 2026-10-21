@@ -13,7 +13,7 @@ function Dashboard() {
                 </div>
                 
                 <div className="navbar-links">
-                    <Link to="/home" className="active">Home</Link>
+                    <Link to="/dashboard" className="active">Home</Link>
                     <Link to="/activities">Activities</Link>
                     <Link to="/progress">My Progress</Link>
                     <Link to="/profile">Profile</Link>

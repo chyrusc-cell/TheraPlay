@@ -47,7 +47,7 @@ function Activities() {
                 </div>
                 
                 <div className="navbar-links">
-                    <Link to="/home">Home</Link>
+                    <Link to="/dashboard">Home</Link>
                     <Link to="/activities" className="active">Activities</Link>
                     <Link to="/progress">My Progress</Link>
                     <Link to="/profile">Profile</Link>

@@ -35,7 +35,7 @@ function Profile() {
                 </div>
                 
                 <div className="navbar-links">
-                    <Link to="/home">Home</Link>
+                    <Link to="/dashboard">Home</Link>
                     <Link to="/activities">Activities</Link>
                     <Link to="/progress">My Progress</Link>
                     <Link to="/profile" className="active">Profile</Link>

@@ -13,7 +13,7 @@ function Progress() {
                 </div>
                 
                 <div className="navbar-links">
-                    <Link to="/home">Home</Link>
+                    <Link to="/dashboard">Home</Link>
                     <Link to="/activities">Activities</Link>
                     <Link to="/progress" className="active">My Progress</Link>
                     <Link to="/profile">Profile</Link>
