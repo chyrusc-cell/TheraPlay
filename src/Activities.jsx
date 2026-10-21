@@ -46,10 +46,6 @@ function Activities() {
 
     return (
         <div className="activities-page">
-            {/* Navigation Bar */}
-            <nav className="navbar">
-                {/* Keep your existing navbar JSX here */}
-            </nav>
 
             {/* Main Content */}
             <main className="activities-content">
