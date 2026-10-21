@@ -26,10 +26,15 @@ function Register() {
         <div className="register-page">
             <div className="register-container">
                 
+                {/* Updated Header Logo Block */}
                 <div className="header-logo">
-                    {/* Placeholder for the TheraPlay elephant logo icon */}
-                    <div className="logo-icon-elephant"></div>
-                    <h2>TheraPlay!</h2>
+                    <Link to="/home" className="logo-link">
+                        <img 
+                            src="./img/theraplaylogo2.png" 
+                            alt="TheraPlay Logo" 
+                            className="register-logo-image" 
+                        />
+                    </Link>
                 </div>
 
                 <div className="header-text">
