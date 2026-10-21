@@ -35,17 +35,21 @@ body {
     gap: 12px;
 }
 
-.logo-icon-elephant {
-    width: 32px;
-    height: 32px;
-    background-color: #ddd;
-    border-radius: 6px;
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
 }
 
-.navbar-logo-text {
-    font-size: 22px;
-    font-weight: 700;
-    color: #1a1a1a;
+.navbar-logo-image {
+    height: 40px; /* Adjust this value to scale the entire logo proportionally */
+    width: auto;
+    object-fit: contain;
+    transition: opacity 0.2s ease;
+}
+
+.navbar-logo-image:hover {
+    opacity: 0.8; /* Gives a slight visual feedback when hovered */
 }
 
 .navbar-links {

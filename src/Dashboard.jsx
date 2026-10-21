@@ -8,8 +8,13 @@ function Dashboard() {
             {/* Top Navigation Only - No Sidebar */}
             <nav className="navbar">
                 <div className="navbar-logo-section">
-                    <div className="logo-icon-elephant"></div>
-                    <span className="navbar-logo-text">TheraPlay!</span>
+                    <Link to="/dashboard" className="logo-link">
+                        <img 
+                            src="./img/theraplaylogo2.png"
+                            alt="TheraPlay Logo" 
+                            className="navbar-logo-image" 
+                        />
+                    </Link>
                 </div>
                 
                 <div className="navbar-links">
