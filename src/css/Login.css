@@ -15,7 +15,7 @@ body {
     min-height: 100vh;
     display: flex;
     /* Placeholder for your actual background image */
-    background-image: url("../../img/background.img.png"); 
+    background-image: url("../../img/occu_therapy.bg.jpg"); 
     background-size: cover;
     background-position: center;
 }
