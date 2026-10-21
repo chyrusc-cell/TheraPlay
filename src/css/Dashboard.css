@@ -13,6 +13,8 @@ body {
 
 .dashboard-page {
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* --- Navigation --- */
@@ -24,6 +26,7 @@ body {
     justify-content: space-between;
     background-color: white;
     border-bottom: 1px solid #eaeaea;
+    width: 100%;
 }
 
 .navbar-logo-section {
@@ -95,6 +98,7 @@ body {
     max-width: 1000px;
     margin: 0 auto;
     padding: 40px 20px 80px;
+    width: 100%;
 }
 
 .dashboard-header {
@@ -196,7 +200,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* Monochrome Button */
 .btn-primary {
     background-color: #333;
     color: white;
@@ -235,7 +238,6 @@ body {
     font-weight: 500;
 }
 
-/* Monochrome Status Tag */
 .status-tag {
     font-size: 10px;
     font-weight: 700;
@@ -272,7 +274,6 @@ body {
     color: #999;
 }
 
-/* Monochrome Active Days */
 .day.active {
     background-color: #404040;
     color: white;
@@ -359,7 +360,6 @@ body {
     gap: 16px;
 }
 
-/* Monochrome Icons */
 .icon-circle {
     width: 36px;
     height: 36px;
@@ -384,7 +384,6 @@ body {
     color: #888;
 }
 
-/* Monochrome List Tags */
 .list-tag {
     font-size: 11px;
     font-weight: 700;

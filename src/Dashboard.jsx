@@ -5,7 +5,7 @@ function Dashboard() {
     return (
         <div className="dashboard-page">
             
-            {/* Top Navigation */}
+            {/* Top Navigation Only - No Sidebar */}
             <nav className="navbar">
                 <div className="navbar-logo-section">
                     <div className="logo-icon-elephant"></div>
@@ -39,17 +39,13 @@ function Dashboard() {
 
             <main className="dashboard-content">
                 
-                {/* Header Section */}
                 <header className="dashboard-header">
                     <h1>Hello, Frent Yvan!</h1>
                     <p>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
                     <span className="date-subtitle">Sample data • Week of Oct 19-25, 2026</span>
                 </header>
 
-                {/* Top Grid: Activity & Streak */}
                 <div className="dashboard-top-grid">
-                    
-                    {/* Continue Activity Card */}
                     <div className="card">
                         <div className="card-header-border">
                             <h3>Continue / Recommended Activity</h3>
@@ -64,7 +60,6 @@ function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Streak Card */}
                     <div className="card">
                         <div className="card-header-border">
                             <h3>Streak</h3>
@@ -92,7 +87,6 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Progress Summary Card */}
                 <div className="card full-width-card">
                     <div className="card-header-border">
                         <h3>Summary of Progress</h3>
@@ -122,7 +116,6 @@ function Dashboard() {
                     </div>
                 </div>
 
-                {/* Recent Activities Card */}
                 <div className="card full-width-card">
                     <div className="card-header-flex">
                         <h3>Recent Activities</h3>

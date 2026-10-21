@@ -1,187 +1,193 @@
-.activities-page {
-    min-height: 100vh;
-    background-color: #f5f7fa;
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
+body {
+    font-family: 'Quicksand', sans-serif;
+    background-color: #f7f8fa;
+}
 
-/* Navigation */
+.activities-page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
 
+/* --- Navigation --- */
 .navbar {
-    height: 70px;
+    height: 72px;
     padding: 0 40px;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     background-color: white;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: 1px solid #eaeaea;
+    width: 100%;
 }
 
-.navbar-logo {
-    font-size: 24px;
-    font-weight: bold;
+.navbar-logo-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon-elephant {
+    width: 32px;
+    height: 32px;
+    background-color: #ddd;
+    border-radius: 6px;
+}
+
+.navbar-logo-text {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
 }
 
 .navbar-links {
     display: flex;
-    gap: 30px;
+    gap: 32px;
 }
 
 .navbar-links a {
     text-decoration: none;
-    color: #333;
+    color: #666;
+    font-weight: 500;
+    font-size: 15px;
+    transition: color 0.2s;
 }
 
-.logout-button {
-    text-decoration: none;
-    color: #333;
+.navbar-links a.active, .navbar-links a:hover {
+    color: #1a1a1a;
+    font-weight: 700;
 }
 
+.navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 
-/* Main Content */
+.icon-button {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+}
 
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    background-color: #ccc;
+    border-radius: 50%;
+}
+
+/* --- Main Content --- */
 .activities-content {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 50px 30px;
+    padding: 60px 20px 80px;
+    width: 100%;
 }
 
-
-/* Header */
-
 .activities-header {
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .activities-header h1 {
-    font-size: 32px;
-    margin-bottom: 8px;
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
 }
 
 .activities-header p {
     color: #666;
     font-size: 16px;
+    font-weight: 500;
 }
 
-
-/* Category Filters */
-
-.category-filters {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 30px;
-}
-
-.category-button {
-    padding: 9px 16px;
-
-    border: 1px solid #d5dbe2;
-    border-radius: 20px;
-
-    background-color: white;
-    color: #555;
-
-    cursor: pointer;
-}
-
-.category-button:hover {
-    background-color: #f0f2f5;
-}
-
-.category-button.active {
-    background-color: #333;
-    color: white;
-    border-color: #333;
-}
-
-
-/* Activities Grid */
-
+/* --- Grid & Cards --- */
 .activities-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    gap: 24px;
 }
-
-
-/* Activity Card */
 
 .activity-card {
     background-color: white;
-
-    border: 1px solid #e1e5ea;
-    border-radius: 10px;
-
-    overflow: hidden;
-
-    transition: transform 0.2s ease;
+    border: 1px solid #eaeaea;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .activity-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
 }
 
-
-/* Image Placeholder */
+.activity-image-wrapper {
+    margin-bottom: 20px;
+}
 
 .activity-image {
-    height: 150px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background-color: #e9eef3;
-
-    color: #8a96a3;
+    width: 100%;
+    height: 180px;
+    border-radius: 8px;
+    background-color: #f0f0f0;
+    background-size: cover;
+    background-position: center;
 }
 
-
-/* Activity Information */
-
-.activity-info {
-    padding: 18px;
-}
+/* Placeholders for CSS Background Images (to be replaced with actual URLs) */
+.img-placeholder-1 { background-color: #e3f2fd; }
+.img-placeholder-2 { background-color: #fbe9e7; }
+.img-placeholder-3 { background-color: #fce4ec; }
+.img-placeholder-4 { background-color: #f3e5f5; }
+.img-placeholder-5 { background-color: #e8f5e9; }
+.img-placeholder-6 { background-color: #fff8e1; }
 
 .activity-info h2 {
-    font-size: 18px;
-    margin-bottom: 7px;
-}
-
-.activity-category {
-    color: #777;
-    font-size: 14px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
     margin-bottom: 12px;
 }
 
-
-/* Difficulty */
-
-.difficulty {
-    display: inline-block;
-
-    padding: 4px 9px;
-
-    background-color: #f1f3f5;
-
-    border-radius: 5px;
-
-    font-size: 12px;
+.activity-desc {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    flex-grow: 1; /* Pushes the link to the bottom if description is short */
 }
 
-
-/* View Activity */
-
 .activity-link {
-    display: block;
-
-    margin-top: 15px;
-
+    display: flex;
+    align-items: center;
+    gap: 8px;
     text-decoration: none;
-
     font-size: 14px;
-    font-weight: bold;
-    color: #333;
+    font-weight: 700;
+    color: #1a1a1a;
+    transition: color 0.2s;
+}
+
+.activity-link:hover {
+    color: #666;
 }
