@@ -1,73 +1,278 @@
-import { Link, useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import './css/ActivityDetails.css';
+
+const API_URL = 'http://127.0.0.1:8000/api';
+
+// The token is saved by Login.jsx in either localStorage or sessionStorage.
+const getToken = () =>
+    localStorage.getItem('theraplay_token') ||
+    sessionStorage.getItem('theraplay_token');
 
 function ActivityDetails() {
 
     const { activityId } = useParams();
+    const navigate = useNavigate();
 
-    const activities = [
-        {
-            id: 1,
-            title: 'Memory Match',
-            category: 'Executive Functioning',
-            difficulty: 'Easy',
-            objective: 'Improve memory and concentration through matching activities.',
-            instructions: [
-                'Look at the cards carefully.',
-                'Remember the position of each item.',
-                'Match the cards with the same image.',
-                'Continue until all pairs are matched.'
-            ],
-            materials: [
-                'Activity cards',
-                'Matching board'
-            ]
-        },
+    const [activity, setActivity] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+    const [error, setError] = useState('');
 
-        {
-            id: 2,
-            title: 'Shape Sorting',
-            category: 'Fine Motor Skills',
-            difficulty: 'Medium',
-            objective: 'Improve hand coordination by sorting different shapes.',
-            instructions: [
-                'Look at the different shapes.',
-                'Pick up one shape at a time.',
-                'Place each shape in its correct location.',
-                'Repeat until all shapes are sorted.'
-            ],
-            materials: [
-                'Shape pieces',
-                'Sorting board'
-            ]
-        },
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+    const [message, setMessage] = useState('');
+    const [isMessageError, setIsMessageError] = useState(false);
 
-        {
-            id: 3,
-            title: 'Button Practice',
-            category: 'Functional Skills',
-            difficulty: 'Easy',
-            objective: 'Improve fine motor skills and hand-eye coordination by practicing buttons.',
-            instructions: [
-                'Place the button board in front of you.',
-                'Hold the button with your fingers.',
-                'Practice buttoning and unbuttoning.',
-                'Repeat the activity several times.'
-            ],
-            materials: [
-                'Button board',
-                'Shirt with buttons'
-            ]
+    const [showChildForm, setShowChildForm] = useState(false);
+    const [childName, setChildName] = useState('');
+    const [childError, setChildError] = useState('');
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadActivity = async () => {
+            try {
+                setIsLoading(true);
+                setError('');
+                setNotFound(false);
+
+                const response = await fetch(
+                    `${API_URL}/activities/${activityId}`,
+                    {
+                        headers: { Accept: 'application/json' },
+                        signal: controller.signal,
+                    }
+                );
+
+                if (response.status === 404) {
+                    setNotFound(true);
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Unable to load this activity.');
+                }
+
+                const result = await response.json();
+                setActivity(result.data);
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadActivity();
+
+        return () => controller.abort();
+    }, [activityId]);
+
+    // Token missing or rejected: clear it and send the user to login.
+    const redirectToLogin = (text) => {
+        ['theraplay_token', 'theraplay_user'].forEach((key) => {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
+
+        navigate('/login', { state: { message: text } });
+    };
+
+    // Asks the backend to save the completion. Returns true only when the
+    // backend confirms it was saved.
+    const completeActivity = async (token) => {
+        const response = await fetch(
+            `${API_URL}/activities/${activityId}/complete`,
+            {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            }
+        );
+
+        if (response.status === 401) {
+            redirectToLogin('Your session has expired. Please log in again.');
+            return false;
         }
-    ];
+
+        const data = await response.json().catch(() => ({}));
+
+        // The parent has no child profile yet: ask for the child's name.
+        if (data.code === 'child_profile_required') {
+            setShowChildForm(true);
+            return false;
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.message ||
+                'Unable to save your progress. Please try again.'
+            );
+        }
+
+        setShowChildForm(false);
+        setIsCompleted(true);
+        setMessage(data.message || 'Activity marked as completed.');
+        return true;
+    };
+
+    const handleComplete = async () => {
+        if (isSubmitting || isCompleted) {
+            return;
+        }
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin('Please log in to mark activities as completed.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setMessage('');
+        setIsMessageError(false);
+
+        try {
+            await completeActivity(token);
+        } catch (err) {
+            setIsMessageError(true);
+            setMessage(
+                err.message ||
+                'Unable to connect to the server. Please try again.'
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleChildSubmit = async (event) => {
+        event.preventDefault();
+
+        if (isSubmitting) {
+            return;
+        }
+
+        const name = childName.trim();
+
+        if (!name) {
+            setChildError("Please enter your child's name.");
+            return;
+        }
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin('Please log in to mark activities as completed.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        setChildError('');
+        setMessage('');
+        setIsMessageError(false);
+
+        try {
+            const response = await fetch(`${API_URL}/children`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name }),
+            });
+
+            if (response.status === 401) {
+                redirectToLogin('Your session has expired. Please log in again.');
+                return;
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            // A child profile that already exists is fine: just continue.
+            if (!response.ok && data.code !== 'child_profile_exists') {
+                // The typed name stays in the form so it can be corrected.
+                setChildError(
+                    data.errors?.name?.[0] ||
+                    data.message ||
+                    "Unable to save your child's profile. Please try again."
+                );
+                return;
+            }
+
+            // Child profile is ready: hide the form and retry the completion.
+            setShowChildForm(false);
+            setChildName('');
+
+            try {
+                await completeActivity(token);
+            } catch (err) {
+                setIsMessageError(true);
+                setMessage(
+                    err.message ||
+                    'Your child profile was saved, but the activity could not be completed. Please try again.'
+                );
+            }
+        } catch {
+            setChildError('Unable to connect to the server. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleChildCancel = () => {
+        setShowChildForm(false);
+        setChildName('');
+        setChildError('');
+    };
 
 
-    const activity = activities.find(
-        (item) => item.id === Number(activityId)
-    );
+    if (isLoading) {
+
+        return (
+            <div className="activity-not-found">
+                <p>Loading activity...</p>
+            </div>
+        );
+
+    }
 
 
-    if (!activity) {
+    if (error) {
+
+        return (
+            <div className="activity-not-found">
+
+                <h1>
+                    Something Went Wrong
+                </h1>
+
+                <p role="alert">
+                    {error}
+                </p>
+
+                <Link to="/activities">
+                    Back to Activities
+                </Link>
+
+            </div>
+        );
+
+    }
+
+
+    if (notFound || !activity) {
 
         return (
             <div className="activity-not-found">
@@ -124,9 +329,11 @@ function ActivityDetails() {
 
                         <div className="activity-tags">
 
-                            <span>
-                                {activity.category}
-                            </span>
+                            {activity.category && (
+                                <span>
+                                    {activity.category}
+                                </span>
+                            )}
 
                             <span>
                                 {activity.difficulty}
@@ -200,14 +407,91 @@ function ActivityDetails() {
                         </section>
 
 
+                        {showChildForm && (
+                            <form
+                                className="child-form"
+                                onSubmit={handleChildSubmit}
+                            >
+                                <h2>
+                                    Add Your Child
+                                </h2>
+
+                                <p>
+                                    Your child's name is needed to record
+                                    completed activities.
+                                </p>
+
+                                <label htmlFor="childName">
+                                    Child's name
+                                </label>
+
+                                <input
+                                    id="childName"
+                                    type="text"
+                                    value={childName}
+                                    onChange={(e) => setChildName(e.target.value)}
+                                    maxLength={255}
+                                    disabled={isSubmitting}
+                                    required
+                                />
+
+                                {childError && (
+                                    <p
+                                        role="alert"
+                                        className="child-form-error"
+                                    >
+                                        {childError}
+                                    </p>
+                                )}
+
+                                <div className="child-form-actions">
+                                    <button
+                                        type="button"
+                                        className="child-form-cancel"
+                                        onClick={handleChildCancel}
+                                        disabled={isSubmitting}
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        className="complete-button"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting
+                                            ? 'Saving...'
+                                            : 'Save and Complete'}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+
                         <button
                             className="complete-button"
-                            onClick={() =>
-                                alert('Activity marked as completed!')
-                            }
+                            onClick={handleComplete}
+                            disabled={isSubmitting || isCompleted || showChildForm}
                         >
-                            Mark as Completed
+                            {isSubmitting
+                                ? 'Saving...'
+                                : isCompleted
+                                    ? 'Completed'
+                                    : 'Mark as Completed'}
                         </button>
+
+                        {message && (
+                            <p
+                                role="alert"
+                                style={{
+                                    color: isMessageError ? '#d93025' : '#188038',
+                                    marginTop: '12px',
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                }}
+                            >
+                                {message}
+                            </p>
+                        )}
 
                     </div>
 

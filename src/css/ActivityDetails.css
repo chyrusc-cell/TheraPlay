@@ -188,3 +188,74 @@
 .activity-not-found a {
     color: #333;
 }
+
+/* Add Your Child form */
+
+.child-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    margin-bottom: 16px;
+    padding: 16px;
+
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.child-form h2 {
+    font-size: 16px;
+}
+
+.child-form p {
+    font-size: 13px;
+    color: #666;
+}
+
+.child-form label {
+    font-size: 13px;
+    color: #666;
+}
+
+.child-form input {
+    padding: 10px 12px;
+
+    border: 1px solid #ddd;
+    border-radius: 6px;
+
+    font-size: 14px;
+}
+
+.child-form .child-form-error {
+    color: #d93025;
+}
+
+.child-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.child-form-cancel {
+    padding: 12px 20px;
+
+    border: 1px solid #333;
+    border-radius: 6px;
+
+    background-color: white;
+    color: #333;
+
+    font-size: 15px;
+
+    cursor: pointer;
+}
+
+.child-form-actions .complete-button {
+    flex: 1;
+}
+
+.complete-button:disabled,
+.child-form-cancel:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

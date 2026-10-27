@@ -28,4 +28,26 @@ class ActivityController extends Controller
             'data' => $activities,
         ]);
     }
+
+    public function show(int $id): JsonResponse
+    {
+        $activity = Activity::query()
+            ->where('is_published', true)
+            ->with('category:id,name')
+            ->findOrFail($id);
+
+        return response()->json([
+            'data' => [
+                'id' => $activity->id,
+                'title' => $activity->title,
+                'category' => $activity->category?->name,
+                'difficulty' => $activity->difficulty,
+                'description' => $activity->description,
+                'objective' => $activity->objective,
+                'instructions' => $activity->instructions,
+                'materials' => $activity->materials,
+                'image_path' => $activity->image_path,
+            ],
+        ]);
+    }
 }

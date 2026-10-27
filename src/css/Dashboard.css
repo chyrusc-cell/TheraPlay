@@ -405,3 +405,14 @@ body {
     color: #666;
     border: 1px solid #ddd;
 }
+
+/* --- Loading / empty / error messages --- */
+.dashboard-status {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.dashboard-error {
+    color: #d93025;
+}
