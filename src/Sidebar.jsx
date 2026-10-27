@@ -9,6 +9,9 @@ import {
     LogOut
 } from 'lucide-react';
 
+import logoFull from '../img/theraplaylogo2.png';
+import logoIcon from '../img/theraplaylogo.png';
+
 import './css/Sidebar.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -67,8 +70,17 @@ function Sidebar() {
     return (
         <aside className="sidebar">
             <div className="sidebar-logo">
-                <span className="sidebar-logo-full">TheraPlay</span>
-                <span className="sidebar-logo-short" aria-hidden="true">TP</span>
+                <img
+                    src={logoFull}
+                    alt="TheraPlay"
+                    className="sidebar-logo-full"
+                />
+                <img
+                    src={logoIcon}
+                    alt=""
+                    aria-hidden="true"
+                    className="sidebar-logo-short"
+                />
             </div>
 
             <nav className="sidebar-navigation" aria-label="Main navigation">
@@ -79,7 +91,7 @@ function Sidebar() {
                     className={linkClass}
                 >
                     <House size={20} aria-hidden="true" />
-                    <span>Dashboard</span>
+                    <span>Home</span>
                 </NavLink>
 
                 <NavLink

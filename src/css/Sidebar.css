@@ -21,13 +21,17 @@
 .sidebar-logo {
     padding: 0 15px;
     margin-bottom: 40px;
-
-    font-size: 24px;
-    font-weight: bold;
-    color: #1a1a1a;
 }
 
-/* Short mark shown only when the sidebar is collapsed. */
+/* Full logo (icon + name) in the wide sidebar. */
+.sidebar-logo-full {
+    display: block;
+    width: 100%;
+    max-width: 180px;
+    height: auto;
+}
+
+/* Icon-only logo, shown only when the sidebar is collapsed. */
 .sidebar-logo-short {
     display: none;
 }
@@ -123,8 +127,6 @@
         width: 100%;
         padding: 0;
         margin-bottom: 28px;
-        text-align: center;
-        font-size: 18px;
     }
 
     .sidebar-logo-full {
@@ -141,6 +143,10 @@
 
     .sidebar-logo-short {
         display: block;
+        width: 100%;
+        max-width: 56px;
+        height: auto;
+        margin: 0 auto;
     }
 
     .sidebar-navigation,
