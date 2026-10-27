@@ -415,3 +415,15 @@ body {
     line-height: 1.4;
     font-weight: 500;
 } 
+
+
+/* --- Loading / empty / error messages --- */
+.progress-status {
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.progress-error {
+    color: #d93025;
+}

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\RegisterController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProgressController;
 
 Route::post('/register', [RegisterController::class, 'store']);
 
@@ -18,4 +19,7 @@ Route::get('/user', function (Request $request) {
 Route::get('/activities', [ActivityController::class, 'index']);
 
 Route::put('/profile', [ProfileController::class, 'update'])
+    ->middleware('auth:sanctum');
+
+Route::get('/progress', [ProgressController::class, 'index'])
     ->middleware('auth:sanctum');
