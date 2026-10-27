@@ -256,3 +256,171 @@
     background-color: #f5f5f5;
     color: #333;
 }
+
+/* Header buttons (Refresh + Add Activity) */
+
+.header-actions {
+    display: flex;
+
+    gap: 10px;
+}
+
+
+/* Textareas in the form */
+
+.form-group textarea {
+    padding: 11px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 14px;
+
+    resize: vertical;
+}
+
+
+/* Validation and status messages */
+
+.field-error {
+    margin-top: 6px;
+
+    color: #d93025;
+    font-size: 13px;
+}
+
+.page-message {
+    margin-bottom: 20px;
+
+    font-size: 14px;
+}
+
+.page-message.success {
+    color: #188038;
+}
+
+.page-message.error {
+    color: #d93025;
+}
+
+.list-state {
+    padding: 30px;
+
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+}
+
+.list-state.list-error {
+    color: #d93025;
+}
+
+.list-state button {
+    margin-top: 12px;
+}
+
+
+/* Published / draft badge (extends difficulty-badge) */
+
+.status-badge.published {
+    background-color: #e6f4ea;
+    color: #188038;
+}
+
+.status-badge.draft {
+    background-color: #f1f3f5;
+    color: #666;
+}
+
+
+/* Publish / unpublish button (same look as the other row buttons) */
+
+.publish-button {
+    padding: 7px 11px;
+
+    border: 1px solid #ddd;
+    border-radius: 5px;
+
+    background-color: #f5f5f5;
+    color: #333;
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+.edit-button:disabled,
+.publish-button:disabled,
+.save-button:disabled,
+.cancel-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* File materials in the activity form */
+
+.file-hint {
+    margin-bottom: 8px;
+}
+
+.file-list {
+    list-style: none;
+
+    margin-bottom: 10px;
+}
+
+.file-item {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+
+    padding: 8px 10px;
+    margin-bottom: 6px;
+
+    background-color: #f8f9fa;
+
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+
+    font-size: 13px;
+}
+
+.file-name {
+    word-break: break-word;
+}
+
+.file-size {
+    color: #888;
+}
+
+.file-actions {
+    display: flex;
+
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.file-remove {
+    flex-shrink: 0;
+
+    padding: 5px 10px;
+
+    border: 1px solid #ddd;
+    border-radius: 5px;
+
+    background-color: white;
+    color: #333;
+
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.file-remove:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

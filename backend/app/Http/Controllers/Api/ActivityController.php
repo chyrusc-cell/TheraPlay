@@ -33,7 +33,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::query()
             ->where('is_published', true)
-            ->with('category:id,name')
+            ->with('category:id,name', 'resources')
             ->findOrFail($id);
 
         return response()->json([
@@ -46,6 +46,12 @@ class ActivityController extends Controller
                 'objective' => $activity->objective,
                 'instructions' => $activity->instructions,
                 'materials' => $activity->materials,
+                // Uploaded files (published activities only): display metadata.
+                'resources' => $activity->resources->map(fn ($resource) => [
+                    'id' => $resource->id,
+                    'file_name' => $resource->file_name,
+                    'file_type' => $resource->file_type,
+                ])->values(),
                 'image_path' => $activity->image_path,
             ],
         ]);

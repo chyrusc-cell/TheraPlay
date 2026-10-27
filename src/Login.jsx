@@ -58,8 +58,13 @@ function Login() {
             storage.setItem('theraplay_token', data.token);
             storage.setItem('theraplay_user', JSON.stringify(data.user));
 
-            // Redirect after successful authentication.
-            navigate('/dashboard');
+            // Redirect after successful authentication. The role is only used
+            // to pick the landing page; the admin pages verify it again.
+            navigate(
+                data.user?.role === 'admin'
+                    ? '/professional-dashboard'
+                    : '/dashboard'
+            );
         } catch (error) {
             setMessage(
                 error.message ||

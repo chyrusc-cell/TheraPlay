@@ -259,3 +259,48 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+
+/* Downloadable files */
+
+.resource-list {
+    list-style: none;
+
+    margin-top: 12px;
+    padding-left: 0;
+}
+
+.resource-list li {
+    margin-bottom: 8px;
+}
+
+.resource-button {
+    padding: 8px 12px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: white;
+    color: #333;
+
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    word-break: break-word;
+}
+
+.resource-button:hover {
+    background-color: #f1f3f5;
+}
+
+.resource-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.resource-error {
+    margin-top: 8px;
+
+    color: #d93025;
+    font-size: 13px;
+}

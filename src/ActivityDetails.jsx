@@ -28,6 +28,9 @@ function ActivityDetails() {
     const [childName, setChildName] = useState('');
     const [childError, setChildError] = useState('');
 
+    const [downloadingId, setDownloadingId] = useState(null);
+    const [downloadError, setDownloadError] = useState('');
+
     useEffect(() => {
         const controller = new AbortController();
 
@@ -237,6 +240,50 @@ function ActivityDetails() {
         setChildError('');
     };
 
+    // Files of a published activity are fetched and handed to the browser as
+    // a download, so a failure can be shown instead of opening an error page.
+    const handleDownload = async (resource) => {
+        if (downloadingId !== null) {
+            return;
+        }
+
+        setDownloadError('');
+        setDownloadingId(resource.id);
+
+        try {
+            const response = await fetch(
+                `${API_URL}/activities/${activityId}/resources/${resource.id}/download`
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    response.status === 404
+                        ? 'This file is no longer available.'
+                        : 'Unable to download this file. Please try again.'
+                );
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.download = resource.file_name;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        } catch (err) {
+            setDownloadError(
+                err.message ||
+                'Unable to connect to the server. Please try again.'
+            );
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
 
     if (isLoading) {
 
@@ -403,6 +450,45 @@ function ActivityDetails() {
                                 )}
 
                             </ul>
+
+
+                            {/* Uploaded files (only shown when there are some) */}
+
+                            {Array.isArray(activity.resources) &&
+                                activity.resources.length > 0 && (
+
+                                <ul className="resource-list">
+
+                                    {activity.resources.map((resource) => (
+
+                                        <li key={resource.id}>
+
+                                            <button
+                                                type="button"
+                                                className="resource-button"
+                                                onClick={() =>
+                                                    handleDownload(resource)
+                                                }
+                                                disabled={downloadingId !== null}
+                                            >
+                                                {downloadingId === resource.id
+                                                    ? 'Downloading...'
+                                                    : `Download ${resource.file_name}`}
+                                            </button>
+
+                                        </li>
+
+                                    ))}
+
+                                </ul>
+
+                            )}
+
+                            {downloadError && (
+                                <p role="alert" className="resource-error">
+                                    {downloadError}
+                                </p>
+                            )}
 
                         </section>
 

@@ -6,8 +6,14 @@ import {
     Gamepad2,
     ChartNoAxesColumn,
     User,
+    ClipboardList,
+    Contact,
+    Users,
+    Mail,
     LogOut
 } from 'lucide-react';
+
+import { useAuth } from './authContext.js';
 
 import logoFull from '../img/theraplaylogo2.png';
 import logoIcon from '../img/theraplaylogo.png';
@@ -22,6 +28,11 @@ const linkClass = ({ isActive }) =>
 function Sidebar() {
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    // The role comes from the server (GET /api/user), not from the browser.
+    // Hiding links is only a convenience: Laravel enforces access.
+    const { status, user } = useAuth();
+    const isAdmin = user?.role === 'admin';
 
     const handleLogout = async () => {
         if (isLoggingOut) {
@@ -84,6 +95,59 @@ function Sidebar() {
             </div>
 
             <nav className="sidebar-navigation" aria-label="Main navigation">
+                {isAdmin && (
+                    <>
+                        <NavLink
+                            to="/professional-dashboard"
+                            end
+                            title="Admin Dashboard"
+                            className={linkClass}
+                        >
+                            <House size={20} aria-hidden="true" />
+                            <span>Dashboard</span>
+                        </NavLink>
+
+                        <NavLink
+                            to="/manage-activities"
+                            title="Manage Activities"
+                            className={linkClass}
+                        >
+                            <ClipboardList size={20} aria-hidden="true" />
+                            <span>Manage Activities</span>
+                        </NavLink>
+
+                        <NavLink
+                            to="/manage-contacts"
+                            title="Manage Contacts"
+                            className={linkClass}
+                        >
+                            <Contact size={20} aria-hidden="true" />
+                            <span>Manage Contacts</span>
+                        </NavLink>
+
+                        <NavLink
+                            to="/manage-accounts"
+                            title="Manage Accounts"
+                            className={linkClass}
+                        >
+                            <Users size={20} aria-hidden="true" />
+                            <span>Manage Accounts</span>
+                        </NavLink>
+
+                        <NavLink
+                            to="/profile"
+                            title="Profile"
+                            className={linkClass}
+                        >
+                            <User size={20} aria-hidden="true" />
+                            <span>Profile</span>
+                        </NavLink>
+                    </>
+                )}
+
+                {/* Parent links; nothing is shown until the role is verified. */}
+                {status !== 'loading' && !isAdmin && (
+                <>
                 <NavLink
                     to="/dashboard"
                     end
@@ -120,6 +184,17 @@ function Sidebar() {
                     <User size={20} aria-hidden="true" />
                     <span>Profile</span>
                 </NavLink>
+
+                <NavLink
+                    to="/contact"
+                    title="Contact Us"
+                    className={linkClass}
+                >
+                    <Mail size={20} aria-hidden="true" />
+                    <span>Contact Us</span>
+                </NavLink>
+                </>
+                )}
             </nav>
 
             <div className="sidebar-bottom">

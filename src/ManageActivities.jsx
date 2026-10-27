@@ -1,88 +1,541 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    apiRequest,
+    clearSession,
+    mapValidationErrors,
+} from './api.js';
 import './css/ManageActivities.css';
+
+// Uploads: the server checks everything again; these only give quick feedback.
+const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'txt'];
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILES = 10;
+
+const formatSize = (bytes) =>
+    bytes >= 1024 * 1024
+        ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+// One item per line in the form <-> an array for the API.
+const linesToArray = (text) =>
+    text
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+const arrayToLines = (items) =>
+    Array.isArray(items) ? items.join('\n') : '';
+
+const emptyForm = {
+    title: '',
+    categoryId: '',
+    difficulty: 'Easy',
+    description: '',
+    objective: '',
+    instructions: '',
+    materials: '',
+};
 
 function ManageActivities() {
 
-    const [activities, setActivities] = useState([
-        {
-            id: 1,
-            title: 'Memory Match',
-            category: 'Executive Functioning',
-            difficulty: 'Easy'
-        },
-        {
-            id: 2,
-            title: 'Shape Sorting',
-            category: 'Fine Motor Skills',
-            difficulty: 'Medium'
-        },
-        {
-            id: 3,
-            title: 'Button Practice',
-            category: 'Functional Skills',
-            difficulty: 'Easy'
-        },
-        {
-            id: 4,
-            title: 'Handwriting Lines',
-            category: 'Handwriting',
-            difficulty: 'Medium'
-        },
-        {
-            id: 5,
-            title: 'Sensory Bin',
-            category: 'Sensory Skills',
-            difficulty: 'Easy'
-        }
-    ]);
+    const navigate = useNavigate();
 
+    const [activities, setActivities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
+    const [reloadKey, setReloadKey] = useState(0);
+
+    const [notice, setNotice] = useState(null);
 
     const [showForm, setShowForm] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [form, setForm] = useState(emptyForm);
+    const [fieldErrors, setFieldErrors] = useState({});
+    const [formError, setFormError] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
 
-    const [newTitle, setNewTitle] = useState('');
-    const [newCategory, setNewCategory] = useState('');
-    const [newDifficulty, setNewDifficulty] = useState('Easy');
+    const [loadingEditId, setLoadingEditId] = useState(null);
+    const [busyId, setBusyId] = useState(null);
+
+    // File materials: files chosen but not saved yet, files already saved on
+    // the server, and the state of the remove-file confirmation.
+    const [pendingFiles, setPendingFiles] = useState([]);
+    const [existingResources, setExistingResources] = useState([]);
+    const [fileErrors, setFileErrors] = useState([]);
+    const [fileInputKey, setFileInputKey] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
+    const [confirmingResourceId, setConfirmingResourceId] = useState(null);
+    const [removingResourceId, setRemovingResourceId] = useState(null);
 
 
-    const handleAddActivity = (event) => {
+    // Expired or invalid token: clear it and go to the login page.
+    const handleUnauthorized = useCallback(() => {
+        clearSession();
 
-        event.preventDefault();
+        navigate('/login', {
+            replace: true,
+            state: { message: 'Please log in to continue.' },
+        });
+    }, [navigate]);
 
-        const newActivity = {
-            id: Date.now(),
-            title: newTitle,
-            category: newCategory,
-            difficulty: newDifficulty
+
+    // Fetch the list whenever reloadKey changes.
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadActivities = async () => {
+            try {
+                const result = await apiRequest('/admin/activities', {
+                    signal: controller.signal,
+                });
+
+                if (result.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (result.status === 403) {
+                    throw new Error(
+                        'You do not have permission to manage activities.'
+                    );
+                }
+
+                if (!result.ok) {
+                    throw new Error('Unable to load activities.');
+                }
+
+                setActivities(
+                    Array.isArray(result.data.data) ? result.data.data : []
+                );
+                setLoadError('');
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                setLoadError(
+                    error.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
         };
 
-        setActivities([
-            ...activities,
-            newActivity
-        ]);
+        loadActivities();
 
-        setNewTitle('');
-        setNewCategory('');
-        setNewDifficulty('Easy');
+        return () => controller.abort();
+    }, [reloadKey, handleUnauthorized]);
 
-        setShowForm(false);
+
+    // showSpinner = false refreshes quietly after a save or publish action.
+    const reload = (showSpinner = true) => {
+        if (showSpinner) {
+            setIsLoading(true);
+        }
+
+        setLoadError('');
+        setReloadKey((key) => key + 1);
     };
 
 
-    const handleDeleteActivity = (id) => {
+    // The API only accepts an existing category id, and there is no category
+    // endpoint yet, so the choices are the categories already in use.
+    const categories = useMemo(() => {
+        const found = new Map();
 
-        const confirmed = window.confirm(
-            'Are you sure you want to delete this activity?'
-        );
+        activities.forEach((activity) => {
+            if (activity.category_id && activity.category) {
+                found.set(activity.category_id, activity.category);
+            }
+        });
 
-        if (!confirmed) {
+        return [...found.entries()].map(([id, name]) => ({ id, name }));
+    }, [activities]);
+
+
+    const updateField = (name, value) => {
+        setForm((current) => ({ ...current, [name]: value }));
+    };
+
+    const resetFiles = () => {
+        setPendingFiles([]);
+        setExistingResources([]);
+        setFileErrors([]);
+        setConfirmingResourceId(null);
+        setFileInputKey((key) => key + 1);
+    };
+
+    const closeForm = () => {
+        setShowForm(false);
+        setEditingId(null);
+        setForm(emptyForm);
+        setFieldErrors({});
+        setFormError('');
+        resetFiles();
+    };
+
+    const openCreateForm = () => {
+        setNotice(null);
+        setEditingId(null);
+        setForm(emptyForm);
+        setFieldErrors({});
+        setFormError('');
+        resetFiles();
+        setShowForm(true);
+    };
+
+
+    // Quick checks so obvious mistakes are caught before uploading. The
+    // server repeats every check and decides what is accepted.
+    const handleFilesSelected = (event) => {
+        const chosen = Array.from(event.target.files || []);
+        const problems = [];
+        const accepted = [...pendingFiles];
+
+        chosen.forEach((file) => {
+            const extension = file.name.split('.').pop().toLowerCase();
+
+            if (!ALLOWED_EXTENSIONS.includes(extension)) {
+                problems.push(`"${file.name}" is not a supported type.`);
+            } else if (file.size > MAX_FILE_BYTES) {
+                problems.push(
+                    `"${file.name}" is larger than ${MAX_FILE_BYTES / (1024 * 1024)} MB.`
+                );
+            } else if (
+                accepted.some(
+                    (item) => item.name === file.name && item.size === file.size
+                )
+            ) {
+                problems.push(`"${file.name}" is already selected.`);
+            } else if (accepted.length >= MAX_FILES) {
+                problems.push(`You can upload at most ${MAX_FILES} files at once.`);
+            } else {
+                accepted.push(file);
+            }
+        });
+
+        setPendingFiles(accepted);
+        setFileErrors(problems);
+
+        // Clear the picker so the same file can be chosen again later.
+        setFileInputKey((key) => key + 1);
+    };
+
+    const handleRemovePendingFile = (index) => {
+        setPendingFiles((files) => files.filter((_, i) => i !== index));
+        setFileErrors([]);
+    };
+
+    // Removes a file that is already saved on the server.
+    const handleRemoveResource = async (resource) => {
+        if (removingResourceId !== null) {
             return;
         }
 
-        setActivities(
-            activities.filter(
-                (activity) => activity.id !== id
-            )
+        setRemovingResourceId(resource.id);
+        setFileErrors([]);
+
+        try {
+            const result = await apiRequest(
+                `/admin/activities/${editingId}/resources/${resource.id}`,
+                { method: 'DELETE' }
+            );
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            // 404 means it is already gone, so the list is simply refreshed.
+            if (!result.ok && result.status !== 404) {
+                throw new Error(
+                    result.data.message || 'Unable to remove the file.'
+                );
+            }
+
+            setExistingResources((items) =>
+                items.filter((item) => item.id !== resource.id)
+            );
+            setNotice({
+                type: 'success',
+                text: `"${resource.file_name}" was removed.`,
+            });
+            reload(false);
+        } catch (error) {
+            setFileErrors([
+                error.message ||
+                'Unable to connect to the server. Please try again.',
+            ]);
+        } finally {
+            setConfirmingResourceId(null);
+            setRemovingResourceId(null);
+        }
+    };
+
+    // Sends the chosen files as multipart form data. No Content-Type header is
+    // set by hand: the browser adds it together with the multipart boundary.
+    const uploadFiles = async (activityId) => {
+        const data = new FormData();
+
+        pendingFiles.forEach((file) => data.append('files[]', file));
+
+        const result = await apiRequest(
+            `/admin/activities/${activityId}/resources`,
+            { method: 'POST', body: data }
         );
+
+        if (result.ok) {
+            return { ok: true };
+        }
+
+        if (result.status === 401) {
+            return { ok: false, unauthorized: true, messages: [] };
+        }
+
+        let messages = Object.values(result.data.errors || {}).flat();
+
+        if (result.status === 413) {
+            messages = ['The selected files are larger than the server allows.'];
+        }
+
+        if (messages.length === 0) {
+            messages = [
+                result.data.message ||
+                'The files could not be uploaded. Please try again.',
+            ];
+        }
+
+        return { ok: false, messages };
+    };
+
+    const handleToggleForm = () => {
+        if (showForm && editingId === null) {
+            closeForm();
+        } else {
+            openCreateForm();
+        }
+    };
+
+
+    // Load the full record from the server, then fill the form with it.
+    const handleEdit = async (id) => {
+        if (loadingEditId !== null) {
+            return;
+        }
+
+        setNotice(null);
+        setLoadingEditId(id);
+
+        try {
+            const result = await apiRequest(`/admin/activities/${id}`);
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error('Unable to load this activity for editing.');
+            }
+
+            const activity = result.data.data;
+
+            setForm({
+                title: activity.title || '',
+                categoryId: activity.category_id
+                    ? String(activity.category_id)
+                    : '',
+                difficulty: activity.difficulty || 'Easy',
+                description: activity.description || '',
+                objective: activity.objective || '',
+                instructions: arrayToLines(activity.instructions),
+                materials: arrayToLines(activity.materials),
+            });
+            setEditingId(activity.id);
+            setFieldErrors({});
+            setFormError('');
+            resetFiles();
+            setExistingResources(
+                Array.isArray(activity.resources) ? activity.resources : []
+            );
+            setShowForm(true);
+        } catch (error) {
+            setNotice({
+                type: 'error',
+                text:
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setLoadingEditId(null);
+        }
+    };
+
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (isSaving) {
+            return;
+        }
+
+        const instructions = linesToArray(form.instructions);
+
+        if (instructions.length === 0) {
+            setFieldErrors({
+                instructions: 'Add at least one instruction.',
+            });
+            setFormError('Please fix the highlighted fields.');
+            return;
+        }
+
+        // Only these fields are sent. created_by and is_published are never
+        // part of the form; the server controls them.
+        const payload = {
+            title: form.title.trim(),
+            category_id: form.categoryId ? Number(form.categoryId) : null,
+            difficulty: form.difficulty,
+            description: form.description.trim() || null,
+            objective: form.objective.trim() || null,
+            instructions,
+            materials: linesToArray(form.materials),
+        };
+
+        const isEditing = editingId !== null;
+
+        setIsSaving(true);
+        setFieldErrors({});
+        setFormError('');
+        setNotice(null);
+
+        try {
+            const result = await apiRequest(
+                isEditing
+                    ? `/admin/activities/${editingId}`
+                    : '/admin/activities',
+                { method: isEditing ? 'PUT' : 'POST', body: payload }
+            );
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (result.status === 422) {
+                setFieldErrors(mapValidationErrors(result.data.errors));
+                setFormError('Please fix the highlighted fields.');
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error(
+                    result.data.message ||
+                    'Unable to save the activity. Please try again.'
+                );
+            }
+
+            // The activity itself is saved. Files, if any, are uploaded next.
+            const savedId = isEditing ? editingId : result.data.data.id;
+            const fileCount = pendingFiles.length;
+
+            if (fileCount > 0) {
+                setIsUploading(true);
+
+                const upload = await uploadFiles(savedId);
+
+                if (upload.unauthorized) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (!upload.ok) {
+                    // Stay in the form (now editing the saved activity) so
+                    // the files can be fixed and sent again without creating
+                    // a duplicate activity. Typed values are kept.
+                    setEditingId(savedId);
+                    setFileErrors(upload.messages);
+                    setFormError(
+                        'The activity was saved, but the files were not uploaded.'
+                    );
+                    reload(false);
+                    return;
+                }
+            }
+
+            const filesText =
+                fileCount > 0
+                    ? ` ${fileCount} ${fileCount === 1 ? 'file' : 'files'} uploaded.`
+                    : '';
+
+            setNotice({
+                type: 'success',
+                text: isEditing
+                    ? `Activity updated.${filesText}`
+                    : `Activity created as a draft. Publish it to make it visible to parents.${filesText}`,
+            });
+            closeForm();
+            reload(false);
+        } catch (error) {
+            setFormError(
+                error.message ||
+                'Unable to connect to the server. Please try again.'
+            );
+        } finally {
+            setIsUploading(false);
+            setIsSaving(false);
+        }
+    };
+
+
+    const handleTogglePublish = async (activity) => {
+        if (busyId !== null) {
+            return;
+        }
+
+        const action = activity.is_published ? 'unpublish' : 'publish';
+
+        setNotice(null);
+        setBusyId(activity.id);
+
+        try {
+            const result = await apiRequest(
+                `/admin/activities/${activity.id}/${action}`,
+                { method: 'POST' }
+            );
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error(
+                    result.data.message ||
+                    `Unable to ${action} this activity.`
+                );
+            }
+
+            setNotice({
+                type: 'success',
+                text: `"${activity.title}" ${
+                    action === 'publish' ? 'published' : 'unpublished'
+                }.`,
+            });
+            reload(false);
+        } catch (error) {
+            setNotice({
+                type: 'error',
+                text:
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setBusyId(null);
+        }
     };
 
 
@@ -109,77 +562,143 @@ function ManageActivities() {
                     </div>
 
 
-                    <button
-                        className="add-activity-button"
-                        onClick={() => setShowForm(!showForm)}
-                    >
-                        + Add Activity
-                    </button>
+                    <div className="header-actions">
+
+                        <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={() => reload(true)}
+                            disabled={isLoading}
+                        >
+                            Refresh
+                        </button>
+
+                        <button
+                            type="button"
+                            className="add-activity-button"
+                            onClick={handleToggleForm}
+                        >
+                            + Add Activity
+                        </button>
+
+                    </div>
 
                 </div>
 
 
-                {/* Add Activity Form */}
+                {notice && (
+                    <p
+                        className={`page-message ${notice.type}`}
+                        role={notice.type === 'error' ? 'alert' : 'status'}
+                    >
+                        {notice.text}
+                    </p>
+                )}
+
+
+                {/* Add / Edit Activity Form */}
 
                 {showForm && (
 
                     <section className="activity-form">
 
                         <h2>
-                            Add New Activity
+                            {editingId === null
+                                ? 'Add New Activity'
+                                : 'Edit Activity'}
                         </h2>
 
 
-                        <form onSubmit={handleAddActivity}>
+                        <form onSubmit={handleSubmit}>
+
+                            {formError && (
+                                <p className="page-message error" role="alert">
+                                    {formError}
+                                </p>
+                            )}
 
                             <div className="form-group">
 
-                                <label>
+                                <label htmlFor="activity-title">
                                     Activity Name
                                 </label>
 
                                 <input
+                                    id="activity-title"
                                     type="text"
                                     placeholder="Enter activity name"
-                                    value={newTitle}
+                                    value={form.title}
+                                    maxLength={255}
                                     onChange={(event) =>
-                                        setNewTitle(event.target.value)
+                                        updateField('title', event.target.value)
                                     }
                                     required
                                 />
+
+                                {fieldErrors.title && (
+                                    <p className="field-error">
+                                        {fieldErrors.title}
+                                    </p>
+                                )}
 
                             </div>
 
 
                             <div className="form-group">
 
-                                <label>
+                                <label htmlFor="activity-category">
                                     Category
                                 </label>
 
-                                <input
-                                    type="text"
-                                    placeholder="Enter category"
-                                    value={newCategory}
+                                <select
+                                    id="activity-category"
+                                    value={form.categoryId}
                                     onChange={(event) =>
-                                        setNewCategory(event.target.value)
+                                        updateField(
+                                            'categoryId',
+                                            event.target.value
+                                        )
                                     }
-                                    required
-                                />
+                                >
+
+                                    <option value="">
+                                        No category
+                                    </option>
+
+                                    {categories.map((category) => (
+                                        <option
+                                            key={category.id}
+                                            value={category.id}
+                                        >
+                                            {category.name}
+                                        </option>
+                                    ))}
+
+                                </select>
+
+                                {fieldErrors.category_id && (
+                                    <p className="field-error">
+                                        {fieldErrors.category_id}
+                                    </p>
+                                )}
 
                             </div>
 
 
                             <div className="form-group">
 
-                                <label>
+                                <label htmlFor="activity-difficulty">
                                     Difficulty
                                 </label>
 
                                 <select
-                                    value={newDifficulty}
+                                    id="activity-difficulty"
+                                    value={form.difficulty}
                                     onChange={(event) =>
-                                        setNewDifficulty(event.target.value)
+                                        updateField(
+                                            'difficulty',
+                                            event.target.value
+                                        )
                                     }
                                 >
 
@@ -197,6 +716,259 @@ function ManageActivities() {
 
                                 </select>
 
+                                {fieldErrors.difficulty && (
+                                    <p className="field-error">
+                                        {fieldErrors.difficulty}
+                                    </p>
+                                )}
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="activity-description">
+                                    Description (optional)
+                                </label>
+
+                                <textarea
+                                    id="activity-description"
+                                    rows={3}
+                                    placeholder="Short summary shown on the activity card"
+                                    value={form.description}
+                                    maxLength={5000}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'description',
+                                            event.target.value
+                                        )
+                                    }
+                                />
+
+                                {fieldErrors.description && (
+                                    <p className="field-error">
+                                        {fieldErrors.description}
+                                    </p>
+                                )}
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="activity-objective">
+                                    Objective (optional)
+                                </label>
+
+                                <textarea
+                                    id="activity-objective"
+                                    rows={2}
+                                    placeholder="What this activity helps to improve"
+                                    value={form.objective}
+                                    maxLength={2000}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'objective',
+                                            event.target.value
+                                        )
+                                    }
+                                />
+
+                                {fieldErrors.objective && (
+                                    <p className="field-error">
+                                        {fieldErrors.objective}
+                                    </p>
+                                )}
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="activity-instructions">
+                                    Instructions (one step per line)
+                                </label>
+
+                                <textarea
+                                    id="activity-instructions"
+                                    rows={5}
+                                    placeholder={'Look at the cards carefully.\nMatch the cards with the same image.'}
+                                    value={form.instructions}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'instructions',
+                                            event.target.value
+                                        )
+                                    }
+                                    required
+                                />
+
+                                {fieldErrors.instructions && (
+                                    <p className="field-error">
+                                        {fieldErrors.instructions}
+                                    </p>
+                                )}
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="activity-materials">
+                                    Materials (one per line, optional)
+                                </label>
+
+                                <textarea
+                                    id="activity-materials"
+                                    rows={3}
+                                    placeholder={'Activity cards\nMatching board'}
+                                    value={form.materials}
+                                    onChange={(event) =>
+                                        updateField(
+                                            'materials',
+                                            event.target.value
+                                        )
+                                    }
+                                />
+
+                                {fieldErrors.materials && (
+                                    <p className="field-error">
+                                        {fieldErrors.materials}
+                                    </p>
+                                )}
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="activity-files">
+                                    Attached files (optional)
+                                </label>
+
+                                <p className="cell-sub file-hint">
+                                    PDF, DOCX, PPTX, PNG, JPG or TXT, up to
+                                    10 MB each.
+                                </p>
+
+                                {existingResources.length > 0 && (
+                                    <ul className="file-list">
+
+                                        {existingResources.map((resource) => (
+
+                                            <li className="file-item" key={resource.id}>
+
+                                                <span className="file-name">
+                                                    {resource.file_name}
+                                                </span>
+
+                                                {confirmingResourceId === resource.id ? (
+
+                                                    <span className="file-actions">
+
+                                                        <span className="confirm-text">
+                                                            Remove this file?
+                                                        </span>
+
+                                                        <button
+                                                            type="button"
+                                                            className="file-remove"
+                                                            onClick={() =>
+                                                                handleRemoveResource(resource)
+                                                            }
+                                                            disabled={removingResourceId !== null}
+                                                        >
+                                                            {removingResourceId === resource.id
+                                                                ? 'Removing...'
+                                                                : 'Yes, remove'}
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            className="file-remove"
+                                                            onClick={() =>
+                                                                setConfirmingResourceId(null)
+                                                            }
+                                                            disabled={removingResourceId !== null}
+                                                        >
+                                                            Cancel
+                                                        </button>
+
+                                                    </span>
+
+                                                ) : (
+
+                                                    <button
+                                                        type="button"
+                                                        className="file-remove"
+                                                        onClick={() =>
+                                                            setConfirmingResourceId(resource.id)
+                                                        }
+                                                        disabled={isSaving || removingResourceId !== null}
+                                                    >
+                                                        Remove
+                                                    </button>
+
+                                                )}
+
+                                            </li>
+
+                                        ))}
+
+                                    </ul>
+                                )}
+
+                                <input
+                                    id="activity-files"
+                                    key={fileInputKey}
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.docx,.pptx,.png,.jpg,.jpeg,.txt"
+                                    onChange={handleFilesSelected}
+                                    disabled={isSaving}
+                                />
+
+                                {pendingFiles.length > 0 && (
+                                    <ul className="file-list">
+
+                                        {pendingFiles.map((file, index) => (
+
+                                            <li
+                                                className="file-item"
+                                                key={`${file.name}-${file.size}`}
+                                            >
+
+                                                <span className="file-name">
+                                                    {file.name}
+                                                    <span className="file-size">
+                                                        {' '}({formatSize(file.size)})
+                                                    </span>
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    className="file-remove"
+                                                    onClick={() =>
+                                                        handleRemovePendingFile(index)
+                                                    }
+                                                    disabled={isSaving}
+                                                >
+                                                    Remove
+                                                </button>
+
+                                            </li>
+
+                                        ))}
+
+                                    </ul>
+                                )}
+
+                                {fileErrors.map((message) => (
+                                    <p className="field-error" key={message}>
+                                        {message}
+                                    </p>
+                                ))}
+
                             </div>
 
 
@@ -205,14 +977,22 @@ function ManageActivities() {
                                 <button
                                     type="submit"
                                     className="save-button"
+                                    disabled={isSaving}
                                 >
-                                    Add Activity
+                                    {isUploading
+                                        ? `Uploading ${pendingFiles.length} ${pendingFiles.length === 1 ? 'file' : 'files'}...`
+                                        : isSaving
+                                        ? 'Saving...'
+                                        : editingId === null
+                                            ? 'Add Activity'
+                                            : 'Save Changes'}
                                 </button>
 
                                 <button
                                     type="button"
                                     className="cancel-button"
-                                    onClick={() => setShowForm(false)}
+                                    onClick={closeForm}
+                                    disabled={isSaving}
                                 >
                                     Cancel
                                 </button>
@@ -228,96 +1008,168 @@ function ManageActivities() {
 
                 {/* Activities Table */}
 
-                <section className="activities-table-container">
+                {isLoading ? (
 
-                    <table className="activities-table">
+                    <p className="list-state">
+                        Loading activities...
+                    </p>
 
-                        <thead>
+                ) : loadError ? (
 
-                            <tr>
+                    <div className="list-state list-error" role="alert">
 
-                                <th>
-                                    Activity
-                                </th>
+                        <p>
+                            {loadError}
+                        </p>
 
-                                <th>
-                                    Category
-                                </th>
+                        <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={() => reload(true)}
+                        >
+                            Try again
+                        </button>
 
-                                <th>
-                                    Difficulty
-                                </th>
+                    </div>
 
-                                <th>
-                                    Actions
-                                </th>
+                ) : (
 
-                            </tr>
+                    <section className="activities-table-container">
 
-                        </thead>
+                        <table className="activities-table">
 
+                            <thead>
 
-                        <tbody>
+                                <tr>
 
-                            {activities.map((activity) => (
+                                    <th>
+                                        Activity
+                                    </th>
 
-                                <tr key={activity.id}>
+                                    <th>
+                                        Category
+                                    </th>
 
-                                    <td>
-                                        {activity.title}
-                                    </td>
+                                    <th>
+                                        Difficulty
+                                    </th>
 
-                                    <td>
-                                        {activity.category}
-                                    </td>
+                                    <th>
+                                        Status
+                                    </th>
 
-                                    <td>
-
-                                        <span className="difficulty-badge">
-                                            {activity.difficulty}
-                                        </span>
-
-                                    </td>
-
-                                    <td>
-
-                                        <div className="table-actions">
-
-                                            <button
-                                                className="edit-button"
-                                                onClick={() =>
-                                                    alert(
-                                                        `Edit ${activity.title} - editing will be added later.`
-                                                    )
-                                                }
-                                            >
-                                                Edit
-                                            </button>
-
-                                            <button
-                                                className="delete-button"
-                                                onClick={() =>
-                                                    handleDeleteActivity(
-                                                        activity.id
-                                                    )
-                                                }
-                                            >
-                                                Delete
-                                            </button>
-
-                                        </div>
-
-                                    </td>
+                                    <th>
+                                        Actions
+                                    </th>
 
                                 </tr>
 
-                            ))}
+                            </thead>
 
-                        </tbody>
 
-                    </table>
+                            <tbody>
 
-                </section>
+                                {activities.length === 0 && (
+
+                                    <tr>
+
+                                        <td colSpan={5}>
+                                            No activities yet. Use
+                                            &ldquo;+ Add Activity&rdquo; to
+                                            create the first one.
+                                        </td>
+
+                                    </tr>
+
+                                )}
+
+                                {activities.map((activity) => (
+
+                                    <tr key={activity.id}>
+
+                                        <td>
+                                            {activity.title}
+                                        </td>
+
+                                        <td>
+                                            {activity.category || '—'}
+                                        </td>
+
+                                        <td>
+
+                                            <span className="difficulty-badge">
+                                                {activity.difficulty}
+                                            </span>
+
+                                        </td>
+
+                                        <td>
+
+                                            <span
+                                                className={`difficulty-badge status-badge ${
+                                                    activity.is_published
+                                                        ? 'published'
+                                                        : 'draft'
+                                                }`}
+                                            >
+                                                {activity.is_published
+                                                    ? 'Published'
+                                                    : 'Draft'}
+                                            </span>
+
+                                        </td>
+
+                                        <td>
+
+                                            <div className="table-actions">
+
+                                                <button
+                                                    type="button"
+                                                    className="edit-button"
+                                                    onClick={() =>
+                                                        handleEdit(activity.id)
+                                                    }
+                                                    disabled={
+                                                        loadingEditId !== null
+                                                    }
+                                                >
+                                                    {loadingEditId === activity.id
+                                                        ? 'Loading...'
+                                                        : 'Edit'}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    className="publish-button"
+                                                    onClick={() =>
+                                                        handleTogglePublish(
+                                                            activity
+                                                        )
+                                                    }
+                                                    disabled={busyId !== null}
+                                                >
+                                                    {busyId === activity.id
+                                                        ? 'Working...'
+                                                        : activity.is_published
+                                                            ? 'Unpublish'
+                                                            : 'Publish'}
+                                                </button>
+
+                                            </div>
+
+                                        </td>
+
+                                    </tr>
+
+                                ))}
+
+                            </tbody>
+
+                        </table>
+
+                    </section>
+
+                )}
 
             </main>
 

@@ -73,6 +73,23 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Activity Material Uploads
+    |--------------------------------------------------------------------------
+    |
+    | Files attached to activities are kept on a PRIVATE disk (never linked
+    | into public/) and are only served through the API. The limits can be
+    | changed with ACTIVITY_MATERIAL_MAX_KB / ACTIVITY_MATERIAL_MAX_FILES.
+    |
+    */
+
+    'activity_materials' => [
+        'disk' => 'local',
+        'max_kb' => (int) env('ACTIVITY_MATERIAL_MAX_KB', 10240),
+        'max_files' => (int) env('ACTIVITY_MATERIAL_MAX_FILES', 10),
+    ],
+
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],

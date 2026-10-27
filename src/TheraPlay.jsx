@@ -16,6 +16,10 @@ import ProfessionalDashboard from './ProfessionalDashboard.jsx';
 import ManageActivities from './ManageActivities.jsx';
 import Profile from './Profile.jsx';
 import Layout from './Layout.jsx';
+import RequireRole from './RequireRole.jsx';
+import Contact from './Contact.jsx';
+import ManageContacts from './ManageContacts.jsx';
+import ManageAccounts from './ManageAccounts.jsx';
 
 function TheraPlay() {
 
@@ -76,15 +80,36 @@ function TheraPlay() {
                         element={<Profile />}
                     />
 
+                    {/* Contact list is public; only the feedback form needs a parent login */}
                     <Route
-                        path="/professional-dashboard"
-                        element={<ProfessionalDashboard />}
+                        path="/contact"
+                        element={<Contact />}
                     />
 
-                    <Route
-                        path="/manage-activities"
-                        element={<ManageActivities />}
-                    />
+                    {/* Admin-only pages */}
+                    <Route element={<RequireRole role="admin" />}>
+
+                        <Route
+                            path="/professional-dashboard"
+                            element={<ProfessionalDashboard />}
+                        />
+
+                        <Route
+                            path="/manage-activities"
+                            element={<ManageActivities />}
+                        />
+
+                        <Route
+                            path="/manage-contacts"
+                            element={<ManageContacts />}
+                        />
+
+                        <Route
+                            path="/manage-accounts"
+                            element={<ManageAccounts />}
+                        />
+
+                    </Route>
 
                 </Route>
 

@@ -265,3 +265,98 @@
 
     color: #888;
 }
+
+/* Notes shown where data is loading, empty or not available yet */
+
+.stat-note,
+.panel-note {
+    color: #888;
+    font-size: 13px;
+}
+
+.stat-note {
+    margin-top: 4px;
+}
+
+.panel-note.error {
+    margin-bottom: 20px;
+
+    color: #d93025;
+}
+
+
+/* Parent feedback */
+
+.feedback-section {
+    margin-top: 20px;
+}
+
+.feedback-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.feedback-item {
+    padding: 14px 0;
+
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.feedback-item:first-child {
+    padding-top: 0;
+}
+
+.feedback-item:last-child {
+    border-bottom: none;
+}
+
+.feedback-meta {
+    display: flex;
+
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 6px;
+}
+
+.feedback-author {
+    font-size: 13px;
+    font-weight: bold;
+    word-break: break-word;
+}
+
+.feedback-date {
+    flex-shrink: 0;
+
+    color: #888;
+    font-size: 12px;
+}
+
+.feedback-rating {
+    margin-bottom: 6px;
+
+    color: #666;
+    font-size: 12px;
+}
+
+.feedback-message {
+    color: #444;
+    font-size: 14px;
+    line-height: 1.5;
+
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.feedback-retry {
+    padding: 8px 16px;
+
+    border: 1px solid #ccc;
+    border-radius: 6px;
+
+    background-color: white;
+    color: #333;
+
+    cursor: pointer;
+    font-size: 13px;
+}

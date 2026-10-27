@@ -1,66 +1,166 @@
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { apiRequest, clearSession } from './api.js';
 import './css/ProfessionalDashboard.css';
+
+// The API returns every feedback entry (there is no pagination yet), so the
+// dashboard only shows the newest few. Nothing is hidden on the server.
+const FEEDBACK_LIMIT = 5;
+
+const API_URL = 'http://127.0.0.1:8000/api';
+
+// The token is saved by Login.jsx in either localStorage or sessionStorage.
+const getToken = () =>
+    localStorage.getItem('theraplay_token') ||
+    sessionStorage.getItem('theraplay_token');
+
+const formatDate = (value) =>
+    value
+        ? new Date(value).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+          })
+        : '';
 
 function ProfessionalDashboard() {
 
-    const recentUploads = [
-        {
-            id: 1,
-            title: 'Color Matching',
-            category: 'Visual Skills',
-            date: 'Sept 1, 2026'
-        },
-        {
-            id: 2,
-            title: 'Hand Strength',
-            category: 'Fine Motor Skills',
-            date: 'Aug 31, 2026'
-        },
-        {
-            id: 3,
-            title: 'Daily Routine',
-            category: 'Functional Skills',
-            date: 'Aug 29, 2026'
-        },
-        {
-            id: 4,
-            title: 'Memory Match',
-            category: 'Executive Functioning',
-            date: 'Aug 27, 2026'
+    const navigate = useNavigate();
+
+    const [activities, setActivities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const [feedback, setFeedback] = useState([]);
+    const [feedbackLoading, setFeedbackLoading] = useState(true);
+    const [feedbackError, setFeedbackError] = useState('');
+    const [feedbackReloadKey, setFeedbackReloadKey] = useState(0);
+
+    useEffect(() => {
+        const redirectToLogin = () => {
+            ['theraplay_token', 'theraplay_user'].forEach((key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+
+            navigate('/login', {
+                replace: true,
+                state: { message: 'Please log in to continue.' },
+            });
+        };
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin();
+            return;
         }
-    ];
+
+        const controller = new AbortController();
+
+        const loadActivities = async () => {
+            try {
+                const response = await fetch(`${API_URL}/admin/activities`, {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    signal: controller.signal,
+                });
+
+                if (response.status === 401) {
+                    redirectToLogin();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Unable to load dashboard data.');
+                }
+
+                const result = await response.json();
+
+                setActivities(Array.isArray(result.data) ? result.data : []);
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadActivities();
+
+        return () => controller.abort();
+    }, [navigate]);
 
 
-    const weeklyProgress = [
-        {
-            day: 'Mon',
-            completed: 25
-        },
-        {
-            day: 'Tue',
-            completed: 40
-        },
-        {
-            day: 'Wed',
-            completed: 35
-        },
-        {
-            day: 'Thu',
-            completed: 55
-        },
-        {
-            day: 'Fri',
-            completed: 45
-        },
-        {
-            day: 'Sat',
-            completed: 65
-        },
-        {
-            day: 'Sun',
-            completed: 75
-        }
-    ];
+    // Submitted feedback (newest first, as returned by the API).
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadFeedback = async () => {
+            try {
+                const result = await apiRequest('/admin/feedback', {
+                    signal: controller.signal,
+                });
+
+                if (result.status === 401) {
+                    clearSession();
+                    navigate('/login', {
+                        replace: true,
+                        state: { message: 'Please log in to continue.' },
+                    });
+                    return;
+                }
+
+                if (!result.ok) {
+                    throw new Error('Unable to load feedback.');
+                }
+
+                setFeedback(
+                    Array.isArray(result.data.data) ? result.data.data : []
+                );
+                setFeedbackError('');
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setFeedbackError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setFeedbackLoading(false);
+                }
+            }
+        };
+
+        loadFeedback();
+
+        return () => controller.abort();
+    }, [feedbackReloadKey, navigate]);
+
+
+    const retryFeedback = () => {
+        setFeedbackLoading(true);
+        setFeedbackError('');
+        setFeedbackReloadKey((key) => key + 1);
+    };
+
+
+    // The API returns newest first. Only the activity list is available to
+    // the dashboard, so only figures calculated from it are shown.
+    const recentUploads = activities.slice(0, 4);
 
 
     return (
@@ -83,6 +183,13 @@ function ProfessionalDashboard() {
                 </div>
 
 
+                {error && (
+                    <p className="panel-note error" role="alert">
+                        {error}
+                    </p>
+                )}
+
+
                 {/* Statistics */}
 
                 <section className="statistics-grid">
@@ -90,7 +197,7 @@ function ProfessionalDashboard() {
                     <div className="stat-card">
 
                         <div className="stat-number">
-                            48
+                            {isLoading || error ? '—' : activities.length}
                         </div>
 
                         <div className="stat-label">
@@ -103,11 +210,15 @@ function ProfessionalDashboard() {
                     <div className="stat-card">
 
                         <div className="stat-number">
-                            128
+                            —
                         </div>
 
                         <div className="stat-label">
                             Total Users
+                        </div>
+
+                        <div className="stat-note">
+                            Not available yet
                         </div>
 
                     </div>
@@ -116,11 +227,15 @@ function ProfessionalDashboard() {
                     <div className="stat-card">
 
                         <div className="stat-number">
-                            342
+                            —
                         </div>
 
                         <div className="stat-label">
                             Completed Activities
+                        </div>
+
+                        <div className="stat-note">
+                            Not available yet
                         </div>
 
                     </div>
@@ -140,37 +255,9 @@ function ProfessionalDashboard() {
                             Activity Progress Overview
                         </h2>
 
-
-                        <div className="bar-chart">
-
-                            {weeklyProgress.map((item) => (
-
-                                <div
-                                    className="chart-item"
-                                    key={item.day}
-                                >
-
-                                    <div className="chart-value">
-                                        {item.completed}
-                                    </div>
-
-                                    <div
-                                        className="chart-bar"
-                                        style={{
-                                            height: `${item.completed}%`
-                                        }}
-                                    >
-                                    </div>
-
-                                    <div className="chart-label">
-                                        {item.day}
-                                    </div>
-
-                                </div>
-
-                            ))}
-
-                        </div>
+                        <p className="panel-note">
+                            Progress statistics are not available yet.
+                        </p>
 
                     </div>
 
@@ -194,6 +281,18 @@ function ProfessionalDashboard() {
 
                         <div className="recent-uploads">
 
+                            {isLoading && (
+                                <p className="panel-note">
+                                    Loading activities...
+                                </p>
+                            )}
+
+                            {!isLoading && !error && recentUploads.length === 0 && (
+                                <p className="panel-note">
+                                    No activities yet.
+                                </p>
+                            )}
+
                             {recentUploads.map((item) => (
 
                                 <div
@@ -212,13 +311,17 @@ function ProfessionalDashboard() {
                                         </h3>
 
                                         <p>
-                                            {item.category}
+                                            {item.category || 'No category'}
+                                            {' • '}
+                                            {item.is_published
+                                                ? 'Published'
+                                                : 'Draft'}
                                         </p>
 
                                     </div>
 
                                     <div className="upload-date">
-                                        {item.date}
+                                        {formatDate(item.created_at)}
                                     </div>
 
                                 </div>
@@ -226,6 +329,105 @@ function ProfessionalDashboard() {
                             ))}
 
                         </div>
+
+                    </div>
+
+                </section>
+
+
+                {/* Feedback from parents */}
+
+                <section className="feedback-section">
+
+                    <div className="dashboard-panel">
+
+                        <h2>
+                            Parent Feedback
+                        </h2>
+
+                        {feedbackLoading ? (
+
+                            <p className="panel-note">
+                                Loading feedback...
+                            </p>
+
+                        ) : feedbackError ? (
+
+                            <div role="alert">
+
+                                <p className="panel-note error">
+                                    {feedbackError}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className="feedback-retry"
+                                    onClick={retryFeedback}
+                                >
+                                    Try again
+                                </button>
+
+                            </div>
+
+                        ) : feedback.length === 0 ? (
+
+                            <p className="panel-note">
+                                No feedback has been submitted yet.
+                            </p>
+
+                        ) : (
+
+                            <>
+
+                                <div className="feedback-list">
+
+                                    {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
+
+                                        <div
+                                            className="feedback-item"
+                                            key={item.id}
+                                        >
+
+                                            <div className="feedback-meta">
+
+                                                <span className="feedback-author">
+                                                    {item.user
+                                                        ? `${item.user.name} (${item.user.email})`
+                                                        : 'Former user'}
+                                                </span>
+
+                                                <span className="feedback-date">
+                                                    {formatDate(item.created_at)}
+                                                </span>
+
+                                            </div>
+
+                                            {item.rating && (
+                                                <div className="feedback-rating">
+                                                    Rating: {item.rating} / 5
+                                                </div>
+                                            )}
+
+                                            <p className="feedback-message">
+                                                {item.message}
+                                            </p>
+
+                                        </div>
+
+                                    ))}
+
+                                </div>
+
+                                {feedback.length > FEEDBACK_LIMIT && (
+                                    <p className="panel-note">
+                                        Showing the latest {FEEDBACK_LIMIT} of{' '}
+                                        {feedback.length} feedback entries.
+                                    </p>
+                                )}
+
+                            </>
+
+                        )}
 
                     </div>
 
