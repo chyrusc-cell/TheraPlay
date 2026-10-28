@@ -7,9 +7,7 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
-import './css/ManageActivities.css';
-import './css/ManageContacts.css';
-import './css/ManageAccounts.css';
+import * as ui from './adminClasses.js';
 
 const emptyForm = {
     name: '',
@@ -324,9 +322,9 @@ function ManageAccounts() {
             const isDelete = confirming.type === 'delete';
 
             return (
-                <div className="table-actions">
+                <div className={ui.actions}>
 
-                    <span className="confirm-text">
+                    <span className={ui.confirmText}>
                         {isDelete
                             ? 'Delete this account?'
                             : `Make this account ${targetRole === 'admin' ? 'an admin' : 'a parent'}? They will be signed out.`}
@@ -334,7 +332,7 @@ function ManageAccounts() {
 
                     <button
                         type="button"
-                        className="delete-button"
+                        className={ui.deleteButton}
                         onClick={() =>
                             isDelete
                                 ? handleDelete(account)
@@ -347,7 +345,7 @@ function ManageAccounts() {
 
                     <button
                         type="button"
-                        className="edit-button"
+                        className={ui.editButton}
                         onClick={() => setConfirming(null)}
                         disabled={busyId !== null}
                     >
@@ -359,11 +357,11 @@ function ManageAccounts() {
         }
 
         return (
-            <div className="table-actions">
+            <div className={ui.actions}>
 
                 <button
                     type="button"
-                    className="edit-button"
+                    className={ui.editButton}
                     aria-label={`Edit ${account.name}`}
                     onClick={() => handleEdit(account)}
                     disabled={busyId !== null}
@@ -373,7 +371,7 @@ function ManageAccounts() {
 
                 <button
                     type="button"
-                    className="publish-button"
+                    className={ui.neutralRowButton}
                     aria-label={`${account.role === 'admin' ? 'Make parent' : 'Make admin'}: ${account.name}`}
                     onClick={() =>
                         setConfirming({ id: account.id, type: 'role' })
@@ -385,7 +383,7 @@ function ManageAccounts() {
 
                 <button
                     type="button"
-                    className="delete-button"
+                    className={ui.deleteButton}
                     aria-label={`Delete ${account.name}`}
                     onClick={() =>
                         setConfirming({ id: account.id, type: 'delete' })
@@ -404,19 +402,19 @@ function ManageAccounts() {
     const isEditing = editingId !== null;
 
     return (
-        <div className="manage-activities-page">
+        <div className={ui.page}>
 
-            <main className="manage-activities-content">
+            <main className={ui.content}>
 
-                <div className="page-header">
+                <div className={ui.header}>
 
                     <div>
 
-                        <h1>
+                        <h1 className={ui.title}>
                             Manage Accounts
                         </h1>
 
-                        <p>
+                        <p className={ui.subtitle}>
                             Create accounts, change roles and remove
                             accounts.
                         </p>
@@ -424,11 +422,11 @@ function ManageAccounts() {
                     </div>
 
 
-                    <div className="header-actions">
+                    <div className={ui.headerActions}>
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                             disabled={isLoading}
                         >
@@ -437,7 +435,7 @@ function ManageAccounts() {
 
                         <button
                             type="button"
-                            className="add-activity-button"
+                            className={ui.addButton}
                             onClick={handleToggleForm}
                         >
                             + Create Account
@@ -450,7 +448,7 @@ function ManageAccounts() {
 
                 {notice && (
                     <p
-                        className={`page-message ${notice.type}`}
+                        className={notice.type === 'error' ? ui.messageError : ui.messageSuccess}
                         role={notice.type === 'error' ? 'alert' : 'status'}
                     >
                         {notice.text}
@@ -460,9 +458,9 @@ function ManageAccounts() {
 
                 {showForm && (
 
-                    <section className="activity-form">
+                    <section className={ui.formCard}>
 
-                        <h2>
+                        <h2 className={ui.formTitle}>
                             {isEditing ? 'Edit Account' : 'Create New Account'}
                         </h2>
 
@@ -470,18 +468,18 @@ function ManageAccounts() {
                         <form onSubmit={handleSubmit}>
 
                             {formError && (
-                                <p className="page-message error" role="alert">
+                                <p className={ui.messageError} role="alert">
                                     {formError}
                                 </p>
                             )}
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="account-name">
+                                <label className={ui.label} htmlFor="account-name">
                                     Name
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="account-name"
                                     type="text"
                                     value={form.name}
@@ -493,7 +491,7 @@ function ManageAccounts() {
                                 />
 
                                 {fieldErrors.name && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.name}
                                     </p>
                                 )}
@@ -501,13 +499,13 @@ function ManageAccounts() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="account-email">
+                                <label className={ui.label} htmlFor="account-email">
                                     Email
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="account-email"
                                     type="email"
                                     value={form.email}
@@ -519,7 +517,7 @@ function ManageAccounts() {
                                 />
 
                                 {fieldErrors.email && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.email}
                                     </p>
                                 )}
@@ -530,13 +528,13 @@ function ManageAccounts() {
                             {!isEditing && (
                                 <>
 
-                                    <div className="form-group">
+                                    <div className={ui.formGroup}>
 
-                                        <label htmlFor="account-password">
+                                        <label className={ui.label} htmlFor="account-password">
                                             Password (at least 8 characters)
                                         </label>
 
-                                        <input
+                                        <input className={ui.input}
                                             id="account-password"
                                             type="password"
                                             autoComplete="new-password"
@@ -551,7 +549,7 @@ function ManageAccounts() {
                                         />
 
                                         {fieldErrors.password && (
-                                            <p className="field-error">
+                                            <p className={ui.fieldError}>
                                                 {fieldErrors.password}
                                             </p>
                                         )}
@@ -559,13 +557,13 @@ function ManageAccounts() {
                                     </div>
 
 
-                                    <div className="form-group">
+                                    <div className={ui.formGroup}>
 
-                                        <label htmlFor="account-password-confirm">
+                                        <label className={ui.label} htmlFor="account-password-confirm">
                                             Confirm Password
                                         </label>
 
-                                        <input
+                                        <input className={ui.input}
                                             id="account-password-confirm"
                                             type="password"
                                             autoComplete="new-password"
@@ -585,13 +583,13 @@ function ManageAccounts() {
                             )}
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="account-role">
+                                <label className={ui.label} htmlFor="account-role">
                                     Role
                                 </label>
 
-                                <select
+                                <select className={ui.input}
                                     id="account-role"
                                     value={form.role}
                                     onChange={(event) =>
@@ -610,14 +608,14 @@ function ManageAccounts() {
                                 </select>
 
                                 {isEditing && (
-                                    <p className="cell-sub">
+                                    <p className={ui.cellSub}>
                                         Changing a role signs the person out
                                         of their devices.
                                     </p>
                                 )}
 
                                 {fieldErrors.role && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.role}
                                     </p>
                                 )}
@@ -625,11 +623,11 @@ function ManageAccounts() {
                             </div>
 
 
-                            <div className="form-actions">
+                            <div className={ui.formActions}>
 
                                 <button
                                     type="submit"
-                                    className="save-button"
+                                    className={ui.saveButton}
                                     disabled={isSaving}
                                 >
                                     {isSaving
@@ -641,7 +639,7 @@ function ManageAccounts() {
 
                                 <button
                                     type="button"
-                                    className="cancel-button"
+                                    className={ui.cancelButton}
                                     onClick={closeForm}
                                     disabled={isSaving}
                                 >
@@ -666,7 +664,7 @@ function ManageAccounts() {
 
                 ) : loadError ? (
 
-                    <div className="list-state list-error" role="alert">
+                    <div className={ui.listError} role="alert">
 
                         <p>
                             {loadError}
@@ -674,7 +672,7 @@ function ManageAccounts() {
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                         >
                             Try again
@@ -684,27 +682,27 @@ function ManageAccounts() {
 
                 ) : (
 
-                    <section className="activities-table-container">
+                    <section className={ui.tableContainer}>
 
-                        <table className="activities-table">
+                        <table className={ui.table}>
 
-                            <thead>
+                            <thead className={ui.thead}>
 
                                 <tr>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Name
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Email
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Role
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Actions
                                     </th>
 
@@ -713,13 +711,13 @@ function ManageAccounts() {
                             </thead>
 
 
-                            <tbody>
+                            <tbody className={ui.tbody}>
 
                                 {accounts.length === 0 && (
 
-                                    <tr>
+                                    <tr className={ui.row}>
 
-                                        <td colSpan={4}>
+                                        <td className={ui.tdEmpty} colSpan={4}>
                                             No accounts found.
                                         </td>
 
@@ -729,19 +727,19 @@ function ManageAccounts() {
 
                                 {accounts.map((account) => (
 
-                                    <tr key={account.id}>
+                                    <tr className={ui.row} key={account.id}>
 
-                                        <td data-label="Name">
+                                        <td className={ui.td} data-label="Name">
 
                                             {account.name}
 
                                             {currentUser?.id === account.id && (
-                                                <span className="you-tag">
+                                                <span className={ui.youTag}>
                                                     you
                                                 </span>
                                             )}
 
-                                            <div className="cell-sub">
+                                            <div className={ui.cellSub}>
                                                 Joined {formatDate(account.created_at)}
                                                 {account.has_child_profile &&
                                                     ' • has a child profile'}
@@ -749,14 +747,14 @@ function ManageAccounts() {
 
                                         </td>
 
-                                        <td data-label="Email">
+                                        <td className={ui.td} data-label="Email">
                                             {account.email}
                                         </td>
 
-                                        <td data-label="Role">
+                                        <td className={ui.td} data-label="Role">
 
                                             <span
-                                                className={`difficulty-badge role-badge ${account.role}`}
+                                                className={account.role === 'admin' ? ui.badgeAdmin : ui.badgeParent}
                                             >
                                                 {account.role === 'admin'
                                                     ? 'Admin'
@@ -765,7 +763,7 @@ function ManageAccounts() {
 
                                         </td>
 
-                                        <td data-label="Actions">
+                                        <td className={ui.td} data-label="Actions">
                                             {renderActions(account)}
                                         </td>
 

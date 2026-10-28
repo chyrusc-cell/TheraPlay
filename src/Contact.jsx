@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Mail, Phone } from 'lucide-react';
 import { useAuth } from './authContext.js';
 import {
     apiRequest,
@@ -7,22 +8,56 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { ContactCardsSkeleton } from './Skeleton.jsx';
-import './css/Contact.css';
+import StarRating from './StarRating.jsx';
+import { contactItemClass, contactPanelClass } from './uiClasses.js';
 
 /*
- * DEVELOPER CONTACT DETAILS: placeholder, please edit.
- * Fill in the values below and they will appear on the page. Leave a value
- * empty ('') to hide that line. No real details have been supplied yet, so
- * nothing is invented here.
+ * DEVELOPER TEAM DETAILS.
+ * One shared card is shown for the whole team.
+ * IMPORTANT: the email and phone below are SAMPLE / DEMO values only. They are
+ * not real or official contact details, and the page says so. Replace them (and
+ * set isSample to false) once the team has real contact details.
  */
-const DEVELOPER_CONTACT = {
-    name: '',
-    role: '',
-    email: '',
-    phone: '',
+const TEAM = {
+    name: 'TheraPlay Development Team',
+    description:
+        'The team responsible for developing and maintaining the TheraPlay website.',
+    email: 'theraplay.team@example.com',
+    phone: '+63 900 123 4567',
+    isSample: true,
 };
 
-const hasDeveloperDetails = Object.values(DEVELOPER_CONTACT).some(Boolean);
+// The feedback message length limit (the same limit the server enforces).
+const MESSAGE_MAX = 5000;
+
+// Class strings reused through the page. The focus ring on fields and buttons is
+// the global one from ui.css.
+const panelTitleClass = 'mb-4 text-[20px] font-bold text-ink';
+const statusClass = 'text-[14px] font-medium text-muted';
+const errorClass = 'text-[14px] font-medium text-[#d93025]';
+const nameClass = 'mb-1 text-[16px] font-bold text-ink';
+const roleClass = 'text-[14px] font-medium text-muted';
+const methodsClass = 'mt-3 flex list-none flex-col gap-2';
+const methodClass = 'flex flex-col gap-0.5';
+const methodLabelClass = 'text-[12px] font-medium text-[#888]';
+const methodLinkClass = 'text-[14px] font-bold text-ink [word-break:break-word]';
+const fieldClass = 'mb-[18px] flex flex-col gap-2';
+const fieldLabelClass = 'text-[12px] font-medium text-[#888]';
+const fieldErrorClass = 'text-[13px] text-[#d93025]';
+const messageBase = 'mb-4 text-[14px] font-medium';
+const retryClass =
+    'mt-3 cursor-pointer rounded-3xl border border-[#333] bg-white px-5 py-2 [font-family:inherit] text-[14px] font-bold text-[#333] enabled:hover:bg-hover';
+const submitClass =
+    'cursor-pointer rounded-3xl border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover phone:w-full';
+
+// How much of the next contact card peeks out below the second one, so it is
+// clear the list scrolls.
+const LIST_PEEK = 20;
+
+// A fixed height with resizing turned off: a long message scrolls INSIDE the box
+// instead of making the feedback container grow.
+const textareaClass =
+    'h-40 w-full resize-none overflow-y-auto rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
 
 function Contact() {
 
@@ -35,11 +70,17 @@ function Contact() {
     const [reloadKey, setReloadKey] = useState(0);
 
     const [message, setMessage] = useState('');
-    const [rating, setRating] = useState('');
+    // 0 = no rating chosen, otherwise 1 to 5.
+    const [rating, setRating] = useState(0);
     const [fieldErrors, setFieldErrors] = useState({});
     const [formError, setFormError] = useState('');
     const [successText, setSuccessText] = useState('');
     const [isSending, setIsSending] = useState(false);
+
+    // The contact list shows about two cards: its height is measured from the
+    // real rendered cards (null = no limit, e.g. two or fewer contacts).
+    const listRef = useRef(null);
+    const [listMaxHeight, setListMaxHeight] = useState(null);
 
 
     // Public list: no login needed, so guests can see it too.
@@ -106,10 +147,11 @@ function Contact() {
             return;
         }
 
-        // No user_id is sent: the server uses the logged-in account.
+        // No user_id is sent: the server uses the logged-in account. The rating
+        // is the same optional number (1 to 5, or null) the server expects.
         const payload = {
             message: text,
-            rating: rating ? Number(rating) : null,
+            rating: rating || null,
         };
 
         setIsSending(true);
@@ -151,7 +193,7 @@ function Contact() {
 
             // Clear the form only after the server confirms it was saved.
             setMessage('');
-            setRating('');
+            setRating(0);
             setSuccessText(
                 result.data.message || 'Thank you for your feedback.'
             );
@@ -169,13 +211,13 @@ function Contact() {
 
     const renderFeedbackForm = () => {
         if (status === 'loading') {
-            return <p className="contact-status">Checking your account...</p>;
+            return <p className={statusClass}>Checking your account...</p>;
         }
 
         if (status === 'unauthenticated') {
             return (
-                <p className="contact-status">
-                    Please <Link to="/login">log in</Link> with a parent
+                <p className={statusClass}>
+                    Please <Link to="/login" className="font-bold text-ink">log in</Link> with a parent
                     account to send feedback.
                 </p>
             );
@@ -183,7 +225,7 @@ function Contact() {
 
         if (status === 'error') {
             return (
-                <p className="contact-status contact-error" role="alert">
+                <p className={errorClass} role="alert">
                     We could not verify your account, so feedback is
                     unavailable right now. Please reload the page.
                 </p>
@@ -192,7 +234,7 @@ function Contact() {
 
         if (user?.role !== 'parent') {
             return (
-                <p className="contact-status">
+                <p className={statusClass}>
                     Feedback can only be sent from a parent account.
                 </p>
             );
@@ -202,68 +244,60 @@ function Contact() {
             <form onSubmit={handleSubmit} noValidate>
 
                 {successText && (
-                    <p className="contact-message success" role="status">
+                    <p className={`${messageBase} text-[#188038]`} role="status">
                         {successText}
                     </p>
                 )}
 
                 {formError && (
-                    <p className="contact-message error" role="alert">
+                    <p className={`${messageBase} text-[#d93025]`} role="alert">
                         {formError}
                     </p>
                 )}
 
-                <div className="contact-field">
+                <div className={fieldClass}>
 
-                    <label htmlFor="feedback-message">
+                    <label htmlFor="feedback-message" className={fieldLabelClass}>
                         Your feedback
                     </label>
 
                     <textarea
                         id="feedback-message"
-                        rows={5}
+                        className={textareaClass}
                         placeholder="Tell us what is working well or what we can improve"
                         value={message}
-                        maxLength={5000}
+                        maxLength={MESSAGE_MAX}
                         onChange={(event) => setMessage(event.target.value)}
                         disabled={isSending}
                     />
 
+                    <span className="self-end text-[12px] text-[#888]">
+                        {message.length} / {MESSAGE_MAX}
+                    </span>
+
                     {fieldErrors.message && (
-                        <p className="contact-field-error">
+                        <p className={fieldErrorClass}>
                             {fieldErrors.message}
                         </p>
                     )}
 
                 </div>
 
-                <div className="contact-field">
+                <div className={fieldClass}>
 
-                    <label htmlFor="feedback-rating">
+                    <span className={fieldLabelClass}>
                         Rating (optional)
-                    </label>
+                    </span>
 
-                    <select
-                        id="feedback-rating"
+                    <StarRating
                         value={rating}
-                        onChange={(event) => setRating(event.target.value)}
+                        onChange={setRating}
                         disabled={isSending}
-                    >
-
-                        <option value="">
-                            No rating
-                        </option>
-
-                        {[1, 2, 3, 4, 5].map((value) => (
-                            <option key={value} value={value}>
-                                {value} {value === 1 ? 'star' : 'stars'}
-                            </option>
-                        ))}
-
-                    </select>
+                        label="Rating (optional)"
+                    />
 
                     {fieldErrors.rating && (
-                        <p className="contact-field-error">
+                        <p className={fieldErrorClass}>
                             {fieldErrors.rating}
                         </p>
                     )}
@@ -272,7 +306,7 @@ function Contact() {
 
                 <button
                     type="submit"
-                    className="contact-submit"
+                    className={submitClass}
                     disabled={isSending}
                 >
                     {isSending ? 'Sending...' : 'Send Feedback'}
@@ -283,18 +317,79 @@ function Contact() {
     };
 
 
+    // Size the list from the first two rendered cards plus the gap between them
+    // and a small peek of the third. Re-measured whenever the cards resize (for
+    // example when text wraps on a narrower screen).
+    useLayoutEffect(() => {
+        const list = listRef.current;
+
+        if (!list) {
+            return undefined;
+        }
+
+        const measure = () => {
+            const cards = list.children;
+
+            if (cards.length <= 2) {
+                setListMaxHeight(null);
+                return;
+            }
+
+            const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+            const first = cards[0].getBoundingClientRect().height;
+            const second = cards[1].getBoundingClientRect().height;
+
+            setListMaxHeight(Math.ceil(first + gap + second + LIST_PEEK));
+        };
+
+        const observer = new ResizeObserver(measure);
+
+        observer.observe(list);
+        Array.from(list.children).forEach((card) => observer.observe(card));
+
+        return () => observer.disconnect();
+    }, [contacts, isLoading, loadError]);
+
+
+    // Email and phone lines, shown only for the values that exist.
+    const renderMethods = ({ email, phone }) =>
+        (email || phone) && (
+            <ul className={methodsClass}>
+
+                {email && (
+                    <li className={methodClass}>
+                        <span className={methodLabelClass}>Email</span>
+                        <a href={`mailto:${email}`} className={methodLinkClass}>
+                            {email}
+                        </a>
+                    </li>
+                )}
+
+                {phone && (
+                    <li className={methodClass}>
+                        <span className={methodLabelClass}>Phone</span>
+                        <a href={`tel:${phone}`} className={methodLinkClass}>
+                            {phone}
+                        </a>
+                    </li>
+                )}
+
+            </ul>
+        );
+
+
     return (
-        <div className="contact-page">
+        <div className="min-h-page">
 
-            <main className="contact-content">
+            <main className="mx-auto w-full max-w-[1100px] px-5 pt-[30px] pb-20 phone:px-4 phone:pt-5 phone:pb-[60px]">
 
-                <div className="contact-header">
+                <div className="mb-[30px]">
 
-                    <h1>
+                    <h1 className="mb-1.5 text-[36px] font-bold text-ink">
                         Contact Us
                     </h1>
 
-                    <p>
+                    <p className="text-[15px] text-muted">
                         Reach out to our professionals, or send us your
                         feedback.
                     </p>
@@ -302,170 +397,148 @@ function Contact() {
                 </div>
 
 
-                {/* Professional contacts */}
+                {/* Top row: two containers of equal height (the grid stretches them),
+                    stacked on small screens */}
 
-                <section className="contact-section">
+                <div className="mb-6 grid grid-cols-2 gap-6 tablet-sm:grid-cols-1">
 
-                    <h2>
-                        Our Professionals
-                    </h2>
+                    {/* Professional contacts (the list scrolls inside its box) */}
 
-                    {isLoading ? (
+                    <section className={`${contactPanelClass} min-w-0`}>
 
-                        <ContactCardsSkeleton />
+                        <h2 className={panelTitleClass}>
+                            Professional Contacts
+                        </h2>
 
-                    ) : loadError ? (
+                        {isLoading ? (
 
-                        <div className="contact-status contact-error" role="alert">
+                            <ContactCardsSkeleton count={2} />
 
-                            <p>
-                                {loadError}
+                        ) : loadError ? (
+
+                            <div className={errorClass} role="alert">
+
+                                <p>
+                                    {loadError}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className={retryClass}
+                                    onClick={retry}
+                                >
+                                    Try again
+                                </button>
+
+                            </div>
+
+                        ) : contacts.length === 0 ? (
+
+                            <p className={statusClass}>
+                                No professional contacts are listed yet.
                             </p>
 
-                            <button
-                                type="button"
-                                className="contact-retry"
-                                onClick={retry}
-                            >
-                                Try again
-                            </button>
-
-                        </div>
-
-                    ) : contacts.length === 0 ? (
-
-                        <p className="contact-status">
-                            No professional contacts are listed yet.
-                        </p>
-
-                    ) : (
-
-                        <div className="contact-grid">
-
-                            {contacts.map((contact) => (
-
-                                <article className="contact-card" key={contact.id}>
-
-                                    <h3>
-                                        {contact.name}
-                                    </h3>
-
-                                    <p className="contact-title">
-                                        {contact.title}
-                                    </p>
-
-                                    {contact.description && (
-                                        <p className="contact-description">
-                                            {contact.description}
-                                        </p>
-                                    )}
-
-                                    {(contact.email || contact.phone) && (
-                                        <ul className="contact-methods">
-
-                                            {contact.email && (
-                                                <li>
-                                                    <span>Email</span>
-                                                    <a href={`mailto:${contact.email}`}>
-                                                        {contact.email}
-                                                    </a>
-                                                </li>
-                                            )}
-
-                                            {contact.phone && (
-                                                <li>
-                                                    <span>Phone</span>
-                                                    <a href={`tel:${contact.phone}`}>
-                                                        {contact.phone}
-                                                    </a>
-                                                </li>
-                                            )}
-
-                                        </ul>
-                                    )}
-
-                                </article>
-
-                            ))}
-
-                        </div>
-
-                    )}
-
-                </section>
-
-
-                {/* Developer contact (edit DEVELOPER_CONTACT at the top of this file) */}
-
-                <section className="contact-section">
-
-                    <h2>
-                        Website Developer
-                    </h2>
-
-                    <div className="contact-card">
-
-                        {hasDeveloperDetails ? (
-                            <>
-                                {DEVELOPER_CONTACT.name && (
-                                    <h3>
-                                        {DEVELOPER_CONTACT.name}
-                                    </h3>
-                                )}
-
-                                {DEVELOPER_CONTACT.role && (
-                                    <p className="contact-title">
-                                        {DEVELOPER_CONTACT.role}
-                                    </p>
-                                )}
-
-                                {(DEVELOPER_CONTACT.email || DEVELOPER_CONTACT.phone) && (
-                                    <ul className="contact-methods">
-
-                                        {DEVELOPER_CONTACT.email && (
-                                            <li>
-                                                <span>Email</span>
-                                                <a href={`mailto:${DEVELOPER_CONTACT.email}`}>
-                                                    {DEVELOPER_CONTACT.email}
-                                                </a>
-                                            </li>
-                                        )}
-
-                                        {DEVELOPER_CONTACT.phone && (
-                                            <li>
-                                                <span>Phone</span>
-                                                <a href={`tel:${DEVELOPER_CONTACT.phone}`}>
-                                                    {DEVELOPER_CONTACT.phone}
-                                                </a>
-                                            </li>
-                                        )}
-
-                                    </ul>
-                                )}
-                            </>
                         ) : (
-                            <p className="contact-status">
-                                Developer contact details will appear here
-                                once they are added.
-                            </p>
+
+                            <ul
+                                ref={listRef}
+                                style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
+                                className="flex list-none flex-col gap-3 overflow-y-auto pr-1"
+                                aria-label="Professional contacts"
+                                tabIndex={0}
+                            >
+
+                                {contacts.map((contact) => (
+
+                                    <li className={contactItemClass} key={contact.id}>
+
+                                        <h3 className={nameClass}>
+                                            {contact.name}
+                                        </h3>
+
+                                        <p className={roleClass}>
+                                            {contact.title}
+                                        </p>
+
+                                        {contact.description && (
+                                            <p className="mt-2 text-[14px] leading-[1.5] text-[#555]">
+                                                {contact.description}
+                                            </p>
+                                        )}
+
+                                        {renderMethods(contact)}
+
+                                    </li>
+
+                                ))}
+
+                            </ul>
+
                         )}
 
-                    </div>
-
-                </section>
+                    </section>
 
 
-                {/* Feedback */}
+                    {/* One shared card for the whole development team */}
 
-                <section className="contact-section">
+                    <section className={`${contactPanelClass} min-w-0`}>
 
-                    <h2>
+                        <h2 className={panelTitleClass}>
+                            Developer Team
+                        </h2>
+
+                        <div className={contactItemClass}>
+
+                            <h3 className={nameClass}>
+                                {TEAM.name}
+                            </h3>
+
+                            <p className="text-[14px] leading-[1.5] text-[#555]">
+                                {TEAM.description}
+                            </p>
+
+                            <ul className={methodsClass}>
+
+                                <li className="flex items-center gap-2">
+                                    <Mail size={16} aria-hidden="true" className="shrink-0 text-[#888]" />
+                                    <span className="sr-only">Email: </span>
+                                    <a href={`mailto:${TEAM.email}`} className={methodLinkClass}>
+                                        {TEAM.email}
+                                    </a>
+                                </li>
+
+                                <li className="flex items-center gap-2">
+                                    <Phone size={16} aria-hidden="true" className="shrink-0 text-[#888]" />
+                                    <span className="sr-only">Phone: </span>
+                                    <a href={`tel:${TEAM.phone.replace(/\s+/g, '')}`} className={methodLinkClass}>
+                                        {TEAM.phone}
+                                    </a>
+                                </li>
+
+                            </ul>
+
+                            {TEAM.isSample && (
+                                <p className="mt-3 text-[12px] text-[#888]">
+                                    Sample details for demonstration only. These are not real or official contact details.
+                                </p>
+                            )}
+
+                        </div>
+
+                    </section>
+
+                </div>
+
+
+                {/* Feedback: full width underneath */}
+
+                <section className={contactPanelClass}>
+
+                    <h2 className={panelTitleClass}>
                         Send Feedback
                     </h2>
 
-                    <div className="contact-card">
-                        {renderFeedbackForm()}
-                    </div>
+                    {renderFeedbackForm()}
 
                 </section>
 

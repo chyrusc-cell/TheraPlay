@@ -19,12 +19,20 @@ import ConfirmDialog from './ConfirmDialog.jsx';
 import logoFull from '../img/theraplaylogo2.png';
 import logoIcon from '../img/theraplaylogo.png';
 
-import './css/Sidebar.css';
-
 const API_URL = 'http://127.0.0.1:8000/api';
 
+// Below 900px the sidebar becomes an icon-only rail: labels stay for screen
+// readers (sr-only) and the icon is centered. Active and inactive links are
+// written out in full so no two classes set the same property.
+const linkCommon =
+    'flex items-center gap-3 rounded-lg px-[15px] py-3 text-[15px] whitespace-nowrap no-underline transition-colors tablet:justify-center tablet:px-2';
+
 const linkClass = ({ isActive }) =>
-    isActive ? 'sidebar-link active' : 'sidebar-link';
+    isActive
+        ? `${linkCommon} bg-[#e9ecef] font-bold text-primary`
+        : `${linkCommon} font-medium text-[#555] hover:bg-hover`;
+
+const labelClass = 'tablet:sr-only';
 
 function Sidebar() {
     const navigate = useNavigate();
@@ -81,22 +89,22 @@ function Sidebar() {
     };
 
     return (
-        <aside className="sidebar">
-            <div className="sidebar-logo">
+        <aside className="fixed inset-y-0 left-0 z-[100] flex w-sidebar flex-col overflow-y-auto border-r border-[#e5e5e5] bg-white px-5 py-[30px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
+            <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0">
                 <img
                     src={logoFull}
                     alt="TheraPlay"
-                    className="sidebar-logo-full"
+                    className="block h-auto w-full max-w-[180px] tablet:sr-only"
                 />
                 <img
                     src={logoIcon}
                     alt=""
                     aria-hidden="true"
-                    className="sidebar-logo-short"
+                    className="hidden h-auto w-full max-w-14 tablet:mx-auto tablet:block"
                 />
             </div>
 
-            <nav className="sidebar-navigation" aria-label="Main navigation">
+            <nav className="flex flex-col gap-2 tablet:w-full" aria-label="Main navigation">
                 {isAdmin && (
                     <>
                         <NavLink
@@ -105,8 +113,8 @@ function Sidebar() {
                             title="Admin Dashboard"
                             className={linkClass}
                         >
-                            <House size={20} aria-hidden="true" />
-                            <span>Dashboard</span>
+                            <House size={20} aria-hidden="true" className="shrink-0" />
+                            <span className={labelClass}>Dashboard</span>
                         </NavLink>
 
                         <NavLink
@@ -114,8 +122,8 @@ function Sidebar() {
                             title="Manage Activities"
                             className={linkClass}
                         >
-                            <ClipboardList size={20} aria-hidden="true" />
-                            <span>Manage Activities</span>
+                            <ClipboardList size={20} aria-hidden="true" className="shrink-0" />
+                            <span className={labelClass}>Manage Activities</span>
                         </NavLink>
 
                         <NavLink
@@ -123,8 +131,8 @@ function Sidebar() {
                             title="Manage Contacts"
                             className={linkClass}
                         >
-                            <Contact size={20} aria-hidden="true" />
-                            <span>Manage Contacts</span>
+                            <Contact size={20} aria-hidden="true" className="shrink-0" />
+                            <span className={labelClass}>Manage Contacts</span>
                         </NavLink>
 
                         <NavLink
@@ -132,8 +140,8 @@ function Sidebar() {
                             title="Manage Accounts"
                             className={linkClass}
                         >
-                            <Users size={20} aria-hidden="true" />
-                            <span>Manage Accounts</span>
+                            <Users size={20} aria-hidden="true" className="shrink-0" />
+                            <span className={labelClass}>Manage Accounts</span>
                         </NavLink>
 
                         <NavLink
@@ -141,8 +149,8 @@ function Sidebar() {
                             title="Profile"
                             className={linkClass}
                         >
-                            <User size={20} aria-hidden="true" />
-                            <span>Profile</span>
+                            <User size={20} aria-hidden="true" className="shrink-0" />
+                            <span className={labelClass}>Profile</span>
                         </NavLink>
                     </>
                 )}
@@ -156,8 +164,8 @@ function Sidebar() {
                     title="Dashboard"
                     className={linkClass}
                 >
-                    <House size={20} aria-hidden="true" />
-                    <span>Home</span>
+                    <House size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>Home</span>
                 </NavLink>
 
                 <NavLink
@@ -165,8 +173,8 @@ function Sidebar() {
                     title="Activities"
                     className={linkClass}
                 >
-                    <Gamepad2 size={20} aria-hidden="true" />
-                    <span>Activities</span>
+                    <Gamepad2 size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>Activities</span>
                 </NavLink>
 
                 <NavLink
@@ -174,8 +182,8 @@ function Sidebar() {
                     title="My Progress"
                     className={linkClass}
                 >
-                    <ChartNoAxesColumn size={20} aria-hidden="true" />
-                    <span>My Progress</span>
+                    <ChartNoAxesColumn size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>My Progress</span>
                 </NavLink>
 
                 <NavLink
@@ -183,8 +191,8 @@ function Sidebar() {
                     title="Profile"
                     className={linkClass}
                 >
-                    <User size={20} aria-hidden="true" />
-                    <span>Profile</span>
+                    <User size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>Profile</span>
                 </NavLink>
 
                 <NavLink
@@ -192,23 +200,23 @@ function Sidebar() {
                     title="Contact Us"
                     className={linkClass}
                 >
-                    <Mail size={20} aria-hidden="true" />
-                    <span>Contact Us</span>
+                    <Mail size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>Contact Us</span>
                 </NavLink>
                 </>
                 )}
             </nav>
 
-            <div className="sidebar-bottom">
+            <div className="mt-auto pt-5 tablet:w-full">
                 <button
                     type="button"
-                    className="sidebar-logout"
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-[15px] py-3 text-left [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-[#555] enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
                     title="Logout"
                     onClick={() => setShowLogoutConfirm(true)}
                     disabled={isLoggingOut}
                 >
-                    <LogOut size={20} aria-hidden="true" />
-                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                    <LogOut size={20} aria-hidden="true" className="shrink-0" />
+                    <span className={labelClass}>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
             </div>
 

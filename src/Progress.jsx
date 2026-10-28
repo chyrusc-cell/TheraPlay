@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
-import './css/Progress.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -86,6 +85,22 @@ const getLongestStreak = (completed) => {
     return longest;
 };
 
+// Card look as currently rendered (the old global .card rule was merged from the
+// Dashboard, Progress and Profile stylesheets).
+const cardClass =
+    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+const cardHeaderClass = 'px-6 pt-5 pb-2.5';
+const cardHeaderRuleClass = 'border-b border-[#f0f0f0] px-6 pt-5 pb-5';
+const cardTitleClass = 'text-[16px] font-bold text-ink';
+const cardBodyClass = 'px-6 pt-5 pb-6';
+const statusClass = 'text-[14px] font-medium text-muted';
+const bigNumberClass = 'text-[28px] leading-[1.2] font-bold text-ink';
+const bigLabelClass = 'text-[13px] font-medium text-muted';
+const barTrackClass = 'h-2 w-full overflow-hidden rounded-lg bg-[#f0f0f0]';
+const barFillClass = 'h-full rounded-lg bg-[#404040]';
+const iconCircleClass =
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#ddd] bg-white text-[#333]';
+
 function Progress() {
     const navigate = useNavigate();
 
@@ -165,8 +180,8 @@ function Progress() {
 
     if (isLoading) {
         return (
-            <div className="progress-page">
-                <main className="progress-content">
+            <div className="flex min-h-page flex-col">
+                <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
                     <CardsSkeleton label="Loading your progress..." cards={3} />
                 </main>
             </div>
@@ -175,9 +190,9 @@ function Progress() {
 
     if (error) {
         return (
-            <div className="progress-page">
-                <main className="progress-content">
-                    <p className="progress-status progress-error" role="alert">
+            <div className="flex min-h-page flex-col">
+                <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
+                    <p className="text-[14px] font-medium text-[#d93025]" role="alert">
                         {error}
                     </p>
                 </main>
@@ -225,14 +240,14 @@ function Progress() {
     const recent = records.slice(0, 5);
 
     return (
-        <div className="progress-page">
-            <main className="progress-content">
-                <div className="progress-header">
-                    <h1>My Progress</h1>
+        <div className="flex min-h-page flex-col">
+            <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
+                <div className="mb-6">
+                    <h1 className="text-[36px] font-bold text-ink">My Progress</h1>
                 </div>
 
-                <div className="progress-sub-header">
-                    <button className="dropdown-button" type="button">
+                <div className="mb-[30px] flex items-center justify-between">
+                    <button className="flex cursor-pointer items-center gap-2 rounded-[20px] border border-[#ddd] bg-white px-4 py-2 [font-family:inherit] text-[13px] font-medium text-[#333]" type="button">
                         {formatWeekLabel(weekStart)}
                         <svg
                             viewBox="0 0 24 24"
@@ -247,57 +262,57 @@ function Progress() {
                     </button>
 
                     {records.length === 0 && (
-                        <span className="sample-data-text">
+                        <span className="text-[13px] font-medium text-[#888]">
                             No activity has been recorded yet.
                         </span>
                     )}
                 </div>
 
                 {/* 2-Column Grid Layout */}
-                <div className="progress-grid">
+                <div className="grid grid-cols-2 gap-6 tablet:grid-cols-1">
                     {/* Left Column */}
-                    <div className="grid-col-left">
+                    <div className="flex flex-col gap-6">
                         {/* Weekly Participation Card */}
-                        <div className="card">
-                            <div className="card-header">
-                                <h3>Weekly Participation</h3>
+                        <div className={cardClass}>
+                            <div className={cardHeaderClass}>
+                                <h3 className={cardTitleClass}>Weekly Participation</h3>
                             </div>
 
-                            <div className="card-body">
-                                <div className="participation-stats">
-                                    <div className="stat-left">
-                                        <h2>{completedThisWeek}</h2>
-                                        <span>activities completed this week</span>
+                            <div className={cardBodyClass}>
+                                <div className="mb-4 flex items-end justify-between">
+                                    <div>
+                                        <h2 className={bigNumberClass}>{completedThisWeek}</h2>
+                                        <span className={bigLabelClass}>activities completed this week</span>
                                     </div>
 
-                                    <div className="stat-right">
-                                        <h2>{completionRate}%</h2>
-                                        <span>of started activities completed</span>
+                                    <div className="text-right">
+                                        <h2 className={bigNumberClass}>{completionRate}%</h2>
+                                        <span className={bigLabelClass}>of started activities completed</span>
                                     </div>
                                 </div>
 
-                                <div className="progress-bar-container large-bar">
+                                <div className="mb-6 h-3 w-full overflow-hidden rounded-lg bg-[#f0f0f0]">
                                     <div
-                                        className="progress-bar-fill monochrome-fill"
+                                        className={barFillClass}
                                         style={{ width: `${completionRate}%` }}
                                     ></div>
                                 </div>
 
-                                <div className="participation-boxes">
-                                    <div className="sub-box">
-                                        <span className="box-label">
+                                <div className="flex gap-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-[#f9f9f9] p-4">
+                                        <span className="text-[12px] font-medium text-muted">
                                             Active days this week
                                         </span>
-                                        <span className="box-value">
+                                        <span className="text-[18px] font-bold text-ink">
                                             {activeDays}
                                         </span>
                                     </div>
 
-                                    <div className="sub-box">
-                                        <span className="box-label">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-[#f9f9f9] p-4">
+                                        <span className="text-[12px] font-medium text-muted">
                                             Longest streak
                                         </span>
-                                        <span className="box-value">
+                                        <span className="text-[18px] font-bold text-ink">
                                             {longestStreak}{' '}
                                             {longestStreak === 1 ? 'day' : 'days'}
                                         </span>
@@ -307,14 +322,14 @@ function Progress() {
                         </div>
 
                         {/* Skills Practiced Card */}
-                        <div className="card">
-                            <div className="card-header border-bottom">
-                                <h3>Skills Practiced</h3>
+                        <div className={cardClass}>
+                            <div className={cardHeaderRuleClass}>
+                                <h3 className={cardTitleClass}>Skills Practiced</h3>
                             </div>
 
-                            <div className="card-body">
+                            <div className={cardBodyClass}>
                                 {skills.length === 0 ? (
-                                    <p className="progress-status">
+                                    <p className={statusClass}>
                                         No completed activities yet.
                                     </p>
                                 ) : (
@@ -324,10 +339,10 @@ function Progress() {
                                         );
 
                                         return (
-                                            <div className="skill-item" key={name}>
-                                                <div className="skill-info">
+                                            <div className="mb-5 last:mb-0" key={name}>
+                                                <div className="mb-2 flex items-center justify-between text-[14px] font-medium text-[#333]">
                                                     <span>{name}</span>
-                                                    <span className="skill-stat">
+                                                    <span className="text-[12px] font-bold text-muted">
                                                         {count}{' '}
                                                         {count === 1
                                                             ? 'activity'
@@ -335,9 +350,9 @@ function Progress() {
                                                         • {percent}%
                                                     </span>
                                                 </div>
-                                                <div className="progress-bar-container">
+                                                <div className={barTrackClass}>
                                                     <div
-                                                        className="progress-bar-fill monochrome-fill"
+                                                        className={barFillClass}
                                                         style={{ width: `${percent}%` }}
                                                     ></div>
                                                 </div>
@@ -350,29 +365,29 @@ function Progress() {
                     </div>
 
                     {/* Right Column */}
-                    <div className="grid-col-right">
+                    <div className="flex flex-col gap-6">
                         {/* Activity Trend Card */}
-                        <div className="card">
-                            <div className="card-header border-bottom">
-                                <h3>Activity Trend</h3>
+                        <div className={cardClass}>
+                            <div className={cardHeaderRuleClass}>
+                                <h3 className={cardTitleClass}>Activity Trend</h3>
                             </div>
 
-                            <div className="card-body">
-                                <div className="trend-header">
+                            <div className={cardBodyClass}>
+                                <div className="mb-[30px] flex items-center justify-between text-[13px] font-medium text-muted">
                                     <span>Activities completed per day</span>
-                                    <span className="total-tag">
+                                    <span className="rounded-xl bg-[#f0f0f0] px-2.5 py-1 text-[11px] font-bold text-[#333]">
                                         {completedThisWeek} total
                                     </span>
                                 </div>
 
-                                <div className="bar-chart-container">
+                                <div className="flex h-40 items-end justify-between pt-5">
                                     {DAY_LABELS.map((label, index) => (
-                                        <div className="chart-bar-group" key={label}>
+                                        <div className="flex h-full flex-col items-center justify-end gap-3" key={label}>
                                             <div
-                                                className={`bar ${
+                                                className={`w-6 rounded-t-md ${
                                                     dailyCounts[index] > 0
-                                                        ? 'monochrome-bar'
-                                                        : 'empty-bar'
+                                                        ? 'bg-[#4b4b4b]'
+                                                        : 'bg-transparent'
                                                 }`}
                                                 style={{
                                                     height: `${
@@ -380,7 +395,7 @@ function Progress() {
                                                     }%`,
                                                 }}
                                             ></div>
-                                            <span>
+                                            <span className="text-[11px] font-medium text-muted">
                                                 {label} • {dailyCounts[index]}
                                             </span>
                                         </div>
@@ -390,26 +405,26 @@ function Progress() {
                         </div>
 
                         {/* Recent Activity Card */}
-                        <div className="card">
-                            <div className="card-header border-bottom">
-                                <h3>Recent Activity</h3>
+                        <div className={cardClass}>
+                            <div className={cardHeaderRuleClass}>
+                                <h3 className={cardTitleClass}>Recent Activity</h3>
                             </div>
 
-                            <div className="card-body">
-                                <div className="goal-header">
-                                    <div className="goal-text">
-                                        <h2>{completed.length}</h2>
-                                        <span>activities completed in total</span>
+                            <div className={cardBodyClass}>
+                                <div className="mb-4 flex items-start justify-between">
+                                    <div>
+                                        <h2 className="text-[24px] leading-[1.2] font-bold text-ink">{completed.length}</h2>
+                                        <span className={bigLabelClass}>activities completed in total</span>
                                     </div>
                                 </div>
 
-                                <h4 className="milestone-title">
+                                <h4 className="mb-4 text-[13px] font-medium text-muted">
                                     Latest activity
                                 </h4>
 
-                                <div className="milestone-list">
+                                <div className="flex flex-col gap-3">
                                     {recent.length === 0 ? (
-                                        <p className="progress-status">
+                                        <p className={statusClass}>
                                             Activities you start or complete will
                                             appear here.
                                         </p>
@@ -423,13 +438,11 @@ function Progress() {
 
                                             return (
                                                 <div
-                                                    className="milestone-item"
+                                                    className="flex items-start gap-3 rounded-lg bg-[#f9f9f9] p-4"
                                                     key={record.id}
                                                 >
                                                     <div
-                                                        className={`icon-circle${
-                                                            isDone ? ' completed' : ''
-                                                        }`}
+                                                        className={iconCircleClass}
                                                     >
                                                         {isDone && (
                                                             <svg
@@ -445,12 +458,12 @@ function Progress() {
                                                         )}
                                                     </div>
 
-                                                    <div className="milestone-text">
-                                                        <h5>
+                                                    <div>
+                                                        <h5 className="mb-1 text-[13px] font-bold text-ink">
                                                             {record.activity_title ||
                                                                 'Activity'}
                                                         </h5>
-                                                        <p>
+                                                        <p className="text-[12px] leading-[1.4] font-medium text-muted">
                                                             {isDone
                                                                 ? 'Completed'
                                                                 : 'In progress'}

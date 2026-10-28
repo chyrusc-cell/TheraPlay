@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from './api.js';
 import { CardsSkeleton } from './Skeleton.jsx';
-import './css/Profile.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -31,6 +30,29 @@ const toFormValues = (user) => ({
     email: user.email || '',
     phone: user.contact_number || '',
 });
+
+// Card look as currently rendered (the old global .card rule was merged from the
+// Dashboard, Progress and Profile stylesheets).
+const cardClass =
+    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+const cardTitleClass = 'mb-[30px] text-[18px] font-bold text-ink';
+
+// Form fields: a floating label on the top border of each input.
+const fieldClass = 'relative mb-[30px] flex flex-col gap-2';
+const fieldLabelClass =
+    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-[#888]';
+const fieldInputClass =
+    'w-full rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
+
+const pillButtonClass =
+    'cursor-pointer rounded-[20px] border border-[#333] bg-white px-6 py-2 [font-family:inherit] text-[14px] font-bold text-[#333] transition-colors enabled:hover:bg-[#333] enabled:hover:text-white';
+
+// Colors for the password-reset notice, by type.
+const noticeColors = {
+    success: 'text-[#188038]',
+    warning: 'text-[#b26a00]',
+    error: 'text-[#d93025]',
+};
 
 function Profile() {
     const navigate = useNavigate();
@@ -277,8 +299,8 @@ function Profile() {
 
     if (isLoading) {
         return (
-            <div className="profile-page">
-                <main className="profile-content">
+            <div className="flex min-h-page flex-col">
+                <main className="mx-auto w-full max-w-[900px] px-5 pt-[50px] pb-20">
                     <CardsSkeleton label="Loading your profile..." cards={2} />
                 </main>
             </div>
@@ -286,14 +308,14 @@ function Profile() {
     }
 
     return (
-        <div className="profile-page">
-            <main className="profile-content">
-                <div className="profile-header">
-                    <h1>My Profile</h1>
+        <div className="flex min-h-page flex-col">
+            <main className="mx-auto w-full max-w-[900px] px-5 pt-[50px] pb-20">
+                <div className="mb-[30px] flex items-center justify-between">
+                    <h1 className="text-[36px] font-bold text-ink">My Profile</h1>
 
                     {!isEditing && savedUser && (
                         <button
-                            className="btn-edit-pill"
+                            className={pillButtonClass}
                             type="button"
                             onClick={() => setIsEditing(true)}
                         >
@@ -303,13 +325,13 @@ function Profile() {
                 </div>
 
                 {/* Profile Avatar Card */}
-                <div className="card top-profile-card">
-                    <div className="avatar-wrapper">
-                        <div className="profile-avatar-large"></div>
+                <div className={`${cardClass} flex items-center gap-6 phone:flex-wrap`}>
+                    <div className="relative h-20 w-20">
+                        <div className="h-full w-full rounded-full bg-[#ccc] bg-cover bg-center"></div>
 
                         {isEditing && (
                             <button
-                                className="avatar-edit-icon"
+                                className="absolute right-0 bottom-0 flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full border border-[#ddd] bg-white text-[#666] shadow-[0_2px_5px_rgba(0,0,0,0.1)]"
                                 type="button"
                                 aria-label="Edit avatar"
                             >
@@ -327,21 +349,18 @@ function Profile() {
                         )}
                     </div>
 
-                    <div className="profile-titles">
-                        <h2>{firstName} {lastName}</h2>
-                        <p>{roleLabel}</p>
+                    <div>
+                        <h2 className="mb-1 text-[24px] font-bold text-ink">{firstName} {lastName}</h2>
+                        <p className="text-[14px] font-medium text-muted">{roleLabel}</p>
                     </div>
                 </div>
 
                 {message && (
                     <p
                         role="alert"
-                        style={{
-                            color: isError ? '#d93025' : '#188038',
-                            margin: '0 0 16px',
-                            fontSize: '14px',
-                            fontWeight: 500,
-                        }}
+                        className={`mb-4 text-[14px] font-medium ${
+                            isError ? 'text-[#d93025]' : 'text-[#188038]'
+                        }`}
                     >
                         {message}
                     </p>
@@ -349,37 +368,37 @@ function Profile() {
 
                 {/* Personal Information Card */}
                 <form onSubmit={handleSave}>
-                    <div className="card bottom-profile-card">
-                        <h3>Personal Information</h3>
+                    <div className={cardClass}>
+                        <h3 className={cardTitleClass}>Personal Information</h3>
 
                         {!isEditing ? (
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="info-label">First Name</span>
-                                    <span className="info-value">{firstName}</span>
+                            <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-[#888]">First Name</span>
+                                    <span className="text-[15px] font-bold text-ink">{firstName}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Last Name</span>
-                                    <span className="info-value">{lastName}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-[#888]">Last Name</span>
+                                    <span className="text-[15px] font-bold text-ink">{lastName}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Email Address</span>
-                                    <span className="info-value">{email}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-[#888]">Email Address</span>
+                                    <span className="text-[15px] font-bold text-ink">{email}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Phone Number</span>
-                                    <span className="info-value">{phone}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-[#888]">Phone Number</span>
+                                    <span className="text-[15px] font-bold text-ink">{phone}</span>
                                 </div>
 
                             </div>
                         ) : (
-                            <div className="info-grid">
-                                <div className="input-group">
-                                    <label htmlFor="firstName">First Name</label>
-                                    <input
+                            <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="firstName">First Name</label>
+                                    <input className={fieldInputClass}
                                         id="firstName"
                                         type="text"
                                         value={firstName}
@@ -388,9 +407,9 @@ function Profile() {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="lastName">Last Name</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="lastName">Last Name</label>
+                                    <input className={fieldInputClass}
                                         id="lastName"
                                         type="text"
                                         value={lastName}
@@ -399,9 +418,9 @@ function Profile() {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="email">Email Address</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="email">Email Address</label>
+                                    <input className={fieldInputClass}
                                         id="email"
                                         type="email"
                                         value={email}
@@ -410,9 +429,9 @@ function Profile() {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="phone">Phone Number</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="phone">Phone Number</label>
+                                    <input className={fieldInputClass}
                                         id="phone"
                                         type="tel"
                                         value={phone}
@@ -425,10 +444,10 @@ function Profile() {
 
                     {/* Edit Action Buttons */}
                     {isEditing && (
-                        <div className="form-actions-row">
+                        <div className="mt-2 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="btn-cancel"
+                                className="cursor-pointer rounded-3xl border border-[#333] bg-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-[#333] enabled:hover:bg-hover"
                                 onClick={handleCancel}
                                 disabled={isSaving}
                             >
@@ -437,7 +456,7 @@ function Profile() {
 
                             <button
                                 type="submit"
-                                className="btn-save"
+                                className="cursor-pointer rounded-3xl border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover"
                                 disabled={isSaving}
                             >
                                 {isSaving ? 'Saving...' : 'Save Changes'}
@@ -447,10 +466,10 @@ function Profile() {
                 </form>
 
                 {/* Password reset request */}
-                <div className="card password-card">
-                    <h3>Password</h3>
+                <div className={cardClass}>
+                    <h3 className="mb-3 text-[18px] font-bold text-ink">Password</h3>
 
-                    <p className="password-help">
+                    <p className="mb-4 text-[14px] leading-[1.5] text-[#666]">
                         We can send a password reset link to your registered
                         email address{savedUser?.email ? ` (${savedUser.email})` : ''}.
                         Your password only changes after you open the link and
@@ -458,7 +477,7 @@ function Profile() {
                     </p>
 
                     <button
-                        className="btn-edit-pill"
+                        className={pillButtonClass}
                         type="button"
                         onClick={handleRequestReset}
                         disabled={isSendingReset || !savedUser}
@@ -468,7 +487,7 @@ function Profile() {
 
                     {resetNotice && (
                         <p
-                            className={`reset-notice ${resetNotice.type}`}
+                            className={`mt-4 text-[14px] font-medium ${noticeColors[resetNotice.type]}`}
                             role={resetNotice.type === 'error' ? 'alert' : 'status'}
                         >
                             {resetNotice.text}

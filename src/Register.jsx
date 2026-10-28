@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './css/Register.css';
+import * as auth from './authClasses.js';
 
 function Register() {
     const navigate = useNavigate();
@@ -86,26 +86,26 @@ function Register() {
     };
 
     return (
-        <div className="register-page">
-            <div className="register-container">
+        <div className={auth.registerPage}>
+            <div className={auth.registerContainer}>
 
-                <div className="header-logo">
-                    <div className="logo-icon-elephant"></div>
-                    <h2>TheraPlay!</h2>
+                <div className={auth.logoRow}>
+                    <div className="h-8 w-8 rounded-md bg-[#ddd]"></div>
+                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
                 </div>
 
-                <div className="header-text">
-                    <h1>Sign up</h1>
-                    <p className="subtitle">
+                <div className={auth.headerText}>
+                    <h1 className={auth.headerTitle}>Sign up</h1>
+                    <p className={auth.subtitle}>
                         Let's get you all set up to access your personal account.
                     </p>
                 </div>
 
                 <form onSubmit={handleRegister}>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <input
+                    <div className={auth.inputRow}>
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="text"
                                 id="firstName"
                                 placeholder=" "
@@ -115,11 +115,11 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="firstName">First Name</label>
+                            <label className={auth.label} htmlFor="firstName">First Name</label>
                         </div>
 
-                        <div className="input-group">
-                            <input
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="text"
                                 id="lastName"
                                 placeholder=" "
@@ -129,13 +129,13 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="lastName">Last Name</label>
+                            <label className={auth.label} htmlFor="lastName">Last Name</label>
                         </div>
                     </div>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <input
+                    <div className={auth.inputRow}>
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="email"
                                 id="email"
                                 placeholder=" "
@@ -145,11 +145,11 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="email">Email</label>
+                            <label className={auth.label} htmlFor="email">Email</label>
                         </div>
 
-                        <div className="input-group">
-                            <input
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="tel"
                                 id="phone"
                                 placeholder=" "
@@ -159,12 +159,12 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="phone">Phone Number</label>
+                            <label className={auth.label} htmlFor="phone">Phone Number</label>
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             placeholder=" "
@@ -174,11 +174,11 @@ function Register() {
                             }
                             required
                         />
-                        <label htmlFor="password">Password</label>
+                        <label className={auth.label} htmlFor="password">Password</label>
 
                         <button
                             type="button"
-                            className="show-password-icon"
+                            className={auth.showPassword}
                             onClick={() =>
                                 setShowPassword(!showPassword)
                             }
@@ -209,8 +209,8 @@ function Register() {
                         </button>
                     </div>
 
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type={showConfirmPassword ? 'text' : 'password'}
                             id="confirmPassword"
                             placeholder=" "
@@ -220,13 +220,13 @@ function Register() {
                             }
                             required
                         />
-                        <label htmlFor="confirmPassword">
+                        <label className={auth.label} htmlFor="confirmPassword">
                             Confirm Password
                         </label>
 
                         <button
                             type="button"
-                            className="show-password-icon"
+                            className={auth.showPassword}
                             onClick={() =>
                                 setShowConfirmPassword(!showConfirmPassword)
                             }
@@ -257,12 +257,12 @@ function Register() {
                         </button>
                     </div>
 
-                    <div className="terms-group">
-                        <label className="terms-label">
-                            <input type="checkbox" required />
+                    <div className={auth.termsGroup}>
+                        <label className={auth.termsLabel}>
+                            <input type="checkbox" required className={auth.termsCheckbox} />
                             <span>
-                                I agree to all the <strong>Terms</strong> and{' '}
-                                <strong>Privacy Policies</strong>
+                                I agree to all the <strong className={auth.termsStrong}>Terms</strong> and{' '}
+                                <strong className={auth.termsStrong}>Privacy Policies</strong>
                             </span>
                         </label>
                     </div>
@@ -270,11 +270,7 @@ function Register() {
                     {message && (
                         <p
                             role="alert"
-                            style={{
-                                color: isError ? '#d93025' : '#188038',
-                                margin: '12px 0',
-                                fontSize: '14px',
-                            }}
+                            className={isError ? auth.registerMessageError : auth.registerMessageSuccess}
                         >
                             {message}
                         </p>
@@ -282,7 +278,7 @@ function Register() {
 
                     <button
                         type="submit"
-                        className="register-button"
+                        className={auth.registerButton}
                         disabled={isLoading}
                     >
                         {isLoading
@@ -291,19 +287,19 @@ function Register() {
                     </button>
                 </form>
 
-                <p className="login-link">
+                <p className={auth.switchLinkRegister}>
                     Already have an account?{' '}
-                    <Link to="/login">Login</Link>
+                    <Link to="/login" className={auth.switchLinkAnchor}>Login</Link>
                 </p>
 
-                <div className="divider">
-                    <span>Or Sign up with</span>
+                <div className={auth.divider}>
+                    <span className={auth.dividerText}>Or Sign up with</span>
                 </div>
 
-                <div className="social-login">
+                <div className={auth.socialRow}>
                     <button
                         type="button"
-                        className="social-btn"
+                        className={auth.socialButton}
                         aria-label="Sign up with Facebook"
                     >
                         <svg
@@ -318,7 +314,7 @@ function Register() {
 
                     <button
                         type="button"
-                        className="social-btn"
+                        className={auth.socialButton}
                         aria-label="Sign up with Google"
                     >
                         <svg viewBox="0 0 24 24" width="20" height="20">

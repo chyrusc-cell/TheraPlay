@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import './css/Login.css';
+import * as auth from './authClasses.js';
 
 function Login() {
     
@@ -77,23 +77,23 @@ function Login() {
     };
 
     return (
-        <div className="login-page">
-            <div className="login-panel">
-                <div className="login-header-logo">
-                    <div className="logo-icon"></div>
-                    <h2>TheraPlay!</h2>
+        <div className={auth.pageBg} style={auth.backgroundStyle}>
+            <div className={auth.panel}>
+                <div className={auth.logoRowLeft}>
+                    <div></div>
+                    <h2 className={auth.logoTitleLogin}>TheraPlay!</h2>
                 </div>
 
-                <div className="login-header-text">
-                    <h1>Login</h1>
-                    <p className="login-subtitle">
+                <div className={auth.headerTextLogin}>
+                    <h1 className={auth.headerTitleLogin}>Login</h1>
+                    <p className={auth.subtitleLogin}>
                         Login to access your TheraPlay account
                     </p>
                 </div>
 
                 <form onSubmit={handleLogin}>
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type="email"
                             id="email"
                             placeholder=" "
@@ -101,11 +101,11 @@ function Login() {
                             onChange={(event) => setEmail(event.target.value)}
                             required
                         />
-                        <label htmlFor="email">Email</label>
+                        <label className={auth.label} htmlFor="email">Email</label>
                     </div>
 
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             placeholder=" "
@@ -113,11 +113,11 @@ function Login() {
                             onChange={(event) => setPassword(event.target.value)}
                             required
                         />
-                        <label htmlFor="password">Password</label>
+                        <label className={auth.label} htmlFor="password">Password</label>
 
                         <button
                             type="button"
-                            className="show-password-icon"
+                            className={auth.showPassword}
                             onClick={() => setShowPassword(!showPassword)}
                             aria-label="Toggle password visibility"
                         >
@@ -146,8 +146,8 @@ function Login() {
                         </button>
                     </div>
 
-                    <div className="login-options">
-                        <label className="remember-me">
+                    <div className={auth.loginOptions}>
+                        <label className={auth.rememberMe}>
                             <input
                                 type="checkbox"
                                 checked={rememberMe}
@@ -160,7 +160,7 @@ function Login() {
 
                         <Link
                             to="/forgot-password"
-                            className="forgot-password"
+                            className={auth.forgotLink}
                         >
                             Forgot Password
                         </Link>
@@ -169,11 +169,7 @@ function Login() {
                     {message && (
                         <p
                             role="alert"
-                            style={{
-                                color: isError ? '#d93025' : '#188038',
-                                margin: '0 0 16px',
-                                fontSize: '14px',
-                            }}
+                            className={isError ? auth.messageError : auth.messageSuccess}
                         >
                             {message}
                         </p>
@@ -181,26 +177,26 @@ function Login() {
 
                     <button
                         type="submit"
-                        className="login-button"
+                        className={auth.loginButton}
                         disabled={isLoading}
                     >
                         {isLoading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
 
-                <p className="register-link">
+                <p className={auth.switchLinkLogin}>
                     Don't have an account?{' '}
-                    <Link to="/register">Sign up</Link>
+                    <Link to="/register" className={auth.switchLinkAnchor}>Sign up</Link>
                 </p>
 
-                <div className="divider">
-                    <span>Or login with</span>
+                <div className={auth.divider}>
+                    <span className={auth.dividerText}>Or login with</span>
                 </div>
 
-                <div className="social-login">
+                <div className={auth.socialRow}>
                     <button
                         type="button"
-                        className="social-btn"
+                        className={auth.socialButton}
                         aria-label="Login with Facebook"
                     >
                         <svg
@@ -215,7 +211,7 @@ function Login() {
 
                     <button
                         type="button"
-                        className="social-btn"
+                        className={auth.socialButton}
                         aria-label="Login with Google"
                     >
                         <svg viewBox="0 0 24 24" width="20" height="20">

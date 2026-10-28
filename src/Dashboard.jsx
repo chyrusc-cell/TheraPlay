@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
-import './css/Dashboard.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -81,6 +80,19 @@ const getCurrentStreak = (completedDayKeys) => {
 
     return streak;
 };
+
+// Card look as currently rendered (the old global .card rule was merged from the
+// Dashboard, Progress and Profile stylesheets).
+const cardClass =
+    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+const cardHeaderClass = 'border-b border-[#f0f0f0] px-6 py-4';
+const cardHeaderFlexClass =
+    'flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4';
+const cardTitleClass = 'text-[15px] font-bold text-[#333]';
+const cardBodyClass = 'px-6 pt-5 pb-6';
+const statusClass = 'text-[14px] font-medium text-muted';
+const iconCircleClass =
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#ddd] bg-white text-[#333]';
 
 function Dashboard() {
     const navigate = useNavigate();
@@ -191,8 +203,8 @@ function Dashboard() {
 
     if (isLoading) {
         return (
-            <div className="dashboard-page">
-                <main className="dashboard-content">
+            <div className="flex min-h-page flex-col">
+                <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
                     <CardsSkeleton label="Loading your dashboard..." cards={3} />
                 </main>
             </div>
@@ -201,9 +213,9 @@ function Dashboard() {
 
     if (error) {
         return (
-            <div className="dashboard-page">
-                <main className="dashboard-content">
-                    <p className="dashboard-status dashboard-error" role="alert">
+            <div className="flex min-h-page flex-col">
+                <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
+                    <p className="text-[14px] font-medium text-[#d93025]" role="alert">
                         {error}
                     </p>
                 </main>
@@ -252,33 +264,33 @@ function Dashboard() {
     const recent = records.slice(0, 3);
 
     return (
-        <div className="dashboard-page">
+        <div className="flex min-h-page flex-col">
 
-            <main className="dashboard-content">
+            <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
 
-                <header className="dashboard-header">
-                    <h1>Hello, {user?.name}!</h1>
-                    <p>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
-                    <span className="date-subtitle">Week of {formatWeekRange(weekStart)}</span>
+                <header className="mb-8">
+                    <h1 className="mb-2 text-[32px] font-bold text-ink">Hello, {user?.name}!</h1>
+                    <p className="mb-4 text-[15px] font-medium text-muted">We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
+                    <span className="text-[12px] font-medium text-[#888]">Week of {formatWeekRange(weekStart)}</span>
                 </header>
 
-                <div className="dashboard-top-grid">
-                    <div className="card">
-                        <div className="card-header-border">
-                            <h3>Continue / Recommended Activity</h3>
+                <div className="mb-6 grid grid-cols-2 gap-6 tablet-sm:grid-cols-1">
+                    <div className={cardClass}>
+                        <div className={cardHeaderClass}>
+                            <h3 className={cardTitleClass}>Continue / Recommended Activity</h3>
                         </div>
-                        <div className="card-body">
+                        <div className={cardBodyClass}>
                             {featured ? (
                                 <>
-                                    <div className="activity-title-row">
-                                        <h2>{featured.title}</h2>
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <h2 className="text-[20px] font-bold text-ink">{featured.title}</h2>
                                     </div>
-                                    <p className="card-desc">
+                                    <p className="mb-5 text-[14px] leading-[1.5] text-[#666]">
                                         {featured.description ||
                                             'Explore this activity and its learning objectives.'}
                                     </p>
                                     <button
-                                        className="btn-primary"
+                                        className="cursor-pointer rounded-md border-0 bg-primary px-5 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover"
                                         type="button"
                                         onClick={() =>
                                             navigate(`/activities/${featured.id}`)
@@ -290,33 +302,33 @@ function Dashboard() {
                                     </button>
                                 </>
                             ) : (
-                                <p className="card-desc">
+                                <p className="mb-5 text-[14px] leading-[1.5] text-[#666]">
                                     No activities are available right now.
                                 </p>
                             )}
                         </div>
                     </div>
 
-                    <div className="card">
-                        <div className="card-header-border">
-                            <h3>Streak</h3>
+                    <div className={cardClass}>
+                        <div className={cardHeaderClass}>
+                            <h3 className={cardTitleClass}>Streak</h3>
                         </div>
-                        <div className="card-body">
-                            <div className="streak-header">
-                                <div className="streak-count">
-                                    <h2>{streak}</h2>
-                                    <span>Day practice streak</span>
+                        <div className={cardBodyClass}>
+                            <div className="mb-4 flex items-start justify-between">
+                                <div>
+                                    <h2 className="text-[28px] leading-none font-bold text-ink">{streak}</h2>
+                                    <span className="text-[13px] font-medium text-muted">Day practice streak</span>
                                 </div>
                             </div>
-                            <p className="streak-date">This week • {formatWeekRange(weekStart)}</p>
+                            <p className="mb-3 text-[12px] font-medium text-[#888]">This week • {formatWeekRange(weekStart)}</p>
 
-                            <div className="streak-days">
+                            <div className="flex gap-2">
                                 {DAY_LETTERS.map((letter, index) => (
                                     <div
-                                        className={`day${
+                                        className={`flex-1 rounded-md py-2 text-center text-[13px] font-bold ${
                                             completedDayKeys.has(weekKeys[index])
-                                                ? ' active'
-                                                : ''
+                                                ? 'bg-[#404040] text-white'
+                                                : 'bg-[#f0f0f0] text-[#999]'
                                         }`}
                                         key={weekKeys[index]}
                                     >
@@ -328,29 +340,29 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="card full-width-card">
-                    <div className="card-header-border">
-                        <h3>Summary of Progress</h3>
+                <div className={cardClass}>
+                    <div className={cardHeaderClass}>
+                        <h3 className={cardTitleClass}>Summary of Progress</h3>
                     </div>
-                    <div className="card-body progress-body">
-                        <div className="progress-stats">
-                            <div className="stat-box">
-                                <span className="stat-label">Activities this week</span>
-                                <h2>{completedThisWeek}</h2>
-                                <span className="stat-sub">completed this week</span>
+                    <div className={cardBodyClass}>
+                        <div className="mb-5 flex gap-4 tablet-sm:flex-col">
+                            <div className="flex-1 rounded-lg bg-[#f9f9f9] p-5">
+                                <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
+                                <h2 className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</h2>
+                                <span className="text-[12px] text-[#888]">completed this week</span>
                             </div>
-                            <div className="stat-box">
-                                <span className="stat-label">Skills practiced</span>
-                                <h2>{skills.length}</h2>
-                                <span className="stat-sub">
+                            <div className="flex-1 rounded-lg bg-[#f9f9f9] p-5">
+                                <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
+                                <h2 className="mb-1 text-[24px] font-bold text-ink">{skills.length}</h2>
+                                <span className="text-[12px] text-[#888]">
                                     {skills.length > 0
                                         ? skills.join(', ')
                                         : 'No completed activities yet'}
                                 </span>
                             </div>
                         </div>
-                        <div className="progress-footer">
-                            <Link to="/progress" className="view-report-link">
+                        <div className="border-t border-[#f0f0f0] pt-4">
+                            <Link to="/progress" className="flex items-center justify-between text-[13px] font-bold text-[#333] no-underline">
                                 View detailed progress report
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -361,15 +373,15 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="card full-width-card">
-                    <div className="card-header-flex">
-                        <h3>Recent Activities</h3>
-                        <Link to="/activities" className="view-all-link">View all</Link>
+                <div className={cardClass}>
+                    <div className={cardHeaderFlexClass}>
+                        <h3 className={cardTitleClass}>Recent Activities</h3>
+                        <Link to="/activities" className="text-[13px] font-bold text-muted no-underline">View all</Link>
                     </div>
-                    <div className="recent-list">
+                    <div className="p-5">
 
                         {recent.length === 0 ? (
-                            <p className="dashboard-status">
+                            <p className={statusClass}>
                                 No activity yet. Completed activities will appear here.
                             </p>
                         ) : (
@@ -380,25 +392,27 @@ function Dashboard() {
                                     : record.started_at;
 
                                 return (
-                                    <div className="recent-item" key={record.id}>
-                                        <div className="item-left">
+                                    <div className="mb-3 flex items-center justify-between rounded-lg bg-[#f9f9f9] p-4 last:mb-0" key={record.id}>
+                                        <div className="flex items-center gap-4">
                                             {isDone ? (
-                                                <div className="icon-circle completed">
+                                                <div className={iconCircleClass}>
                                                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                                 </div>
                                             ) : (
-                                                <div className="icon-circle in-progress">
+                                                <div className={iconCircleClass}>
                                                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                                                 </div>
                                             )}
-                                            <div className="item-text">
-                                                <h4>{record.activity_title || 'Activity'}</h4>
-                                                {when && <span>{formatDate(when)}</span>}
+                                            <div>
+                                                <h4 className="mb-1 text-[14px] font-bold text-ink">{record.activity_title || 'Activity'}</h4>
+                                                {when && <span className="text-[12px] text-[#888]">{formatDate(when)}</span>}
                                             </div>
                                         </div>
                                         <span
-                                            className={`list-tag ${
-                                                isDone ? 'tag-completed' : 'tag-progress'
+                                            className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
+                                                isDone
+                                                    ? 'bg-[#eee] text-[#333]'
+                                                    : 'border border-[#ddd] bg-[#f5f5f5] text-muted'
                                             }`}
                                         >
                                             {isDone

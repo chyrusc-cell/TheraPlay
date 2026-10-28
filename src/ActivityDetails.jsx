@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { apiRequest } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
-import { difficultyBadgeClass } from './uiHelpers.js';
-import './css/ActivityDetails.css';
+import { difficultyBadgeTw } from './uiHelpers.js';
+import { detailsCardClass } from './uiClasses.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -46,6 +46,11 @@ const fetchIsCompleted = async (activityId, signal) => {
         return false;
     }
 };
+
+const completeButtonBase =
+    'cursor-pointer rounded-md border-0 bg-primary p-3 text-[15px] text-white enabled:hover:bg-primary-hover';
+
+const messageBase = 'mt-3 text-[14px] font-medium';
 
 function ActivityDetails() {
 
@@ -328,8 +333,8 @@ function ActivityDetails() {
     if (isLoading) {
 
         return (
-            <div className="activity-details-page">
-                <main className="activity-details-content">
+            <div className="min-h-page bg-[#f5f7fa]">
+                <main className="mx-auto max-w-[1100px] px-[30px] py-10 tablet-sm:px-4 tablet-sm:py-6">
                     <ActivityDetailsSkeleton />
                 </main>
             </div>
@@ -341,7 +346,7 @@ function ActivityDetails() {
     if (error) {
 
         return (
-            <div className="activity-not-found">
+            <div className="flex min-h-page flex-col items-center justify-center gap-[15px]">
 
                 <h1>
                     Something Went Wrong
@@ -351,7 +356,7 @@ function ActivityDetails() {
                     {error}
                 </p>
 
-                <Link to="/activities">
+                <Link to="/activities" className="text-[#333]">
                     Back to Activities
                 </Link>
 
@@ -364,7 +369,7 @@ function ActivityDetails() {
     if (notFound || !activity) {
 
         return (
-            <div className="activity-not-found">
+            <div className="flex min-h-page flex-col items-center justify-center gap-[15px]">
 
                 <h1>
                     Activity Not Found
@@ -374,7 +379,7 @@ function ActivityDetails() {
                     The activity you are looking for does not exist.
                 </p>
 
-                <Link to="/activities">
+                <Link to="/activities" className="text-[#333]">
                     Back to Activities
                 </Link>
 
@@ -385,46 +390,46 @@ function ActivityDetails() {
 
 
     return (
-        <div className="activity-details-page">
+        <div className="min-h-page bg-[#f5f7fa]">
 
             {/* Main Content */}
 
-            <main className="activity-details-content">
+            <main className="mx-auto max-w-[1100px] px-[30px] py-10 tablet-sm:px-4 tablet-sm:py-6">
 
                 <Link
                     to="/activities"
-                    className="back-link"
+                    className="mb-[25px] inline-block text-[14px] text-[#333] no-underline"
                 >
                     ← Back to Activities
                 </Link>
 
 
-                <div className="activity-details-card">
+                <div className={detailsCardClass}>
 
                     {/* Activity Image */}
 
-                    <div className="activity-details-image">
+                    <div className="flex h-[220px] items-center justify-center rounded-lg bg-[#e9eef3] text-[#8a96a3] tablet-sm:h-[180px]">
                         Image
                     </div>
 
 
                     {/* Activity Information */}
 
-                    <div className="activity-information">
+                    <div>
 
-                        <h1>
+                        <h1 className="mb-3 text-[28px] font-bold">
                             {activity.title}
                         </h1>
 
-                        <div className="activity-tags">
+                        <div className="mb-[30px] flex gap-2.5">
 
                             {activity.category && (
-                                <span>
+                                <span className="rounded-[5px] bg-hover px-2.5 py-[5px] text-[13px]">
                                     {activity.category}
                                 </span>
                             )}
 
-                            <span className={difficultyBadgeClass(activity.difficulty)}>
+                            <span className={difficultyBadgeTw(activity.difficulty)}>
                                 {activity.difficulty}
                             </span>
 
@@ -433,13 +438,13 @@ function ActivityDetails() {
 
                         {/* Objective */}
 
-                        <section className="details-section">
+                        <section className="mb-[25px]">
 
-                            <h2>
+                            <h2 className="mb-2.5 text-[18px] font-bold">
                                 Objective
                             </h2>
 
-                            <p>
+                            <p className="leading-[1.5] text-[#666]">
                                 {activity.objective}
                             </p>
 
@@ -448,13 +453,13 @@ function ActivityDetails() {
 
                         {/* Instructions */}
 
-                        <section className="details-section">
+                        <section className="mb-[25px]">
 
-                            <h2>
+                            <h2 className="mb-2.5 text-[18px] font-bold">
                                 Instructions
                             </h2>
 
-                            <ol>
+                            <ol className="list-decimal pl-5 leading-[1.8] text-[#555]">
 
                                 {activity.instructions.map(
                                     (instruction, index) => (
@@ -473,13 +478,13 @@ function ActivityDetails() {
 
                         {/* Materials */}
 
-                        <section className="details-section">
+                        <section className="mb-[25px]">
 
-                            <h2>
+                            <h2 className="mb-2.5 text-[18px] font-bold">
                                 Materials
                             </h2>
 
-                            <ul>
+                            <ul className="list-disc pl-5 leading-[1.8] text-[#555]">
 
                                 {activity.materials.map(
                                     (material, index) => (
@@ -499,15 +504,15 @@ function ActivityDetails() {
                             {Array.isArray(activity.resources) &&
                                 activity.resources.length > 0 && (
 
-                                <ul className="resource-list">
+                                <ul className="mt-3 list-none pl-5 leading-[1.8] text-[#555]">
 
                                     {activity.resources.map((resource) => (
 
-                                        <li key={resource.id}>
+                                        <li key={resource.id} className="mb-2">
 
                                             <button
                                                 type="button"
-                                                className="resource-button"
+                                                className="cursor-pointer rounded-md border border-[#ccc] bg-white px-3 py-2 text-left text-[13px] text-[#333] [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
                                                 onClick={() =>
                                                     handleDownload(resource)
                                                 }
@@ -527,7 +532,7 @@ function ActivityDetails() {
                             )}
 
                             {downloadError && (
-                                <p role="alert" className="resource-error">
+                                <p role="alert" className="mt-2 text-[13px] text-[#d93025]">
                                     {downloadError}
                                 </p>
                             )}
@@ -537,23 +542,24 @@ function ActivityDetails() {
 
                         {showChildForm && (
                             <form
-                                className="child-form"
+                                className="mb-4 flex flex-col gap-2 rounded-md border border-[#ddd] p-4"
                                 onSubmit={handleChildSubmit}
                             >
-                                <h2>
+                                <h2 className="text-[16px] font-bold">
                                     Add Your Child
                                 </h2>
 
-                                <p>
+                                <p className="text-[13px] text-[#666]">
                                     Your child's name is needed to record
                                     completed activities.
                                 </p>
 
-                                <label htmlFor="childName">
+                                <label htmlFor="childName" className="text-[13px] text-[#666]">
                                     Child's name
                                 </label>
 
                                 <input
+                                    className="rounded-md border border-[#ddd] px-3 py-2.5 text-[14px]"
                                     id="childName"
                                     type="text"
                                     value={childName}
@@ -566,16 +572,16 @@ function ActivityDetails() {
                                 {childError && (
                                     <p
                                         role="alert"
-                                        className="child-form-error"
+                                        className="text-[13px] text-[#d93025]"
                                     >
                                         {childError}
                                     </p>
                                 )}
 
-                                <div className="child-form-actions">
+                                <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="child-form-cancel"
+                                        className="cursor-pointer rounded-md border border-[#333] bg-white px-5 py-3 text-[15px] text-[#333] enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >
@@ -584,7 +590,7 @@ function ActivityDetails() {
 
                                     <button
                                         type="submit"
-                                        className="complete-button"
+                                        className={`${completeButtonBase} flex-1`}
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting
@@ -596,7 +602,7 @@ function ActivityDetails() {
                         )}
 
                         <button
-                            className="complete-button"
+                            className={`${completeButtonBase} w-full`}
                             onClick={handleComplete}
                             disabled={isSubmitting || isCompleted || showChildForm}
                         >
@@ -610,12 +616,11 @@ function ActivityDetails() {
                         {message && (
                             <p
                                 role="alert"
-                                style={{
-                                    color: isMessageError ? '#d93025' : '#188038',
-                                    marginTop: '12px',
-                                    fontSize: '14px',
-                                    fontWeight: 500,
-                                }}
+                                className={`${messageBase} ${
+                                    isMessageError
+                                        ? 'text-[#d93025]'
+                                        : 'text-[#188038]'
+                                }`}
                             >
                                 {message}
                             </p>

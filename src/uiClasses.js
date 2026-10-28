@@ -1,0 +1,23 @@
+// Tailwind class strings that are shared between a real component and its
+// loading skeleton, so the placeholder always has the same shape as the
+// content it stands in for. Keep full class names here (never build them from
+// pieces) so Tailwind can find them.
+
+// Breakpoints (laptop / tablet / tablet-sm / phone-lg / phone) are defined in
+// css/tailwind.css.
+
+// Public activities list.
+export const activityGridClass =
+    'grid grid-cols-3 gap-6 laptop:grid-cols-2 phone-lg:grid-cols-1';
+
+// Contact Us: a white rounded container (Professional Contacts, Developer Team,
+// Feedback) and the smaller card used for each professional inside the list.
+export const contactPanelClass =
+    'rounded-xl border border-[#eaeaea] bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] phone:p-4';
+
+export const contactItemClass =
+    'rounded-lg border border-[#eaeaea] bg-[#fafbfc] p-4';
+
+// Activity details: image column + text column.
+export const detailsCardClass =
+    'grid grid-cols-[280px_1fr] gap-[30px] rounded-xl border border-[#e1e5ea] bg-white p-[30px] tablet-sm:grid-cols-1 tablet-sm:p-5';

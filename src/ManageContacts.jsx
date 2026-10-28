@@ -6,8 +6,7 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
-import './css/ManageActivities.css';
-import './css/ManageContacts.css';
+import * as ui from './adminClasses.js';
 
 const emptyForm = {
     name: '',
@@ -297,19 +296,19 @@ function ManageContacts() {
 
 
     return (
-        <div className="manage-activities-page">
+        <div className={ui.page}>
 
-            <main className="manage-activities-content">
+            <main className={ui.content}>
 
-                <div className="page-header">
+                <div className={ui.header}>
 
                     <div>
 
-                        <h1>
+                        <h1 className={ui.title}>
                             Manage Contacts
                         </h1>
 
-                        <p>
+                        <p className={ui.subtitle}>
                             Professional contacts shown on the Contact Us
                             page.
                         </p>
@@ -317,11 +316,11 @@ function ManageContacts() {
                     </div>
 
 
-                    <div className="header-actions">
+                    <div className={ui.headerActions}>
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                             disabled={isLoading}
                         >
@@ -330,7 +329,7 @@ function ManageContacts() {
 
                         <button
                             type="button"
-                            className="add-activity-button"
+                            className={ui.addButton}
                             onClick={handleToggleForm}
                         >
                             + Add Contact
@@ -343,7 +342,7 @@ function ManageContacts() {
 
                 {notice && (
                     <p
-                        className={`page-message ${notice.type}`}
+                        className={notice.type === 'error' ? ui.messageError : ui.messageSuccess}
                         role={notice.type === 'error' ? 'alert' : 'status'}
                     >
                         {notice.text}
@@ -355,9 +354,9 @@ function ManageContacts() {
 
                 {showForm && (
 
-                    <section className="activity-form">
+                    <section className={ui.formCard}>
 
-                        <h2>
+                        <h2 className={ui.formTitle}>
                             {editingId === null
                                 ? 'Add New Contact'
                                 : 'Edit Contact'}
@@ -367,18 +366,18 @@ function ManageContacts() {
                         <form onSubmit={handleSubmit}>
 
                             {formError && (
-                                <p className="page-message error" role="alert">
+                                <p className={ui.messageError} role="alert">
                                     {formError}
                                 </p>
                             )}
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="contact-name">
+                                <label className={ui.label} htmlFor="contact-name">
                                     Name
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="contact-name"
                                     type="text"
                                     placeholder="Enter full name"
@@ -391,7 +390,7 @@ function ManageContacts() {
                                 />
 
                                 {fieldErrors.name && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.name}
                                     </p>
                                 )}
@@ -399,13 +398,13 @@ function ManageContacts() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="contact-title">
+                                <label className={ui.label} htmlFor="contact-title">
                                     Title / Specialty
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="contact-title"
                                     type="text"
                                     placeholder="e.g. Occupational Therapist"
@@ -418,7 +417,7 @@ function ManageContacts() {
                                 />
 
                                 {fieldErrors.title && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.title}
                                     </p>
                                 )}
@@ -426,13 +425,13 @@ function ManageContacts() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="contact-email">
+                                <label className={ui.label} htmlFor="contact-email">
                                     Email (optional if a phone is given)
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="contact-email"
                                     type="email"
                                     placeholder="name@example.com"
@@ -444,7 +443,7 @@ function ManageContacts() {
                                 />
 
                                 {fieldErrors.email && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.email}
                                     </p>
                                 )}
@@ -452,13 +451,13 @@ function ManageContacts() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="contact-phone">
+                                <label className={ui.label} htmlFor="contact-phone">
                                     Phone (optional if an email is given)
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="contact-phone"
                                     type="tel"
                                     placeholder="+63 917 123 4567"
@@ -470,7 +469,7 @@ function ManageContacts() {
                                 />
 
                                 {fieldErrors.phone && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.phone}
                                     </p>
                                 )}
@@ -478,13 +477,13 @@ function ManageContacts() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="contact-description">
+                                <label className={ui.label} htmlFor="contact-description">
                                     Description (optional)
                                 </label>
 
-                                <textarea
+                                <textarea className={ui.textarea}
                                     id="contact-description"
                                     rows={3}
                                     placeholder="Short note about this professional"
@@ -499,7 +498,7 @@ function ManageContacts() {
                                 />
 
                                 {fieldErrors.description && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.description}
                                     </p>
                                 )}
@@ -507,11 +506,11 @@ function ManageContacts() {
                             </div>
 
 
-                            <div className="form-actions">
+                            <div className={ui.formActions}>
 
                                 <button
                                     type="submit"
-                                    className="save-button"
+                                    className={ui.saveButton}
                                     disabled={isSaving}
                                 >
                                     {isSaving
@@ -523,7 +522,7 @@ function ManageContacts() {
 
                                 <button
                                     type="button"
-                                    className="cancel-button"
+                                    className={ui.cancelButton}
                                     onClick={closeForm}
                                     disabled={isSaving}
                                 >
@@ -550,7 +549,7 @@ function ManageContacts() {
 
                 ) : loadError ? (
 
-                    <div className="list-state list-error" role="alert">
+                    <div className={ui.listError} role="alert">
 
                         <p>
                             {loadError}
@@ -558,7 +557,7 @@ function ManageContacts() {
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                         >
                             Try again
@@ -568,27 +567,27 @@ function ManageContacts() {
 
                 ) : (
 
-                    <section className="activities-table-container">
+                    <section className={ui.tableContainer}>
 
-                        <table className="activities-table">
+                        <table className={ui.table}>
 
-                            <thead>
+                            <thead className={ui.thead}>
 
                                 <tr>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Name
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Title / Specialty
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Contact
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Actions
                                     </th>
 
@@ -597,13 +596,13 @@ function ManageContacts() {
                             </thead>
 
 
-                            <tbody>
+                            <tbody className={ui.tbody}>
 
                                 {contacts.length === 0 && (
 
-                                    <tr>
+                                    <tr className={ui.row}>
 
-                                        <td colSpan={4}>
+                                        <td className={ui.tdEmpty} colSpan={4}>
                                             No contacts yet. Use
                                             &ldquo;+ Add Contact&rdquo; to
                                             add the first one.
@@ -615,25 +614,25 @@ function ManageContacts() {
 
                                 {contacts.map((contact) => (
 
-                                    <tr key={contact.id}>
+                                    <tr className={ui.row} key={contact.id}>
 
-                                        <td data-label="Name">
+                                        <td className={ui.td} data-label="Name">
 
                                             {contact.name}
 
                                             {contact.description && (
-                                                <div className="cell-sub">
+                                                <div className={ui.cellSub}>
                                                     {contact.description}
                                                 </div>
                                             )}
 
                                         </td>
 
-                                        <td data-label="Title / Specialty">
+                                        <td className={ui.td} data-label="Title / Specialty">
                                             {contact.title}
                                         </td>
 
-                                        <td data-label="Contact">
+                                        <td className={ui.td} data-label="Contact">
 
                                             {contact.email && (
                                                 <div>{contact.email}</div>
@@ -645,19 +644,19 @@ function ManageContacts() {
 
                                         </td>
 
-                                        <td data-label="Actions">
+                                        <td className={ui.td} data-label="Actions">
 
                                             {confirmingId === contact.id ? (
 
-                                                <div className="table-actions">
+                                                <div className={ui.actions}>
 
-                                                    <span className="confirm-text">
+                                                    <span className={ui.confirmText}>
                                                         Delete this contact?
                                                     </span>
 
                                                     <button
                                                         type="button"
-                                                        className="delete-button"
+                                                        className={ui.deleteButton}
                                                         onClick={() =>
                                                             handleDelete(contact)
                                                         }
@@ -672,7 +671,7 @@ function ManageContacts() {
 
                                                     <button
                                                         type="button"
-                                                        className="edit-button"
+                                                        className={ui.editButton}
                                                         onClick={() =>
                                                             setConfirmingId(null)
                                                         }
@@ -687,11 +686,11 @@ function ManageContacts() {
 
                                             ) : (
 
-                                                <div className="table-actions">
+                                                <div className={ui.actions}>
 
                                                     <button
                                                         type="button"
-                                                        className="edit-button"
+                                                        className={ui.editButton}
                                                         aria-label={`Edit ${contact.name}`}
                                                         onClick={() =>
                                                             handleEdit(contact)
@@ -705,7 +704,7 @@ function ManageContacts() {
 
                                                     <button
                                                         type="button"
-                                                        className="delete-button"
+                                                        className={ui.deleteButton}
                                                         aria-label={`Delete ${contact.name}`}
                                                         onClick={() =>
                                                             setConfirmingId(

@@ -1,9 +1,16 @@
 /*
- * Shared look and feel (Phase 9A).
+ * Shared design tokens and global behavior.
  *
- * This file is imported LAST (see TheraPlay.jsx), so where it sets the same
- * property as an older page stylesheet, this one wins. Page layouts and sizes
- * stay in the page files; this file only unifies colors, states and motion.
+ * Component styling is done with Tailwind classes in the components. What stays
+ * here is what utilities cannot express well:
+ *   - the design tokens (:root variables), which tailwind.css exposes as
+ *     Tailwind colors (bg-primary, text-success-text, ...)
+ *   - the global keyboard focus ring and the disabled-button state
+ *   - keyframes (dialog fade-in, skeleton shimmer)
+ *   - the prefers-reduced-motion rules
+ *
+ * These rules are not in a Tailwind layer, so they intentionally win over
+ * utilities (for example the focus ring always shows).
  */
 
 :root {
@@ -35,21 +42,11 @@
     --ui-focus: #1a73e8;
 
     --ui-transition: 0.15s ease;
-}
 
-
-/* --- Accessibility helpers --- */
-
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
+    /* Layout widths (used by Tailwind utilities such as ml-sidebar). */
+    --sidebar-width: 240px;
+    --sidebar-width-collapsed: 72px;
+    --topbar-height: 56px;
 }
 
 
@@ -96,160 +93,6 @@ button:disabled {
 }
 
 
-/* Primary actions share one color. */
-.add-activity-button,
-.save-button,
-.btn-save,
-.btn-primary,
-.submit-button,
-.login-button,
-.register-button,
-.contact-submit,
-.complete-button,
-.confirm-confirm {
-    background-color: var(--ui-primary);
-    color: #fff;
-}
-
-.add-activity-button:hover:not(:disabled),
-.save-button:hover:not(:disabled),
-.btn-save:hover:not(:disabled),
-.btn-primary:hover:not(:disabled),
-.submit-button:hover:not(:disabled),
-.login-button:hover:not(:disabled),
-.register-button:hover:not(:disabled),
-.contact-submit:hover:not(:disabled),
-.complete-button:hover:not(:disabled),
-.confirm-confirm:hover:not(:disabled) {
-    background-color: var(--ui-primary-hover);
-}
-
-/* Secondary / cancel actions are neutral. */
-.cancel-button,
-.btn-cancel,
-.confirm-cancel,
-.contact-retry,
-.feedback-retry,
-.edit-button,
-.file-remove,
-.resource-button {
-    background-color: #fff;
-    color: #333;
-}
-
-.cancel-button:hover:not(:disabled),
-.btn-cancel:hover:not(:disabled),
-.confirm-cancel:hover:not(:disabled),
-.contact-retry:hover:not(:disabled),
-.feedback-retry:hover:not(:disabled),
-.edit-button:hover:not(:disabled),
-.file-remove:hover:not(:disabled),
-.resource-button:hover:not(:disabled) {
-    background-color: var(--ui-surface-hover);
-}
-
-
-/* Delete is red. The label ("Delete") always says what it does as well. */
-.delete-button {
-    background-color: #fff;
-    border: 1px solid var(--ui-danger);
-    color: var(--ui-danger-text);
-}
-
-.delete-button:hover:not(:disabled) {
-    background-color: var(--ui-danger-bg-hover);
-}
-
-/* Publish is green and Unpublish is amber: distinct from each other and
-   from Delete. Other uses of .publish-button (role change) stay neutral. */
-.publish-button.is-publish {
-    background-color: var(--ui-success-bg);
-    border-color: var(--ui-success);
-    color: var(--ui-success-text);
-}
-
-.publish-button.is-publish:hover:not(:disabled) {
-    background-color: var(--ui-success-bg-hover);
-}
-
-.publish-button.is-unpublish {
-    background-color: var(--ui-warning-bg);
-    border-color: var(--ui-warning-border);
-    color: var(--ui-warning-text);
-}
-
-.publish-button.is-unpublish:hover:not(:disabled) {
-    background-color: var(--ui-warning-bg-hover);
-}
-
-.publish-button:not(.is-publish):not(.is-unpublish):hover:not(:disabled) {
-    background-color: var(--ui-surface-hover);
-}
-
-/* Logout looks normal, then turns red on hover. */
-.sidebar-logout:hover:not(:disabled) {
-    background-color: var(--ui-danger-bg);
-    color: var(--ui-danger-text);
-}
-
-
-/* --- Badges --- */
-
-.ui-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.3;
-}
-
-/* Difficulty. The word is always shown, color is only a second cue. */
-.ui-badge.ui-badge--easy {
-    background-color: var(--ui-success-bg);
-    color: var(--ui-success-text);
-}
-
-.ui-badge.ui-badge--medium {
-    background-color: var(--ui-warning-bg);
-    color: var(--ui-warning-text);
-}
-
-.ui-badge.ui-badge--hard {
-    background-color: var(--ui-hard-bg);
-    color: var(--ui-hard-text);
-}
-
-/* Completed activities keep a clear green indicator. */
-.activity-completed-tag {
-    background-color: var(--ui-success-bg);
-    color: var(--ui-success-text);
-}
-
-/* Cards show difficulty and completion side by side. */
-.activity-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.activity-badges .activity-completed-tag {
-    margin-bottom: 0;
-}
-
-
-/* --- Tables: a light highlight helps follow a row --- */
-
-.activities-table tbody tr {
-    transition: background-color var(--ui-transition);
-}
-
-.activities-table tbody tr:hover {
-    background-color: #fafbfc;
-}
-
-
 /* --- Form fields --- */
 
 input,
@@ -261,7 +104,7 @@ textarea {
 }
 
 
-/* --- Confirmation dialog: a short fade-in --- */
+/* --- Keyframes used by the confirmation dialog --- */
 
 @keyframes ui-fade-in {
     from { opacity: 0; }
@@ -273,16 +116,14 @@ textarea {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.confirm-overlay {
-    animation: ui-fade-in 0.12s ease;
-}
-
-.confirm-dialog {
-    animation: ui-rise-in 0.16s ease;
-}
+/* (The dialog uses these via Tailwind: animate-[ui-fade-in_...].) */
 
 
-/* --- Skeleton loading placeholders --- */
+/* --- Skeleton shimmer ---
+ * Size, spacing and radius of the placeholders are Tailwind utilities (see
+ * Skeleton.jsx). Only the moving gradient lives here, because it needs
+ * keyframes. Reduced-motion users get a flat block (see the rule below).
+ */
 
 @keyframes ui-shimmer {
     0% { background-position: 100% 0; }
@@ -290,8 +131,6 @@ textarea {
 }
 
 .skeleton {
-    display: block;
-    border-radius: 6px;
     background-color: #eceff1;
     background-image: linear-gradient(
         90deg,
@@ -301,56 +140,6 @@ textarea {
     );
     background-size: 200% 100%;
     animation: ui-shimmer 1.4s ease-in-out infinite;
-}
-
-.skeleton-line {
-    height: 14px;
-    margin-bottom: 10px;
-}
-
-.skeleton-line.short {
-    width: 60%;
-}
-
-.skeleton-title {
-    height: 22px;
-    width: 70%;
-    margin-bottom: 14px;
-}
-
-.skeleton-image {
-    height: 180px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-}
-
-.skeleton-pill {
-    height: 28px;
-    width: 90px;
-    border-radius: 14px;
-}
-
-.skeleton-card {
-    background-color: #fff;
-    border: 1px solid #eaeaea;
-    border-radius: 16px;
-    padding: 20px;
-}
-
-.skeleton-row {
-    display: flex;
-    gap: 12px;
-    padding: 16px;
-    border-bottom: 1px solid #e5e5e5;
-}
-
-.skeleton-row:last-child {
-    border-bottom: none;
-}
-
-.skeleton-row .skeleton {
-    flex: 1;
-    height: 16px;
 }
 
 
@@ -370,9 +159,5 @@ textarea {
     .skeleton {
         animation: none;
         background-image: none;
-    }
-
-    .activity-card:hover {
-        transform: none;
     }
 }

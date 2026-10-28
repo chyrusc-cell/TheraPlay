@@ -1,0 +1,111 @@
+/*
+ * Tailwind CSS v4 entry.
+ *
+ *  - Tailwind's own global reset ("preflight") is deliberately NOT imported.
+ *    The components rely on a few browser defaults (for example the size of
+ *    unstyled headings), so adopting preflight is a separate step that needs a
+ *    visual check. Only the small reset in the base layer below is applied.
+ *  - Tailwind's layers are declared first. CSS inside a layer always loses to
+ *    UNLAYERED css, so the few unlayered rules in ui.css (focus ring, disabled
+ *    state, reduced motion) intentionally win over utilities.
+ *
+ * Design tokens: the values live ONCE, in the :root variables of ui.css
+ * (--ui-*). The @theme block below only exposes them as Tailwind colors, so
+ * `bg-primary` and the CSS variable can never drift apart.
+ */
+
+/* The app font, declared once. */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap');
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+/*
+ * source("../") limits class scanning to src/. Without it Tailwind scans the
+ * whole repository, including the Laravel backend/ folder, and generates
+ * hundreds of unused utilities.
+ */
+@import "tailwindcss/utilities.css" layer(utilities) source("../");
+
+@theme inline {
+    --color-primary: var(--ui-primary);
+    --color-primary-hover: var(--ui-primary-hover);
+    --color-ink: var(--ui-text);
+    --color-muted: var(--ui-muted);
+    --color-line: var(--ui-border);
+    --color-hover: var(--ui-surface-hover);
+
+    --color-success: var(--ui-success);
+    --color-success-bg: var(--ui-success-bg);
+    --color-success-bg-hover: var(--ui-success-bg-hover);
+    --color-success-text: var(--ui-success-text);
+
+    --color-warning-bg: var(--ui-warning-bg);
+    --color-warning-bg-hover: var(--ui-warning-bg-hover);
+    --color-warning-border: var(--ui-warning-border);
+    --color-warning-text: var(--ui-warning-text);
+
+    --color-danger: var(--ui-danger);
+    --color-danger-bg: var(--ui-danger-bg);
+    --color-danger-bg-hover: var(--ui-danger-bg-hover);
+    --color-danger-text: var(--ui-danger-text);
+
+    --color-hard-bg: var(--ui-hard-bg);
+    --color-hard-text: var(--ui-hard-text);
+
+    --color-focus: var(--ui-focus);
+
+    /* Layout widths shared with the sidebar and the page offset. */
+    --spacing-sidebar: var(--sidebar-width);
+    --spacing-sidebar-rail: var(--sidebar-width-collapsed);
+    --spacing-topbar: var(--topbar-height);
+}
+
+/*
+ * A page inside the shared layout: at least the visible height BELOW the top
+ * bar, so a short page does not scroll just because the bar takes space.
+ * (Login, Register and the password pages have no top bar and use
+ * min-h-screen.)
+ */
+@utility min-h-page {
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+/*
+ * Breakpoints. These are the same inclusive "max-width" values the project's
+ * CSS has always used (Tailwind's own max-[900px] is exclusive), defined once
+ * so a breakpoint is never repeated as a magic number in class strings.
+ *   laptop  <= 1100px   tablet <= 900px (the sidebar becomes an icon rail)
+ *   tablet-sm <= 800px  phone-lg <= 720px   phone <= 560px
+ * Keep them in this order (largest first): when two apply, the later one wins.
+ */
+@custom-variant laptop (@media (max-width: 1100px));
+@custom-variant tablet (@media (max-width: 900px));
+@custom-variant tablet-sm (@media (max-width: 800px));
+@custom-variant phone-lg (@media (max-width: 720px));
+@custom-variant phone (@media (max-width: 560px));
+
+/*
+ * The universal reset lives here, once, in the base layer. (If it were
+ * unlayered it would beat Tailwind utilities and cancel classes such as p-4
+ * and mb-6.)
+ */
+@layer base {
+    *,
+    ::before,
+    ::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Quicksand is what every page has always ended up with, because each old
+       page stylesheet set it on body. */
+    body {
+        font-family: 'Quicksand', sans-serif;
+    }
+
+    a {
+        color: inherit;
+    }
+}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, mapValidationErrors } from './api.js';
-import './css/ForgotPassword.css';
+import * as auth from './authClasses.js';
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -85,30 +85,30 @@ function ForgotPassword() {
     };
 
     return (
-        <div className="forgot-password-page">
-            <div className="forgot-password-panel">
+        <div className={auth.pageBg} style={auth.backgroundStyle}>
+            <div className={auth.panel}>
                 
-                <div className="header-logo">
+                <div className={auth.logoRow}>
                     {/* Placeholder for the TheraPlay logo icon */}
-                    <div className="logo-icon"></div>
-                    <h2>TheraPlay!</h2>
+                    <div></div>
+                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
                 </div>
 
-                <Link to="/login" className="back-link">
+                <Link to="/login" className={auth.backLink}>
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                     Back to login
                 </Link>
 
-                <div className="header-text">
-                    <h1>Forgot your password?</h1>
-                    <p className="subtitle">Enter your email below to recover your password</p>
+                <div className={auth.headerText}>
+                    <h1 className={auth.headerTitle}>Forgot your password?</h1>
+                    <p className={auth.subtitle}>Enter your email below to recover your password</p>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type="email"
                             id="email"
                             placeholder=" "
@@ -117,22 +117,19 @@ function ForgotPassword() {
                             disabled={isSending}
                             required
                         />
-                        <label htmlFor="email">Email</label>
+                        <label className={auth.label} htmlFor="email">Email</label>
                     </div>
 
                     {notice && (
                         <p
                             role={notice.type === 'error' ? 'alert' : 'status'}
-                            style={{
-                                color:
-                                    notice.type === 'success'
-                                        ? '#188038'
-                                        : notice.type === 'warning'
-                                            ? '#b26a00'
-                                            : '#d93025',
-                                margin: '0 0 16px',
-                                fontSize: '14px',
-                            }}
+                            className={
+                                notice.type === 'success'
+                                    ? auth.messageSuccess
+                                    : notice.type === 'warning'
+                                        ? auth.messageWarning
+                                        : auth.messageError
+                            }
                         >
                             {notice.text}
                         </p>
@@ -140,24 +137,24 @@ function ForgotPassword() {
 
                     <button
                         type="submit"
-                        className="submit-button"
+                        className={auth.submitButton}
                         disabled={isSending}
                     >
                         {isSending ? 'Sending...' : 'Submit'}
                     </button>
                 </form>
 
-                <div className="divider">
-                    <span>Or login with</span>
+                <div className={auth.divider}>
+                    <span className={auth.dividerText}>Or login with</span>
                 </div>
 
-                <div className="social-login">
-                    <button type="button" className="social-btn">
+                <div className={auth.socialRow}>
+                    <button type="button" className={auth.socialButton}>
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="#1877F2">
                             <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                         </svg>
                     </button>
-                    <button type="button" className="social-btn">
+                    <button type="button" className={auth.socialButton}>
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="#DB4437">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>

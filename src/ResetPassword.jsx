@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiRequest, mapValidationErrors } from './api.js';
-import './css/ForgotPassword.css';
+import * as auth from './authClasses.js';
 
 // Opened from the link in the password reset email:
 //   /reset-password?token=...&email=...
@@ -99,24 +99,24 @@ function ResetPassword() {
     };
 
     return (
-        <div className="forgot-password-page">
-            <div className="forgot-password-panel">
+        <div className={auth.pageBg} style={auth.backgroundStyle}>
+            <div className={auth.panel}>
 
-                <div className="header-logo">
-                    <div className="logo-icon"></div>
-                    <h2>TheraPlay!</h2>
+                <div className={auth.logoRow}>
+                    <div></div>
+                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
                 </div>
 
-                <Link to="/login" className="back-link">
+                <Link to="/login" className={auth.backLink}>
                     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="15 18 9 12 15 6"></polyline>
                     </svg>
                     Back to login
                 </Link>
 
-                <div className="header-text">
-                    <h1>Choose a new password</h1>
-                    <p className="subtitle">
+                <div className={auth.headerText}>
+                    <h1 className={auth.headerTitle}>Choose a new password</h1>
+                    <p className={auth.subtitle}>
                         {linkIsIncomplete
                             ? 'This reset link is incomplete.'
                             : `Resetting the password for ${email}`}
@@ -127,7 +127,7 @@ function ResetPassword() {
 
                     <p
                         role="alert"
-                        style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                        className={auth.messageError}
                     >
                         Please open the link from your password reset email, or
                         request a new link from your Profile page.
@@ -136,8 +136,8 @@ function ResetPassword() {
                 ) : (
 
                     <form onSubmit={handleSubmit}>
-                        <div className="input-group">
-                            <input
+                        <div className={auth.field}>
+                            <input className={auth.input}
                                 type="password"
                                 id="new-password"
                                 placeholder=" "
@@ -147,11 +147,11 @@ function ResetPassword() {
                                 disabled={isSaving}
                                 required
                             />
-                            <label htmlFor="new-password">New password</label>
+                            <label className={auth.label} htmlFor="new-password">New password</label>
                         </div>
 
-                        <div className="input-group">
-                            <input
+                        <div className={auth.field}>
+                            <input className={auth.input}
                                 type="password"
                                 id="confirm-password"
                                 placeholder=" "
@@ -161,13 +161,13 @@ function ResetPassword() {
                                 disabled={isSaving}
                                 required
                             />
-                            <label htmlFor="confirm-password">Confirm new password</label>
+                            <label className={auth.label} htmlFor="confirm-password">Confirm new password</label>
                         </div>
 
                         {fieldError && (
                             <p
                                 role="alert"
-                                style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                                className={auth.messageError}
                             >
                                 {fieldError}
                             </p>
@@ -176,7 +176,7 @@ function ResetPassword() {
                         {message && (
                             <p
                                 role="alert"
-                                style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                                className={auth.messageError}
                             >
                                 {message}
                             </p>
@@ -184,7 +184,7 @@ function ResetPassword() {
 
                         <button
                             type="submit"
-                            className="submit-button"
+                            className={auth.submitButton}
                             disabled={isSaving}
                         >
                             {isSaving ? 'Saving...' : 'Reset Password'}

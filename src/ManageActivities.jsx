@@ -6,8 +6,8 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
-import { difficultyBadgeClass } from './uiHelpers.js';
-import './css/ManageActivities.css';
+import { difficultyBadgeTw } from './uiHelpers.js';
+import * as ui from './adminClasses.js';
 
 // Uploads: the server checks everything again; these only give quick feedback.
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'txt'];
@@ -542,21 +542,21 @@ function ManageActivities() {
 
 
     return (
-        <div className="manage-activities-page">
+        <div className={ui.page}>
 
             {/* Main Content */}
 
-            <main className="manage-activities-content">
+            <main className={ui.content}>
 
-                <div className="page-header">
+                <div className={ui.header}>
 
                     <div>
 
-                        <h1>
+                        <h1 className={ui.title}>
                             Manage Activities
                         </h1>
 
-                        <p>
+                        <p className={ui.subtitle}>
                             Create and manage activities available
                             on TheraPlay.
                         </p>
@@ -564,11 +564,11 @@ function ManageActivities() {
                     </div>
 
 
-                    <div className="header-actions">
+                    <div className={ui.headerActions}>
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                             disabled={isLoading}
                         >
@@ -577,7 +577,7 @@ function ManageActivities() {
 
                         <button
                             type="button"
-                            className="add-activity-button"
+                            className={ui.addButton}
                             onClick={handleToggleForm}
                         >
                             + Add Activity
@@ -590,7 +590,7 @@ function ManageActivities() {
 
                 {notice && (
                     <p
-                        className={`page-message ${notice.type}`}
+                        className={notice.type === 'error' ? ui.messageError : ui.messageSuccess}
                         role={notice.type === 'error' ? 'alert' : 'status'}
                     >
                         {notice.text}
@@ -602,9 +602,9 @@ function ManageActivities() {
 
                 {showForm && (
 
-                    <section className="activity-form">
+                    <section className={ui.formCard}>
 
-                        <h2>
+                        <h2 className={ui.formTitle}>
                             {editingId === null
                                 ? 'Add New Activity'
                                 : 'Edit Activity'}
@@ -614,18 +614,18 @@ function ManageActivities() {
                         <form onSubmit={handleSubmit}>
 
                             {formError && (
-                                <p className="page-message error" role="alert">
+                                <p className={ui.messageError} role="alert">
                                     {formError}
                                 </p>
                             )}
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-title">
+                                <label className={ui.label} htmlFor="activity-title">
                                     Activity Name
                                 </label>
 
-                                <input
+                                <input className={ui.input}
                                     id="activity-title"
                                     type="text"
                                     placeholder="Enter activity name"
@@ -638,7 +638,7 @@ function ManageActivities() {
                                 />
 
                                 {fieldErrors.title && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.title}
                                     </p>
                                 )}
@@ -646,13 +646,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-category">
+                                <label className={ui.label} htmlFor="activity-category">
                                     Category
                                 </label>
 
-                                <select
+                                <select className={ui.input}
                                     id="activity-category"
                                     value={form.categoryId}
                                     onChange={(event) =>
@@ -679,7 +679,7 @@ function ManageActivities() {
                                 </select>
 
                                 {fieldErrors.category_id && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.category_id}
                                     </p>
                                 )}
@@ -687,13 +687,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-difficulty">
+                                <label className={ui.label} htmlFor="activity-difficulty">
                                     Difficulty
                                 </label>
 
-                                <select
+                                <select className={ui.input}
                                     id="activity-difficulty"
                                     value={form.difficulty}
                                     onChange={(event) =>
@@ -719,7 +719,7 @@ function ManageActivities() {
                                 </select>
 
                                 {fieldErrors.difficulty && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.difficulty}
                                     </p>
                                 )}
@@ -727,13 +727,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-description">
+                                <label className={ui.label} htmlFor="activity-description">
                                     Description (optional)
                                 </label>
 
-                                <textarea
+                                <textarea className={ui.textarea}
                                     id="activity-description"
                                     rows={3}
                                     placeholder="Short summary shown on the activity card"
@@ -748,7 +748,7 @@ function ManageActivities() {
                                 />
 
                                 {fieldErrors.description && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.description}
                                     </p>
                                 )}
@@ -756,13 +756,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-objective">
+                                <label className={ui.label} htmlFor="activity-objective">
                                     Objective (optional)
                                 </label>
 
-                                <textarea
+                                <textarea className={ui.textarea}
                                     id="activity-objective"
                                     rows={2}
                                     placeholder="What this activity helps to improve"
@@ -777,7 +777,7 @@ function ManageActivities() {
                                 />
 
                                 {fieldErrors.objective && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.objective}
                                     </p>
                                 )}
@@ -785,13 +785,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-instructions">
+                                <label className={ui.label} htmlFor="activity-instructions">
                                     Instructions (one step per line)
                                 </label>
 
-                                <textarea
+                                <textarea className={ui.textarea}
                                     id="activity-instructions"
                                     rows={5}
                                     placeholder={'Look at the cards carefully.\nMatch the cards with the same image.'}
@@ -806,7 +806,7 @@ function ManageActivities() {
                                 />
 
                                 {fieldErrors.instructions && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.instructions}
                                     </p>
                                 )}
@@ -814,13 +814,13 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-materials">
+                                <label className={ui.label} htmlFor="activity-materials">
                                     Materials (one per line, optional)
                                 </label>
 
-                                <textarea
+                                <textarea className={ui.textarea}
                                     id="activity-materials"
                                     rows={3}
                                     placeholder={'Activity cards\nMatching board'}
@@ -834,7 +834,7 @@ function ManageActivities() {
                                 />
 
                                 {fieldErrors.materials && (
-                                    <p className="field-error">
+                                    <p className={ui.fieldError}>
                                         {fieldErrors.materials}
                                     </p>
                                 )}
@@ -842,39 +842,39 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-group">
+                            <div className={ui.formGroup}>
 
-                                <label htmlFor="activity-files">
+                                <label className={ui.label} htmlFor="activity-files">
                                     Attached files (optional)
                                 </label>
 
-                                <p className="cell-sub file-hint">
+                                <p className={ui.fileHint}>
                                     PDF, DOCX, PPTX, PNG, JPG or TXT, up to
                                     10 MB each.
                                 </p>
 
                                 {existingResources.length > 0 && (
-                                    <ul className="file-list">
+                                    <ul className={ui.fileList}>
 
                                         {existingResources.map((resource) => (
 
-                                            <li className="file-item" key={resource.id}>
+                                            <li className={ui.fileItem} key={resource.id}>
 
-                                                <span className="file-name">
+                                                <span className={ui.fileName}>
                                                     {resource.file_name}
                                                 </span>
 
                                                 {confirmingResourceId === resource.id ? (
 
-                                                    <span className="file-actions">
+                                                    <span className={ui.fileActions}>
 
-                                                        <span className="confirm-text">
+                                                        <span className={ui.confirmText}>
                                                             Remove this file?
                                                         </span>
 
                                                         <button
                                                             type="button"
-                                                            className="file-remove"
+                                                            className={ui.fileRemove}
                                                             onClick={() =>
                                                                 handleRemoveResource(resource)
                                                             }
@@ -887,7 +887,7 @@ function ManageActivities() {
 
                                                         <button
                                                             type="button"
-                                                            className="file-remove"
+                                                            className={ui.fileRemove}
                                                             onClick={() =>
                                                                 setConfirmingResourceId(null)
                                                             }
@@ -902,7 +902,7 @@ function ManageActivities() {
 
                                                     <button
                                                         type="button"
-                                                        className="file-remove"
+                                                        className={ui.fileRemove}
                                                         onClick={() =>
                                                             setConfirmingResourceId(resource.id)
                                                         }
@@ -920,7 +920,7 @@ function ManageActivities() {
                                     </ul>
                                 )}
 
-                                <input
+                                <input className={ui.input}
                                     id="activity-files"
                                     key={fileInputKey}
                                     type="file"
@@ -931,25 +931,25 @@ function ManageActivities() {
                                 />
 
                                 {pendingFiles.length > 0 && (
-                                    <ul className="file-list">
+                                    <ul className={ui.fileList}>
 
                                         {pendingFiles.map((file, index) => (
 
                                             <li
-                                                className="file-item"
+                                                className={ui.fileItem}
                                                 key={`${file.name}-${file.size}`}
                                             >
 
-                                                <span className="file-name">
+                                                <span className={ui.fileName}>
                                                     {file.name}
-                                                    <span className="file-size">
+                                                    <span className={ui.fileSize}>
                                                         {' '}({formatSize(file.size)})
                                                     </span>
                                                 </span>
 
                                                 <button
                                                     type="button"
-                                                    className="file-remove"
+                                                    className={ui.fileRemove}
                                                     onClick={() =>
                                                         handleRemovePendingFile(index)
                                                     }
@@ -966,7 +966,7 @@ function ManageActivities() {
                                 )}
 
                                 {fileErrors.map((message) => (
-                                    <p className="field-error" key={message}>
+                                    <p className={ui.fieldError} key={message}>
                                         {message}
                                     </p>
                                 ))}
@@ -974,11 +974,11 @@ function ManageActivities() {
                             </div>
 
 
-                            <div className="form-actions">
+                            <div className={ui.formActions}>
 
                                 <button
                                     type="submit"
-                                    className="save-button"
+                                    className={ui.saveButton}
                                     disabled={isSaving}
                                 >
                                     {isUploading
@@ -992,7 +992,7 @@ function ManageActivities() {
 
                                 <button
                                     type="button"
-                                    className="cancel-button"
+                                    className={ui.cancelButton}
                                     onClick={closeForm}
                                     disabled={isSaving}
                                 >
@@ -1019,7 +1019,7 @@ function ManageActivities() {
 
                 ) : loadError ? (
 
-                    <div className="list-state list-error" role="alert">
+                    <div className={ui.listError} role="alert">
 
                         <p>
                             {loadError}
@@ -1027,7 +1027,7 @@ function ManageActivities() {
 
                         <button
                             type="button"
-                            className="cancel-button"
+                            className={ui.cancelButton}
                             onClick={() => reload(true)}
                         >
                             Try again
@@ -1037,31 +1037,31 @@ function ManageActivities() {
 
                 ) : (
 
-                    <section className="activities-table-container">
+                    <section className={ui.tableContainer}>
 
-                        <table className="activities-table">
+                        <table className={ui.table}>
 
-                            <thead>
+                            <thead className={ui.thead}>
 
                                 <tr>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Activity
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Category
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Difficulty
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Status
                                     </th>
 
-                                    <th>
+                                    <th className={ui.th}>
                                         Actions
                                     </th>
 
@@ -1070,13 +1070,13 @@ function ManageActivities() {
                             </thead>
 
 
-                            <tbody>
+                            <tbody className={ui.tbody}>
 
                                 {activities.length === 0 && (
 
-                                    <tr>
+                                    <tr className={ui.row}>
 
-                                        <td colSpan={5}>
+                                        <td className={ui.tdEmpty} colSpan={5}>
                                             No activities yet. Use
                                             &ldquo;+ Add Activity&rdquo; to
                                             create the first one.
@@ -1088,36 +1088,30 @@ function ManageActivities() {
 
                                 {activities.map((activity) => (
 
-                                    <tr key={activity.id}>
+                                    <tr className={ui.row} key={activity.id}>
 
-                                        <td data-label="Activity">
+                                        <td className={ui.td} data-label="Activity">
                                             {activity.title}
                                         </td>
 
-                                        <td data-label="Category">
+                                        <td className={ui.td} data-label="Category">
                                             {activity.category || '—'}
                                         </td>
 
-                                        <td data-label="Difficulty">
+                                        <td className={ui.td} data-label="Difficulty">
 
                                             <span
-                                                className={`difficulty-badge ${difficultyBadgeClass(
-                                                    activity.difficulty
-                                                )}`}
+                                                className={difficultyBadgeTw(activity.difficulty)}
                                             >
                                                 {activity.difficulty}
                                             </span>
 
                                         </td>
 
-                                        <td data-label="Status">
+                                        <td className={ui.td} data-label="Status">
 
                                             <span
-                                                className={`difficulty-badge status-badge ${
-                                                    activity.is_published
-                                                        ? 'published'
-                                                        : 'draft'
-                                                }`}
+                                                className={activity.is_published ? ui.badgePublished : ui.badgeDraft}
                                             >
                                                 {activity.is_published
                                                     ? 'Published'
@@ -1126,13 +1120,13 @@ function ManageActivities() {
 
                                         </td>
 
-                                        <td data-label="Actions">
+                                        <td className={ui.td} data-label="Actions">
 
-                                            <div className="table-actions">
+                                            <div className={ui.actions}>
 
                                                 <button
                                                     type="button"
-                                                    className="edit-button"
+                                                    className={ui.editButton}
                                                     aria-label={`Edit ${activity.title}`}
                                                     onClick={() =>
                                                         handleEdit(activity.id)
@@ -1148,11 +1142,7 @@ function ManageActivities() {
 
                                                 <button
                                                     type="button"
-                                                    className={`publish-button ${
-                                                        activity.is_published
-                                                            ? 'is-unpublish'
-                                                            : 'is-publish'
-                                                    }`}
+                                                    className={activity.is_published ? ui.unpublishButton : ui.publishButton}
                                                     aria-label={`${
                                                         activity.is_published
                                                             ? 'Unpublish'

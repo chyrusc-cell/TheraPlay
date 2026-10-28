@@ -2,11 +2,16 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
-import './css/ProfessionalDashboard.css';
 
 // The API returns every feedback entry (there is no pagination yet), so the
 // dashboard only shows the newest few. Nothing is hidden on the server.
 const FEEDBACK_LIMIT = 5;
+
+// Class strings used more than once on this page. Colors and breakpoints come
+// from css/tailwind.css; the focus ring is the global one in css/ui.css.
+const cardClass = 'rounded-[10px] border border-[#e1e5ea] bg-white p-[25px]';
+const noteClass = 'text-[13px] text-[#888]';
+const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -165,19 +170,19 @@ function ProfessionalDashboard() {
 
 
     return (
-        <div className="professional-dashboard-page">
+        <div className="min-h-page bg-[#f5f7fa]">
 
             {/* Main Content */}
 
-            <main className="professional-dashboard-content">
+            <main className="mx-auto max-w-[1100px] px-[30px] py-[50px]">
 
-                <div className="dashboard-header">
+                <div className="mb-[30px]">
 
-                    <h1>
+                    <h1 className="mb-2 text-[32px] font-bold">
                         Dashboard
                     </h1>
 
-                    <p>
+                    <p className="text-[#666]">
                         Overview of your TheraPlay activities and users.
                     </p>
 
@@ -185,7 +190,7 @@ function ProfessionalDashboard() {
 
 
                 {error && (
-                    <p className="panel-note error" role="alert">
+                    <p className={noteErrorClass} role="alert">
                         {error}
                     </p>
                 )}
@@ -193,11 +198,11 @@ function ProfessionalDashboard() {
 
                 {/* Statistics */}
 
-                <section className="statistics-grid">
+                <section className="mb-[30px] grid grid-cols-3 gap-5 phone-lg:grid-cols-1">
 
-                    <div className="stat-card">
+                    <div className={cardClass}>
 
-                        <div className="stat-number">
+                        <div className="mb-[5px] text-[30px] font-bold">
                             {isLoading ? (
                                 <>
                                     <SkeletonBlock
@@ -210,41 +215,41 @@ function ProfessionalDashboard() {
                             ) : error ? '—' : activities.length}
                         </div>
 
-                        <div className="stat-label">
+                        <div className="text-[14px] text-[#666]">
                             Total Activities
                         </div>
 
                     </div>
 
 
-                    <div className="stat-card">
+                    <div className={cardClass}>
 
-                        <div className="stat-number">
+                        <div className="mb-[5px] text-[30px] font-bold">
                             —
                         </div>
 
-                        <div className="stat-label">
+                        <div className="text-[14px] text-[#666]">
                             Total Users
                         </div>
 
-                        <div className="stat-note">
+                        <div className="mt-1 text-[13px] text-[#888]">
                             Not available yet
                         </div>
 
                     </div>
 
 
-                    <div className="stat-card">
+                    <div className={cardClass}>
 
-                        <div className="stat-number">
+                        <div className="mb-[5px] text-[30px] font-bold">
                             —
                         </div>
 
-                        <div className="stat-label">
+                        <div className="text-[14px] text-[#666]">
                             Completed Activities
                         </div>
 
-                        <div className="stat-note">
+                        <div className="mt-1 text-[13px] text-[#888]">
                             Not available yet
                         </div>
 
@@ -255,17 +260,17 @@ function ProfessionalDashboard() {
 
                 {/* Dashboard Sections */}
 
-                <section className="dashboard-sections">
+                <section className="grid grid-cols-2 gap-5 tablet:grid-cols-1">
 
                     {/* Activity Progress */}
 
-                    <div className="dashboard-panel">
+                    <div className={cardClass}>
 
-                        <h2>
+                        <h2 className="mb-[25px] text-[18px] font-bold">
                             Activity Progress Overview
                         </h2>
 
-                        <p className="panel-note">
+                        <p className={noteClass}>
                             Progress statistics are not available yet.
                         </p>
 
@@ -274,22 +279,25 @@ function ProfessionalDashboard() {
 
                     {/* Recent Uploads */}
 
-                    <div className="dashboard-panel">
+                    <div className={cardClass}>
 
-                        <div className="panel-header">
+                        <div className="mb-5 flex items-center justify-between">
 
-                            <h2>
+                            <h2 className="text-[18px] font-bold">
                                 Recent Activity Uploads
                             </h2>
 
-                            <Link to="/manage-activities">
+                            <Link
+                                to="/manage-activities"
+                                className="text-[13px] font-bold text-[#333] no-underline"
+                            >
                                 View All
                             </Link>
 
                         </div>
 
 
-                        <div className="recent-uploads">
+                        <div className="flex flex-col">
 
                             {isLoading && (
                                 <LinesSkeleton
@@ -299,7 +307,7 @@ function ProfessionalDashboard() {
                             )}
 
                             {!isLoading && !error && recentUploads.length === 0 && (
-                                <p className="panel-note">
+                                <p className={noteClass}>
                                     No activities yet.
                                 </p>
                             )}
@@ -307,21 +315,21 @@ function ProfessionalDashboard() {
                             {recentUploads.map((item) => (
 
                                 <div
-                                    className="upload-item"
+                                    className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-[#e5e5e5] py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
                                     key={item.id}
                                 >
 
-                                    <div className="upload-image">
+                                    <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-[#e9eef3] text-[10px] text-[#8a96a3]">
                                         Image
                                     </div>
 
-                                    <div className="upload-info">
+                                    <div>
 
-                                        <h3>
+                                        <h3 className="mb-1 text-[14px] font-bold">
                                             {item.title}
                                         </h3>
 
-                                        <p>
+                                        <p className="text-[12px] text-[#777]">
                                             {item.category || 'No category'}
                                             {' • '}
                                             {item.is_published
@@ -331,7 +339,7 @@ function ProfessionalDashboard() {
 
                                     </div>
 
-                                    <div className="upload-date">
+                                    <div className="text-[11px] text-[#888] phone:col-start-2">
                                         {formatDate(item.created_at)}
                                     </div>
 
@@ -348,11 +356,11 @@ function ProfessionalDashboard() {
 
                 {/* Feedback from parents */}
 
-                <section className="feedback-section">
+                <section className="mt-5">
 
-                    <div className="dashboard-panel">
+                    <div className={cardClass}>
 
-                        <h2>
+                        <h2 className="mb-[25px] text-[18px] font-bold">
                             Parent Feedback
                         </h2>
 
@@ -364,13 +372,13 @@ function ProfessionalDashboard() {
 
                             <div role="alert">
 
-                                <p className="panel-note error">
+                                <p className={noteErrorClass}>
                                     {feedbackError}
                                 </p>
 
                                 <button
                                     type="button"
-                                    className="feedback-retry"
+                                    className="cursor-pointer rounded-md border border-[#ccc] bg-white px-4 py-2 text-[13px] text-[#333] enabled:hover:bg-hover"
                                     onClick={retryFeedback}
                                 >
                                     Try again
@@ -380,7 +388,7 @@ function ProfessionalDashboard() {
 
                         ) : feedback.length === 0 ? (
 
-                            <p className="panel-note">
+                            <p className={noteClass}>
                                 No feedback has been submitted yet.
                             </p>
 
@@ -388,36 +396,36 @@ function ProfessionalDashboard() {
 
                             <>
 
-                                <div className="feedback-list">
+                                <div className="flex flex-col">
 
                                     {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
 
                                         <div
-                                            className="feedback-item"
+                                            className="border-b border-[#e5e5e5] py-3.5 first:pt-0 last:border-b-0"
                                             key={item.id}
                                         >
 
-                                            <div className="feedback-meta">
+                                            <div className="mb-1.5 flex justify-between gap-3 phone:flex-col phone:gap-0.5">
 
-                                                <span className="feedback-author">
+                                                <span className="text-[13px] font-bold [word-break:break-word]">
                                                     {item.user
                                                         ? `${item.user.name} (${item.user.email})`
                                                         : 'Former user'}
                                                 </span>
 
-                                                <span className="feedback-date">
+                                                <span className="shrink-0 text-[12px] text-[#888]">
                                                     {formatDate(item.created_at)}
                                                 </span>
 
                                             </div>
 
                                             {item.rating && (
-                                                <div className="feedback-rating">
+                                                <div className="mb-1.5 text-[12px] text-[#666]">
                                                     Rating: {item.rating} / 5
                                                 </div>
                                             )}
 
-                                            <p className="feedback-message">
+                                            <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-[#444] [word-break:break-word]">
                                                 {item.message}
                                             </p>
 
@@ -428,7 +436,7 @@ function ProfessionalDashboard() {
                                 </div>
 
                                 {feedback.length > FEEDBACK_LIMIT && (
-                                    <p className="panel-note">
+                                    <p className={noteClass}>
                                         Showing the latest {FEEDBACK_LIMIT} of{' '}
                                         {feedback.length} feedback entries.
                                     </p>
