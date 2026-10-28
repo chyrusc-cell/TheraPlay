@@ -34,7 +34,7 @@ const pillScrolled =
     'bg-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md';
 
 const dropdownClass =
-    'absolute top-full right-0 left-0 z-50 mt-2 max-h-[340px] overflow-y-auto rounded-xl border border-[#eaeaea] bg-white p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.12)]';
+    'absolute top-full right-0 left-0 z-50 mt-2 max-h-[340px] animate-[ui-pop-in_0.18s_ease-out] overflow-y-auto rounded-xl border border-[#eaeaea] bg-white p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.12)]';
 
 const optionBase =
     'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-[14px] text-ink';

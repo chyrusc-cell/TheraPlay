@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -126,6 +127,8 @@ function Dashboard() {
 
         const controller = new AbortController();
 
+        const startedAt = performance.now();
+
         const authHeaders = {
             Accept: 'application/json',
             Authorization: `Bearer ${token}`,
@@ -190,6 +193,8 @@ function Dashboard() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }

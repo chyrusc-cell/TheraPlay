@@ -1,11 +1,14 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
+    API_URL,
     apiRequest,
     clearSession,
+    getToken,
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import * as ui from './adminClasses.js';
 
@@ -39,6 +42,10 @@ const emptyForm = {
     materials: '',
 };
 
+// Picture rules (the server checks again, from the file's real content).
+const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PICTURE_MAX_BYTES = 5 * 1024 * 1024;
+
 function ManageActivities() {
 
     const navigate = useNavigate();
@@ -67,6 +74,18 @@ function ManageActivities() {
     const [fileErrors, setFileErrors] = useState([]);
     const [fileInputKey, setFileInputKey] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Activity picture: the saved one (shown through a temporary blob URL,
+    // because the admin picture route needs the login token), a newly chosen
+    // file waiting for Save, and a flag to remove the saved one.
+    const pictureInputRef = useRef(null);
+    const pictureRequestRef = useRef(0);
+    const [hasSavedPicture, setHasSavedPicture] = useState(false);
+    const [savedPictureSrc, setSavedPictureSrc] = useState(null);
+    const [pictureFile, setPictureFile] = useState(null);
+    const [picturePreview, setPicturePreview] = useState(null);
+    const [removePicture, setRemovePicture] = useState(false);
+    const [pictureError, setPictureError] = useState('');
     const [confirmingResourceId, setConfirmingResourceId] = useState(null);
     const [removingResourceId, setRemovingResourceId] = useState(null);
 
@@ -85,6 +104,7 @@ function ManageActivities() {
     // Fetch the list whenever reloadKey changes.
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadActivities = async () => {
             try {
@@ -121,6 +141,8 @@ function ManageActivities() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -163,6 +185,97 @@ function ManageActivities() {
         setForm((current) => ({ ...current, [name]: value }));
     };
 
+    // Free temporary picture URLs when they are replaced or the form closes.
+    useEffect(() => {
+        if (!picturePreview) {
+            return undefined;
+        }
+
+        return () => URL.revokeObjectURL(picturePreview);
+    }, [picturePreview]);
+
+    useEffect(() => {
+        if (!savedPictureSrc) {
+            return undefined;
+        }
+
+        return () => URL.revokeObjectURL(savedPictureSrc);
+    }, [savedPictureSrc]);
+
+    const resetPicture = () => {
+        // Ignore a saved-picture download that is still running.
+        pictureRequestRef.current += 1;
+        setHasSavedPicture(false);
+        setSavedPictureSrc(null);
+        setPictureFile(null);
+        setPicturePreview(null);
+        setRemovePicture(false);
+        setPictureError('');
+    };
+
+    // Shows the activity's saved picture (the picture of a draft is only
+    // available to the admin, with the token).
+    const loadSavedPicture = async (activityId) => {
+        const requestId = pictureRequestRef.current;
+        const token = getToken();
+
+        if (!token) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_URL}/admin/activities/${activityId}/image`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob = await response.blob();
+
+            if (requestId === pictureRequestRef.current) {
+                setSavedPictureSrc(URL.createObjectURL(blob));
+            }
+        } catch {
+            // The prompt stays; the picture can still be replaced or removed.
+        }
+    };
+
+    const handlePictureSelected = (event) => {
+        const file = event.target.files?.[0];
+
+        // Let the same file be chosen again later.
+        event.target.value = '';
+
+        if (!file) {
+            return;
+        }
+
+        if (!PICTURE_TYPES.includes(file.type)) {
+            setPictureError('Choose a JPG, PNG or WebP image.');
+            return;
+        }
+
+        if (file.size > PICTURE_MAX_BYTES) {
+            setPictureError('The picture must be 5 MB or smaller.');
+            return;
+        }
+
+        setPictureError('');
+        setPictureFile(file);
+        setPicturePreview(URL.createObjectURL(file));
+        setRemovePicture(false);
+    };
+
+    const handleRemovePicture = () => {
+        setPictureFile(null);
+        setPicturePreview(null);
+        setPictureError('');
+        setRemovePicture(hasSavedPicture);
+    };
+
     const resetFiles = () => {
         setPendingFiles([]);
         setExistingResources([]);
@@ -172,6 +285,7 @@ function ManageActivities() {
     };
 
     const closeForm = () => {
+        resetPicture();
         setShowForm(false);
         setEditingId(null);
         setForm(emptyForm);
@@ -181,6 +295,7 @@ function ManageActivities() {
     };
 
     const openCreateForm = () => {
+        resetPicture();
         setNotice(null);
         setEditingId(null);
         setForm(emptyForm);
@@ -361,6 +476,12 @@ function ManageActivities() {
             setFieldErrors({});
             setFormError('');
             resetFiles();
+            resetPicture();
+
+            if (activity.image_url) {
+                setHasSavedPicture(true);
+                loadSavedPicture(activity.id);
+            }
             setExistingResources(
                 Array.isArray(activity.resources) ? activity.resources : []
             );
@@ -443,6 +564,51 @@ function ManageActivities() {
             // The activity itself is saved. Files, if any, are uploaded next.
             const savedId = isEditing ? editingId : result.data.data.id;
             const fileCount = pendingFiles.length;
+
+            // The picture is sent first (a file, so its own multipart
+            // request). If it fails the files are not sent yet either, and
+            // everything can be retried from the saved activity.
+            if (pictureFile || (removePicture && isEditing)) {
+                const pictureResult = pictureFile
+                    ? await apiRequest(
+                          `/admin/activities/${savedId}/image`,
+                          {
+                              method: 'POST',
+                              body: (() => {
+                                  const data = new FormData();
+
+                                  data.append('image', pictureFile);
+
+                                  return data;
+                              })(),
+                          }
+                      )
+                    : await apiRequest(
+                          `/admin/activities/${savedId}/image`,
+                          { method: 'DELETE' }
+                      );
+
+                if (pictureResult.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (!pictureResult.ok) {
+                    setEditingId(savedId);
+                    setPictureError(
+                        pictureResult.data.errors?.image?.[0] ||
+                        (pictureResult.status === 413
+                            ? 'The picture is larger than the server allows.'
+                            : pictureResult.data.message ||
+                              'The picture could not be saved. Please try again.')
+                    );
+                    setFormError(
+                        'The activity was saved, but the picture was not updated.'
+                    );
+                    reload(false);
+                    return;
+                }
+            }
 
             if (fileCount > 0) {
                 setIsUploading(true);
@@ -619,362 +785,465 @@ function ManageActivities() {
                                 </p>
                             )}
 
-                            <div className={ui.formGroup}>
+                            <div className={ui.activityFormGrid}>
 
-                                <label className={ui.label} htmlFor="activity-title">
-                                    Activity Name
-                                </label>
+                                {/* Left column */}
 
-                                <input className={ui.input}
-                                    id="activity-title"
-                                    type="text"
-                                    placeholder="Enter activity name"
-                                    value={form.title}
-                                    maxLength={255}
-                                    onChange={(event) =>
-                                        updateField('title', event.target.value)
-                                    }
-                                    required
-                                />
+                                <div>
 
-                                {fieldErrors.title && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.title}
-                                    </p>
-                                )}
+                                <div className={ui.formGroup}>
 
-                            </div>
+                                    <label className={ui.label} htmlFor="activity-title">
+                                        Activity Name
+                                    </label>
+
+                                    <input className={ui.input}
+                                        id="activity-title"
+                                        type="text"
+                                        placeholder="Enter activity name"
+                                        value={form.title}
+                                        maxLength={255}
+                                        onChange={(event) =>
+                                            updateField('title', event.target.value)
+                                        }
+                                        required
+                                    />
+
+                                    {fieldErrors.title && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.title}
+                                        </p>
+                                    )}
+
+                                </div>
 
 
-                            <div className={ui.formGroup}>
+                                <div className={ui.formGroup}>
 
-                                <label className={ui.label} htmlFor="activity-category">
-                                    Category
-                                </label>
+                                    <label className={ui.label} htmlFor="activity-description">
+                                        Description (optional)
+                                    </label>
 
-                                <select className={ui.input}
-                                    id="activity-category"
-                                    value={form.categoryId}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'categoryId',
-                                            event.target.value
-                                        )
-                                    }
-                                >
+                                    <textarea className={`${ui.activityTextarea} h-20`}
+                                        id="activity-description"
+                                        placeholder="Short summary shown on the activity card"
+                                        value={form.description}
+                                        maxLength={5000}
+                                        onChange={(event) =>
+                                            updateField(
+                                                'description',
+                                                event.target.value
+                                            )
+                                        }
+                                    />
 
-                                    <option value="">
-                                        No category
-                                    </option>
+                                    {fieldErrors.description && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.description}
+                                        </p>
+                                    )}
 
-                                    {categories.map((category) => (
-                                        <option
-                                            key={category.id}
-                                            value={category.id}
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="activity-objective">
+                                        Objective (optional)
+                                    </label>
+
+                                    <textarea className={`${ui.activityTextarea} h-16`}
+                                        id="activity-objective"
+                                        placeholder="What this activity helps to improve"
+                                        value={form.objective}
+                                        maxLength={2000}
+                                        onChange={(event) =>
+                                            updateField(
+                                                'objective',
+                                                event.target.value
+                                            )
+                                        }
+                                    />
+
+                                    {fieldErrors.objective && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.objective}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="activity-instructions">
+                                        Instructions (one step per line)
+                                    </label>
+
+                                    <textarea className={`${ui.activityTextarea} h-32`}
+                                        id="activity-instructions"
+                                        placeholder={'Look at the cards carefully.\nMatch the cards with the same image.'}
+                                        value={form.instructions}
+                                        onChange={(event) =>
+                                            updateField(
+                                                'instructions',
+                                                event.target.value
+                                            )
+                                        }
+                                        required
+                                    />
+
+                                    {fieldErrors.instructions && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.instructions}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="activity-materials">
+                                        Materials (one per line, optional)
+                                    </label>
+
+                                    <textarea className={`${ui.activityTextarea} h-20`}
+                                        id="activity-materials"
+                                        placeholder={'Activity cards\nMatching board'}
+                                        value={form.materials}
+                                        onChange={(event) =>
+                                            updateField(
+                                                'materials',
+                                                event.target.value
+                                            )
+                                        }
+                                    />
+
+                                    {fieldErrors.materials && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.materials}
+                                        </p>
+                                    )}
+
+                                </div>
+
+                                </div>
+
+
+                                {/* Right column */}
+
+                                <div>
+
+                                    <div className={ui.formGroup}>
+
+                                        <span className={ui.label} id="activity-picture-label">
+                                            Activity Picture
+                                        </span>
+
+                                        <button
+                                            type="button"
+                                            className={ui.activityPictureButton}
+                                            onClick={() => pictureInputRef.current?.click()}
+                                            disabled={isSaving}
+                                            aria-labelledby="activity-picture-label"
                                         >
-                                            {category.name}
-                                        </option>
-                                    ))}
-
-                                </select>
-
-                                {fieldErrors.category_id && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.category_id}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-difficulty">
-                                    Difficulty
-                                </label>
-
-                                <select className={ui.input}
-                                    id="activity-difficulty"
-                                    value={form.difficulty}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'difficulty',
-                                            event.target.value
-                                        )
-                                    }
-                                >
-
-                                    <option value="Easy">
-                                        Easy
-                                    </option>
-
-                                    <option value="Medium">
-                                        Medium
-                                    </option>
-
-                                    <option value="Hard">
-                                        Hard
-                                    </option>
-
-                                </select>
-
-                                {fieldErrors.difficulty && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.difficulty}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-description">
-                                    Description (optional)
-                                </label>
-
-                                <textarea className={ui.textarea}
-                                    id="activity-description"
-                                    rows={3}
-                                    placeholder="Short summary shown on the activity card"
-                                    value={form.description}
-                                    maxLength={5000}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'description',
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                {fieldErrors.description && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.description}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-objective">
-                                    Objective (optional)
-                                </label>
-
-                                <textarea className={ui.textarea}
-                                    id="activity-objective"
-                                    rows={2}
-                                    placeholder="What this activity helps to improve"
-                                    value={form.objective}
-                                    maxLength={2000}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'objective',
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                {fieldErrors.objective && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.objective}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-instructions">
-                                    Instructions (one step per line)
-                                </label>
-
-                                <textarea className={ui.textarea}
-                                    id="activity-instructions"
-                                    rows={5}
-                                    placeholder={'Look at the cards carefully.\nMatch the cards with the same image.'}
-                                    value={form.instructions}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'instructions',
-                                            event.target.value
-                                        )
-                                    }
-                                    required
-                                />
-
-                                {fieldErrors.instructions && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.instructions}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-materials">
-                                    Materials (one per line, optional)
-                                </label>
-
-                                <textarea className={ui.textarea}
-                                    id="activity-materials"
-                                    rows={3}
-                                    placeholder={'Activity cards\nMatching board'}
-                                    value={form.materials}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'materials',
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                {fieldErrors.materials && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.materials}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="activity-files">
-                                    Attached files (optional)
-                                </label>
-
-                                <p className={ui.fileHint}>
-                                    PDF, DOCX, PPTX, PNG, JPG or TXT, up to
-                                    10 MB each.
-                                </p>
-
-                                {existingResources.length > 0 && (
-                                    <ul className={ui.fileList}>
-
-                                        {existingResources.map((resource) => (
-
-                                            <li className={ui.fileItem} key={resource.id}>
-
-                                                <span className={ui.fileName}>
-                                                    {resource.file_name}
+                                            {picturePreview || (!removePicture && savedPictureSrc) ? (
+                                                <img
+                                                    src={picturePreview || (!removePicture && savedPictureSrc)}
+                                                    alt=""
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="px-4">
+                                                    {hasSavedPicture && !removePicture
+                                                        ? 'Current picture (preview loading or unavailable)'
+                                                        : 'Choose a picture'}
                                                 </span>
+                                            )}
+                                        </button>
 
-                                                {confirmingResourceId === resource.id ? (
+                                        <input
+                                            ref={pictureInputRef}
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            className="sr-only"
+                                            tabIndex={-1}
+                                            aria-hidden="true"
+                                            onChange={handlePictureSelected}
+                                            disabled={isSaving}
+                                        />
 
-                                                    <span className={ui.fileActions}>
+                                        <div className="mt-2 flex flex-wrap gap-2">
 
-                                                        <span className={ui.confirmText}>
-                                                            Remove this file?
-                                                        </span>
+                                            <button
+                                                type="button"
+                                                className={ui.fileRemove}
+                                                onClick={() => pictureInputRef.current?.click()}
+                                                disabled={isSaving}
+                                            >
+                                                {picturePreview || (hasSavedPicture && !removePicture)
+                                                    ? 'Replace picture'
+                                                    : 'Choose picture'}
+                                            </button>
 
-                                                        <button
-                                                            type="button"
-                                                            className={ui.fileRemove}
-                                                            onClick={() =>
-                                                                handleRemoveResource(resource)
-                                                            }
-                                                            disabled={removingResourceId !== null}
-                                                        >
-                                                            {removingResourceId === resource.id
-                                                                ? 'Removing...'
-                                                                : 'Yes, remove'}
-                                                        </button>
+                                            {(pictureFile || (hasSavedPicture && !removePicture)) && (
+                                                <button
+                                                    type="button"
+                                                    className={ui.fileRemove}
+                                                    onClick={handleRemovePicture}
+                                                    disabled={isSaving}
+                                                >
+                                                    Remove picture
+                                                </button>
+                                            )}
 
-                                                        <button
-                                                            type="button"
-                                                            className={ui.fileRemove}
-                                                            onClick={() =>
-                                                                setConfirmingResourceId(null)
-                                                            }
-                                                            disabled={removingResourceId !== null}
-                                                        >
-                                                            Cancel
-                                                        </button>
+                                        </div>
 
+                                        <p className={ui.fileHint}>
+                                            JPG, PNG or WebP, up to 5 MB.
+                                        </p>
+
+                                        {pictureError && (
+                                            <p className={ui.fieldError} role="alert">
+                                                {pictureError}
+                                            </p>
+                                        )}
+
+                                    </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="activity-files">
+                                        Attached files (optional)
+                                    </label>
+
+                                    <p className={ui.fileHint}>
+                                        PDF, DOCX, PPTX, PNG, JPG or TXT, up to
+                                        10 MB each.
+                                    </p>
+
+                                    {existingResources.length > 0 && (
+                                        <ul className={ui.fileList}>
+
+                                            {existingResources.map((resource) => (
+
+                                                <li className={ui.fileItem} key={resource.id}>
+
+                                                    <span className={ui.fileName}>
+                                                        {resource.file_name}
                                                     </span>
 
-                                                ) : (
+                                                    {confirmingResourceId === resource.id ? (
+
+                                                        <span className={ui.fileActions}>
+
+                                                            <span className={ui.confirmText}>
+                                                                Remove this file?
+                                                            </span>
+
+                                                            <button
+                                                                type="button"
+                                                                className={ui.fileRemove}
+                                                                onClick={() =>
+                                                                    handleRemoveResource(resource)
+                                                                }
+                                                                disabled={removingResourceId !== null}
+                                                            >
+                                                                {removingResourceId === resource.id
+                                                                    ? 'Removing...'
+                                                                    : 'Yes, remove'}
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className={ui.fileRemove}
+                                                                onClick={() =>
+                                                                    setConfirmingResourceId(null)
+                                                                }
+                                                                disabled={removingResourceId !== null}
+                                                            >
+                                                                Cancel
+                                                            </button>
+
+                                                        </span>
+
+                                                    ) : (
+
+                                                        <button
+                                                            type="button"
+                                                            className={ui.fileRemove}
+                                                            onClick={() =>
+                                                                setConfirmingResourceId(resource.id)
+                                                            }
+                                                            disabled={isSaving || removingResourceId !== null}
+                                                        >
+                                                            Remove
+                                                        </button>
+
+                                                    )}
+
+                                                </li>
+
+                                            ))}
+
+                                        </ul>
+                                    )}
+
+                                    <input className={ui.input}
+                                        id="activity-files"
+                                        key={fileInputKey}
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.docx,.pptx,.png,.jpg,.jpeg,.txt"
+                                        onChange={handleFilesSelected}
+                                        disabled={isSaving}
+                                    />
+
+                                    {pendingFiles.length > 0 && (
+                                        <ul className={ui.fileList}>
+
+                                            {pendingFiles.map((file, index) => (
+
+                                                <li
+                                                    className={ui.fileItem}
+                                                    key={`${file.name}-${file.size}`}
+                                                >
+
+                                                    <span className={ui.fileName}>
+                                                        {file.name}
+                                                        <span className={ui.fileSize}>
+                                                            {' '}({formatSize(file.size)})
+                                                        </span>
+                                                    </span>
 
                                                     <button
                                                         type="button"
                                                         className={ui.fileRemove}
                                                         onClick={() =>
-                                                            setConfirmingResourceId(resource.id)
+                                                            handleRemovePendingFile(index)
                                                         }
-                                                        disabled={isSaving || removingResourceId !== null}
+                                                        disabled={isSaving}
                                                     >
                                                         Remove
                                                     </button>
 
-                                                )}
+                                                </li>
 
-                                            </li>
+                                            ))}
 
-                                        ))}
+                                        </ul>
+                                    )}
 
-                                    </ul>
-                                )}
+                                    {fileErrors.map((message) => (
+                                        <p className={ui.fieldError} key={message}>
+                                            {message}
+                                        </p>
+                                    ))}
 
-                                <input className={ui.input}
-                                    id="activity-files"
-                                    key={fileInputKey}
-                                    type="file"
-                                    multiple
-                                    accept=".pdf,.docx,.pptx,.png,.jpg,.jpeg,.txt"
-                                    onChange={handleFilesSelected}
-                                    disabled={isSaving}
-                                />
+                                </div>
 
-                                {pendingFiles.length > 0 && (
-                                    <ul className={ui.fileList}>
 
-                                        {pendingFiles.map((file, index) => (
+                                    <div className={ui.activityPairRow}>
 
-                                            <li
-                                                className={ui.fileItem}
-                                                key={`${file.name}-${file.size}`}
-                                            >
+                                    <div className={ui.formGroup}>
 
-                                                <span className={ui.fileName}>
-                                                    {file.name}
-                                                    <span className={ui.fileSize}>
-                                                        {' '}({formatSize(file.size)})
-                                                    </span>
-                                                </span>
+                                        <label className={ui.label} htmlFor="activity-category">
+                                            Category
+                                        </label>
 
-                                                <button
-                                                    type="button"
-                                                    className={ui.fileRemove}
-                                                    onClick={() =>
-                                                        handleRemovePendingFile(index)
-                                                    }
-                                                    disabled={isSaving}
+                                        <select className={ui.input}
+                                            id="activity-category"
+                                            value={form.categoryId}
+                                            onChange={(event) =>
+                                                updateField(
+                                                    'categoryId',
+                                                    event.target.value
+                                                )
+                                            }
+                                        >
+
+                                            <option value="">
+                                                No category
+                                            </option>
+
+                                            {categories.map((category) => (
+                                                <option
+                                                    key={category.id}
+                                                    value={category.id}
                                                 >
-                                                    Remove
-                                                </button>
+                                                    {category.name}
+                                                </option>
+                                            ))}
 
-                                            </li>
+                                        </select>
 
-                                        ))}
+                                        {fieldErrors.category_id && (
+                                            <p className={ui.fieldError}>
+                                                {fieldErrors.category_id}
+                                            </p>
+                                        )}
 
-                                    </ul>
-                                )}
+                                    </div>
 
-                                {fileErrors.map((message) => (
-                                    <p className={ui.fieldError} key={message}>
-                                        {message}
-                                    </p>
-                                ))}
+
+                                    <div className={ui.formGroup}>
+
+                                        <label className={ui.label} htmlFor="activity-difficulty">
+                                            Difficulty
+                                        </label>
+
+                                        <select className={ui.input}
+                                            id="activity-difficulty"
+                                            value={form.difficulty}
+                                            onChange={(event) =>
+                                                updateField(
+                                                    'difficulty',
+                                                    event.target.value
+                                                )
+                                            }
+                                        >
+
+                                            <option value="Easy">
+                                                Easy
+                                            </option>
+
+                                            <option value="Medium">
+                                                Medium
+                                            </option>
+
+                                            <option value="Hard">
+                                                Hard
+                                            </option>
+
+                                        </select>
+
+                                        {fieldErrors.difficulty && (
+                                            <p className={ui.fieldError}>
+                                                {fieldErrors.difficulty}
+                                            </p>
+                                        )}
+
+                                    </div>
+
+                                    </div>
+
+                                </div>
 
                             </div>
 
 
-                            <div className={ui.formActions}>
+                            <div className={ui.activityFormActions}>
+
+                                <button
+                                    type="button"
+                                    className={ui.cancelButton}
+                                    onClick={closeForm}
+                                    disabled={isSaving}
+                                >
+                                    Cancel
+                                </button>
 
                                 <button
                                     type="submit"
@@ -988,15 +1257,6 @@ function ManageActivities() {
                                         : editingId === null
                                             ? 'Add Activity'
                                             : 'Save Changes'}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={ui.cancelButton}
-                                    onClick={closeForm}
-                                    disabled={isSaving}
-                                >
-                                    Cancel
                                 </button>
 
                             </div>

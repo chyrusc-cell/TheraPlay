@@ -103,7 +103,6 @@ class ActivityManagementController extends Controller
             'materials' => [$creating ? 'present' : 'sometimes', 'array'],
             'materials.*' => ['required', 'string', 'max:255'],
             'difficulty' => ['sometimes', 'string', Rule::in(['Easy', 'Medium', 'Hard'])],
-            'image_path' => ['nullable', 'string', 'max:255'],
         ];
     }
 
@@ -127,7 +126,7 @@ class ActivityManagementController extends Controller
                 'file_type' => $resource->file_type,
             ])->values(),
             'difficulty' => $activity->difficulty,
-            'image_path' => $activity->image_path,
+            'image_url' => $activity->imageUrl(),
             'is_published' => $activity->is_published,
             'created_by' => $activity->created_by,
             'created_at' => $activity->created_at,

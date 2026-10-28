@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiRequest } from './api.js';
 import { CardsSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -111,6 +112,8 @@ function Profile() {
 
         const controller = new AbortController();
 
+        const startedAt = performance.now();
+
         const loadProfile = async () => {
             try {
                 const response = await fetch(`${API_URL}/user`, {
@@ -144,6 +147,8 @@ function Profile() {
                     true
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }

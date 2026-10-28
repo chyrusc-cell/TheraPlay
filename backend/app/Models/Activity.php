@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Activity extends Model
 {
+    // Pictures live in this folder of the private disk. image_path is never
+    // mass-assignable: only ActivityImageController sets it.
+    public const IMAGE_DIRECTORY = 'activity-images';
+
     protected $fillable = [
         'category_id',
         'created_by',
@@ -17,7 +21,6 @@ class Activity extends Model
         'instructions',
         'materials',
         'difficulty',
-        'image_path',
         'is_published',
     ];
 
@@ -28,6 +31,23 @@ class Activity extends Model
             'materials' => 'array',
             'is_published' => 'boolean',
         ];
+    }
+
+    // Only paths made by the upload code count (older placeholder values in the
+    // column are ignored).
+    public function hasPicture(): bool
+    {
+        return is_string($this->image_path)
+            && str_starts_with($this->image_path, self::IMAGE_DIRECTORY.'/');
+    }
+
+    // The public picture URL (the route only serves published activities), or
+    // null. The stored path itself is never returned.
+    public function imageUrl(): ?string
+    {
+        return $this->hasPicture()
+            ? url("/api/activities/{$this->id}/image").'?v='.substr(md5($this->image_path), 0, 8)
+            : null;
     }
 
     public function category(): BelongsTo

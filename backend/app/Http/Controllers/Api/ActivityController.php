@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityController extends Controller
 {
@@ -21,8 +23,19 @@ class ActivityController extends Controller
                 'difficulty',
                 'image_path',
             ])
+            ->with('category:id,name')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(fn (Activity $activity) => [
+                'id' => $activity->id,
+                'category_id' => $activity->category_id,
+                'category' => $activity->category?->name,
+                'title' => $activity->title,
+                'description' => $activity->description,
+                'objective' => $activity->objective,
+                'difficulty' => $activity->difficulty,
+                'image_url' => $activity->imageUrl(),
+            ]);
 
         return response()->json([
             'data' => $activities,
@@ -52,8 +65,27 @@ class ActivityController extends Controller
                     'file_name' => $resource->file_name,
                     'file_type' => $resource->file_type,
                 ])->values(),
-                'image_path' => $activity->image_path,
+                'image_url' => $activity->imageUrl(),
             ],
+        ]);
+    }
+
+    // The picture of a PUBLISHED activity. Drafts (and activities without a
+    // picture) are 404, so a draft's picture is never reachable by its URL.
+    public function image(Activity $activity): StreamedResponse
+    {
+        $disk = Storage::disk(config('filesystems.activity_materials.disk'));
+
+        abort_unless(
+            $activity->is_published
+                && $activity->hasPicture()
+                && $disk->exists($activity->image_path),
+            404
+        );
+
+        return $disk->response($activity->image_path, null, [
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'public, max-age=3600',
         ]);
     }
 }

@@ -20,8 +20,10 @@ export const title = 'mb-2 text-[32px] font-bold';
 export const subtitle = 'text-[#666]';
 export const headerActions = 'flex flex-wrap gap-2.5';
 
-export const messageSuccess = 'mb-5 text-[14px] text-[#188038]';
-export const messageError = 'mb-5 text-[14px] text-[#d93025]';
+export const messageSuccess =
+    'mb-5 animate-[ui-fade-in_0.2s_ease-out] text-[14px] text-[#188038]';
+export const messageError =
+    'mb-5 animate-[ui-fade-in_0.2s_ease-out] text-[14px] text-[#d93025]';
 
 // Error block with a retry button (the button gets its top margin here).
 export const listError =
@@ -60,7 +62,7 @@ export const neutralRowButton =
 // ---------- Form ----------
 
 export const formCard =
-    'mb-[25px] rounded-[10px] border border-[#e1e5ea] bg-white p-[25px] phone:p-4';
+    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-[#e1e5ea] bg-white p-[25px] phone:p-4';
 
 export const formTitle = 'mb-5 text-[20px] font-bold';
 export const formGroup = 'mb-[18px] flex flex-col';
@@ -139,3 +141,40 @@ export const fileActions = 'flex flex-wrap items-center gap-2';
 
 export const fileRemove =
     'shrink-0 cursor-pointer rounded-[5px] border border-[#ddd] bg-white px-2.5 py-[5px] text-[12px] text-[#333] enabled:hover:bg-hover phone-lg:min-h-9';
+
+// ---------- Activity form layout (Manage Activities) ----------
+
+// Two columns on desktop; one column from the tablet breakpoint down.
+export const activityFormGrid =
+    'grid grid-cols-2 gap-x-8 tablet:grid-cols-1';
+
+// Fixed height (set per field) with no manual resizing; long text scrolls
+// inside the box instead of growing the form.
+export const activityTextarea =
+    'min-h-14 max-h-32 w-full resize-none overflow-y-auto rounded-md border border-[#ccc] p-[11px] [font-family:inherit] text-[14px]';
+
+// Category + Difficulty side by side; stacked on phones.
+export const activityPairRow = 'grid grid-cols-2 gap-3 phone:grid-cols-1';
+
+// The picture area. Pictures are not uploadable yet, so this is a placeholder.
+export const activityPicture =
+    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-[#ccc] bg-[#f8f9fa] px-4 text-center text-[13px] leading-[1.5] text-[#888]';
+
+// Cancel then the primary action, right-aligned. On phones they stack, with
+// the primary action on top, full width.
+export const activityFormActions =
+    'mt-2 flex justify-end gap-2.5 phone:flex-col-reverse phone:[&>button]:w-full';
+
+// ---------- Contact form layout (Manage Contacts) ----------
+
+// Picture on the left, details on the right; one column on tablets and down.
+export const contactFormGrid =
+    'grid grid-cols-[0.8fr_1.6fr] gap-x-8 gap-y-2 tablet:grid-cols-1';
+
+// The large circular picture selector (a button, so it works with the keyboard).
+export const avatarCircle =
+    'flex h-44 w-44 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-[#ccc] bg-[#f8f9fa] p-0 text-[#888] enabled:hover:bg-hover phone:h-36 phone:w-36';
+
+// The clickable picture box in the activity form (shows the picture, or a prompt).
+export const activityPictureButton =
+    'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#ccc] bg-[#f8f9fa] p-0 text-center text-[13px] leading-[1.5] text-[#888] enabled:hover:bg-hover';

@@ -17,12 +17,17 @@ use App\Http\Controllers\Api\Admin\ContactManagementController;
 use App\Http\Controllers\Api\Admin\FeedbackManagementController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ActivityResourceController;
+use App\Http\Controllers\Api\Admin\ActivityImageController;
 use App\Http\Controllers\Api\ActivityMaterialController;
 use App\Http\Controllers\Api\PasswordResetController;
 
-Route::post('/register', [RegisterController::class, 'store']);
+// Rate limited per client to slow down automated sign-ups.
+Route::post('/register', [RegisterController::class, 'store'])
+    ->middleware('throttle:10,1');
 
-Route::post('/login', [LoginController::class, 'store']);
+// Rate limited per client to slow down password guessing.
+Route::post('/login', [LoginController::class, 'store'])
+    ->middleware('throttle:10,1');
 
 Route::post('/logout', [LogoutController::class, 'destroy'])
     ->middleware('auth:sanctum');
@@ -36,6 +41,10 @@ Route::get('/activities', [ActivityController::class, 'index']);
 Route::get('/activities/{id}', [ActivityController::class, 'show'])
     ->whereNumber('id');
 
+// The picture of a PUBLISHED activity (404 for drafts).
+Route::get('/activities/{activity}/image', [ActivityController::class, 'image'])
+    ->whereNumber('activity');
+
 // Download an uploaded file of a PUBLISHED activity (404 for drafts).
 Route::get('/activities/{activity}/resources/{resource}/download', [ActivityMaterialController::class, 'download'])
     ->whereNumber(['activity', 'resource'])
@@ -46,8 +55,9 @@ Route::post('/activities/{id}/complete', [ActivityCompletionController::class, '
     ->whereNumber('id')
     ->middleware(['auth:sanctum', 'role:parent']);
 
+// A child profile belongs to a parent account (admins have none).
 Route::post('/children', [ChildController::class, 'store'])
-    ->middleware('auth:sanctum');
+    ->middleware(['auth:sanctum', 'role:parent']);
 
 Route::put('/profile', [ProfileController::class, 'update'])
     ->middleware('auth:sanctum');
@@ -71,6 +81,9 @@ Route::get('/progress', [ProgressController::class, 'index'])
 // Public, read-only list of professional contacts (Contact Us page).
 Route::get('/contacts', [ContactController::class, 'index']);
 
+Route::get('/contacts/{contact}/photo', [ContactController::class, 'photo'])
+    ->whereNumber('contact');
+
 // Only logged-in parents can send feedback.
 Route::post('/feedback', [FeedbackController::class, 'store'])
     ->middleware(['auth:sanctum', 'role:parent']);
@@ -91,6 +104,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::post('activities/{activity}/unpublish', [ActivityManagementController::class, 'unpublish'])
             ->name('activities.unpublish');
 
+        // The activity's picture (private storage; one per activity).
+        Route::get('activities/{activity}/image', [ActivityImageController::class, 'show'])
+            ->name('activities.image.show');
+
+        Route::post('activities/{activity}/image', [ActivityImageController::class, 'store'])
+            ->name('activities.image.store');
+
+        Route::delete('activities/{activity}/image', [ActivityImageController::class, 'destroy'])
+            ->name('activities.image.destroy');
+
         // Uploaded file materials of an activity (private storage).
         Route::post('activities/{activity}/resources', [ActivityResourceController::class, 'store'])
             ->name('activities.resources.store');
@@ -106,6 +129,12 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         // Professional contacts: full management (they are standalone records).
         Route::apiResource('contacts', ContactManagementController::class)
             ->parameters(['contacts' => 'contact']);
+
+        Route::post('contacts/{contact}/photo', [ContactManagementController::class, 'storePhoto'])
+            ->name('contacts.photo.store');
+
+        Route::delete('contacts/{contact}/photo', [ContactManagementController::class, 'destroyPhoto'])
+            ->name('contacts.photo.destroy');
 
         // Accounts: list, create, update (name, email, role) and guarded delete.
         Route::apiResource('users', UserManagementController::class);

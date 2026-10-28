@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
+import ActivityPicture from './ActivityPicture.jsx';
+import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { activityGridClass } from './uiClasses.js';
 
@@ -63,15 +65,25 @@ const cardClass =
 
 const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 
+// The difficulty levels the server accepts.
+const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
+
+const filterLabelClass = 'text-[13px] font-bold text-muted';
+const filterSelectClass =
+    'min-w-[180px] cursor-pointer rounded-lg border border-[#ddd] bg-white px-3 py-2 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0 phone:flex-1';
+
 function Activities() {
     const [activities, setActivities] = useState([]);
     const [completedIds, setCompletedIds] = useState(new Set());
     const [progressFailed, setProgressFailed] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const fetchActivities = async () => {
             try {
@@ -111,6 +123,8 @@ function Activities() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -131,6 +145,32 @@ function Activities() {
         ],
         [activities, completedIds]
     );
+
+    // The filters work on the list that is already loaded (no new request).
+    // The categories offered are the ones the loaded activities really have.
+    const categories = useMemo(
+        () =>
+            [...new Set(activities.map((activity) => activity.category).filter(Boolean))]
+                .sort((a, b) => a.localeCompare(b)),
+        [activities]
+    );
+
+    const visibleActivities = useMemo(
+        () =>
+            orderedActivities.filter(
+                (activity) =>
+                    (selectedCategory === 'all' ||
+                        activity.category === selectedCategory) &&
+                    (selectedDifficulty === 'all' ||
+                        activity.difficulty === selectedDifficulty)
+            ),
+        [orderedActivities, selectedCategory, selectedDifficulty]
+    );
+
+    const resetFilters = () => {
+        setSelectedCategory('all');
+        setSelectedDifficulty('all');
+    };
 
     return (
         <div className="flex min-h-page flex-col">
@@ -161,6 +201,48 @@ function Activities() {
                     </p>
                 ) : (
                     <>
+                    <div className="mb-8 flex flex-wrap items-end gap-4">
+
+                        <div className="flex flex-col gap-1.5">
+                            <label className={filterLabelClass} htmlFor="activity-filter-category">
+                                Category
+                            </label>
+                            <select
+                                id="activity-filter-category"
+                                className={filterSelectClass}
+                                value={selectedCategory}
+                                onChange={(event) => setSelectedCategory(event.target.value)}
+                            >
+                                <option value="all">All Categories</option>
+                                {categories.map((name) => (
+                                    <option key={name} value={name}>
+                                        {name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5">
+                            <label className={filterLabelClass} htmlFor="activity-filter-difficulty">
+                                Difficulty
+                            </label>
+                            <select
+                                id="activity-filter-difficulty"
+                                className={filterSelectClass}
+                                value={selectedDifficulty}
+                                onChange={(event) => setSelectedDifficulty(event.target.value)}
+                            >
+                                <option value="all">All Difficulties</option>
+                                {DIFFICULTIES.map((level) => (
+                                    <option key={level} value={level}>
+                                        {level}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                    </div>
+
                     {progressFailed && (
                         <p className="pb-5 text-center text-[13px] text-muted">
                             We could not load your completion status, so
@@ -168,18 +250,37 @@ function Activities() {
                         </p>
                     )}
 
+                    {visibleActivities.length === 0 ? (
+                        <p className={statusClass} role="status">
+                            No activities match these filters.{' '}
+                            <button
+                                type="button"
+                                onClick={resetFilters}
+                                className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[15px] font-bold text-ink underline"
+                            >
+                                Reset filters
+                            </button>
+                        </p>
+                    ) : (
                     <div className={activityGridClass}>
-                        {orderedActivities.map((activity) => (
+                        {visibleActivities.map((activity) => (
                             <div
                                 className={cardClass}
                                 key={activity.id}
                             >
                                 <div className="mb-5">
-                                    <div
-                                        className={`h-[180px] w-full rounded-lg bg-cover bg-center ${
-                                            imagePlaceholders[(activity.id - 1) % 6]
-                                        }`}
-                                    ></div>
+                                    <ActivityPicture
+                                        url={activity.image_url}
+                                        alt={`Picture of ${activity.title}`}
+                                        className="h-[180px] w-full rounded-lg object-cover"
+                                        fallback={
+                                            <div
+                                                className={`h-[180px] w-full rounded-lg bg-cover bg-center ${
+                                                    imagePlaceholders[(activity.id - 1) % 6]
+                                                }`}
+                                            ></div>
+                                        }
+                                    />
                                 </div>
 
                                 {/* The info block fills the card, so the description grows and
@@ -241,6 +342,7 @@ function Activities() {
                             </div>
                         ))}
                     </div>
+                    )}
                     </>
                 )}
             </main>

@@ -17,3 +17,15 @@ body {
 img {
     max-width: 100%;
 }
+
+/*
+ * Always reserve the space of the vertical scrollbar. Fixed elements (the
+ * profile shortcut, the search pill) are positioned against the viewport
+ * WITHOUT the scrollbar. Without this, a page that grows taller than the
+ * window (for example when a contact description is expanded) gets a scrollbar,
+ * the viewport becomes narrower, and everything fixed to the right edge jumps
+ * sideways by the scrollbar's width.
+ */
+html {
+    scrollbar-gutter: stable;
+}

@@ -104,7 +104,18 @@ textarea {
 }
 
 
-/* --- Keyframes used by the confirmation dialog --- */
+/*
+ * --- Motion system ---
+ * One set of timings, used through Tailwind (animate-[...] / duration-*):
+ *   hover / focus ........ 150 ms   (--ui-transition above)
+ *   dropdowns, messages .. 180-200 ms, ease-out
+ *   dialogs, form panels . 220-250 ms, ease-out
+ *   expand / collapse .... 300 ms, ease-out opening / ease-in closing
+ *                          (see Collapsible.jsx)
+ * Reduced-motion users get none of it (rule at the bottom of this file).
+ */
+
+/* --- Keyframes: dialog, panels, dropdowns --- */
 
 @keyframes ui-fade-in {
     from { opacity: 0; }
@@ -112,11 +123,16 @@ textarea {
 }
 
 @keyframes ui-rise-in {
-    from { opacity: 0; transform: translateY(6px); }
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ui-pop-in {
+    from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* (The dialog uses these via Tailwind: animate-[ui-fade-in_...].) */
+/* (Used via Tailwind: animate-[ui-fade-in_...], animate-[ui-pop-in_...].) */
 
 
 /* --- Skeleton shimmer ---

@@ -1,6 +1,7 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, User, Users } from 'lucide-react';
+import Collapsible from './Collapsible.jsx';
 import { useAuth } from './authContext.js';
 import {
     apiRequest,
@@ -8,6 +9,7 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { ContactCardsSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 import StarRating from './StarRating.jsx';
 import { contactItemClass, contactPanelClass } from './uiClasses.js';
 
@@ -35,16 +37,15 @@ const MESSAGE_MAX = 5000;
 const panelTitleClass = 'mb-4 text-[20px] font-bold text-ink';
 const statusClass = 'text-[14px] font-medium text-muted';
 const errorClass = 'text-[14px] font-medium text-[#d93025]';
-const nameClass = 'mb-1 text-[16px] font-bold text-ink';
-const roleClass = 'text-[14px] font-medium text-muted';
-const methodsClass = 'mt-3 flex list-none flex-col gap-2';
-const methodClass = 'flex flex-col gap-0.5';
-const methodLabelClass = 'text-[12px] font-medium text-[#888]';
-const methodLinkClass = 'text-[14px] font-bold text-ink [word-break:break-word]';
+const detailLinkClass =
+    'text-[14px] font-medium text-ink underline [overflow-wrap:anywhere]';
+const toggleClass =
+    'mt-2 cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-medium text-ink underline underline-offset-4';
 const fieldClass = 'mb-[18px] flex flex-col gap-2';
 const fieldLabelClass = 'text-[12px] font-medium text-[#888]';
 const fieldErrorClass = 'text-[13px] text-[#d93025]';
-const messageBase = 'mb-4 text-[14px] font-medium';
+const messageBase =
+    'mb-4 animate-[ui-fade-in_0.2s_ease-out] text-[14px] font-medium';
 const retryClass =
     'mt-3 cursor-pointer rounded-3xl border border-[#333] bg-white px-5 py-2 [font-family:inherit] text-[14px] font-bold text-[#333] enabled:hover:bg-hover';
 const submitClass =
@@ -58,6 +59,111 @@ const LIST_PEEK = 20;
 // instead of making the feedback container grow.
 const textareaClass =
     'h-40 w-full resize-none overflow-y-auto rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
+
+/*
+ * One contact card: picture on the left, details on the right. Used for the
+ * professional contacts and for the developer team. Each card keeps its own
+ * expanded state, so opening one never opens the others. The description is
+ * hidden until "View More..." is pressed, and the toggle only exists when there
+ * is a description.
+ */
+function ContactCard({ name, title, email, phone, description, photoUrl, Fallback = User, note }) {
+    const [expanded, setExpanded] = useState(false);
+    // Remember WHICH url failed, so a replaced picture is tried again.
+    const [failedUrl, setFailedUrl] = useState(null);
+
+    const text = description?.trim() ?? '';
+    const hasPhoto = Boolean(photoUrl) && failedUrl !== photoUrl;
+    const descriptionId = useId();
+
+    return (
+        <article className={`${contactItemClass} flex items-start gap-4 phone:gap-3`}>
+
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e5ea] bg-[#e9ecef] text-[#888] phone:h-20 phone:w-20">
+                {hasPhoto ? (
+                    <img
+                        src={photoUrl}
+                        alt={`Photo of ${name}`}
+                        className="h-full w-full object-cover"
+                        onError={() => setFailedUrl(photoUrl)}
+                    />
+                ) : (
+                    <Fallback size={40} aria-hidden="true" />
+                )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+
+                <h3 className="text-[20px] leading-tight font-bold text-ink [overflow-wrap:anywhere]">
+                    {name}
+                </h3>
+
+                {title && (
+                    <p className="mt-0.5 text-[14px] font-medium text-muted [overflow-wrap:anywhere]">
+                        {title}
+                    </p>
+                )}
+
+                {(email || phone) && (
+                    <ul className="mt-2 flex list-none flex-col gap-1.5">
+
+                        {email && (
+                            <li className="flex items-start gap-2">
+                                <Mail size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[#888]" />
+                                <span className="sr-only">Email: </span>
+                                <a href={`mailto:${email}`} className={detailLinkClass}>
+                                    {email}
+                                </a>
+                            </li>
+                        )}
+
+                        {phone && (
+                            <li className="flex items-start gap-2">
+                                <Phone size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[#888]" />
+                                <span className="sr-only">Phone: </span>
+                                <a href={`tel:${phone.replace(/\s+/g, '')}`} className={detailLinkClass}>
+                                    {phone}
+                                </a>
+                            </li>
+                        )}
+
+                    </ul>
+                )}
+
+                {text && (
+                    <div>
+
+                        <Collapsible open={expanded} id={descriptionId}>
+                            <p className="pt-2 text-[14px] leading-[1.5] whitespace-pre-wrap text-[#555] [overflow-wrap:anywhere]">
+                                {text}
+                            </p>
+                        </Collapsible>
+
+                        <button
+                            type="button"
+                            className={toggleClass}
+                            onClick={() => setExpanded((previous) => !previous)}
+                            aria-expanded={expanded}
+                            aria-controls={descriptionId}
+                        >
+                            {expanded ? 'View Less...' : 'View More...'}
+                        </button>
+
+                    </div>
+                )}
+
+                {note && (
+                    <p className="mt-3 text-[12px] text-[#888]">
+                        {note}
+                    </p>
+                )}
+
+            </div>
+
+        </article>
+    );
+}
+
 
 function Contact() {
 
@@ -86,6 +192,7 @@ function Contact() {
     // Public list: no login needed, so guests can see it too.
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadContacts = async () => {
             try {
@@ -112,6 +219,8 @@ function Contact() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -257,12 +366,9 @@ function Contact() {
 
                 <div className={fieldClass}>
 
-                    <label htmlFor="feedback-message" className={fieldLabelClass}>
-                        Your feedback
-                    </label>
-
                     <textarea
                         id="feedback-message"
+                        aria-label="Your feedback"
                         className={textareaClass}
                         placeholder="Tell us what is working well or what we can improve"
                         value={message}
@@ -286,7 +392,7 @@ function Contact() {
                 <div className={fieldClass}>
 
                     <span className={fieldLabelClass}>
-                        Rating (optional)
+                        We appreciate your rating (optional)
                     </span>
 
                     <StarRating
@@ -349,33 +455,6 @@ function Contact() {
 
         return () => observer.disconnect();
     }, [contacts, isLoading, loadError]);
-
-
-    // Email and phone lines, shown only for the values that exist.
-    const renderMethods = ({ email, phone }) =>
-        (email || phone) && (
-            <ul className={methodsClass}>
-
-                {email && (
-                    <li className={methodClass}>
-                        <span className={methodLabelClass}>Email</span>
-                        <a href={`mailto:${email}`} className={methodLinkClass}>
-                            {email}
-                        </a>
-                    </li>
-                )}
-
-                {phone && (
-                    <li className={methodClass}>
-                        <span className={methodLabelClass}>Phone</span>
-                        <a href={`tel:${phone}`} className={methodLinkClass}>
-                            {phone}
-                        </a>
-                    </li>
-                )}
-
-            </ul>
-        );
 
 
     return (
@@ -450,24 +529,15 @@ function Contact() {
 
                                 {contacts.map((contact) => (
 
-                                    <li className={contactItemClass} key={contact.id}>
-
-                                        <h3 className={nameClass}>
-                                            {contact.name}
-                                        </h3>
-
-                                        <p className={roleClass}>
-                                            {contact.title}
-                                        </p>
-
-                                        {contact.description && (
-                                            <p className="mt-2 text-[14px] leading-[1.5] text-[#555]">
-                                                {contact.description}
-                                            </p>
-                                        )}
-
-                                        {renderMethods(contact)}
-
+                                    <li key={contact.id}>
+                                        <ContactCard
+                                            name={contact.name}
+                                            title={contact.title}
+                                            email={contact.email}
+                                            phone={contact.phone}
+                                            description={contact.description}
+                                            photoUrl={contact.photo_url}
+                                        />
                                     </li>
 
                                 ))}
@@ -484,46 +554,21 @@ function Contact() {
                     <section className={`${contactPanelClass} min-w-0`}>
 
                         <h2 className={panelTitleClass}>
-                            Developer Team
+                            Development Team
                         </h2>
 
-                        <div className={contactItemClass}>
-
-                            <h3 className={nameClass}>
-                                {TEAM.name}
-                            </h3>
-
-                            <p className="text-[14px] leading-[1.5] text-[#555]">
-                                {TEAM.description}
-                            </p>
-
-                            <ul className={methodsClass}>
-
-                                <li className="flex items-center gap-2">
-                                    <Mail size={16} aria-hidden="true" className="shrink-0 text-[#888]" />
-                                    <span className="sr-only">Email: </span>
-                                    <a href={`mailto:${TEAM.email}`} className={methodLinkClass}>
-                                        {TEAM.email}
-                                    </a>
-                                </li>
-
-                                <li className="flex items-center gap-2">
-                                    <Phone size={16} aria-hidden="true" className="shrink-0 text-[#888]" />
-                                    <span className="sr-only">Phone: </span>
-                                    <a href={`tel:${TEAM.phone.replace(/\s+/g, '')}`} className={methodLinkClass}>
-                                        {TEAM.phone}
-                                    </a>
-                                </li>
-
-                            </ul>
-
-                            {TEAM.isSample && (
-                                <p className="mt-3 text-[12px] text-[#888]">
-                                    Sample details for demonstration only. These are not real or official contact details.
-                                </p>
-                            )}
-
-                        </div>
+                        <ContactCard
+                            name={TEAM.name}
+                            email={TEAM.email}
+                            phone={TEAM.phone}
+                            description={TEAM.description}
+                            Fallback={Users}
+                            note={
+                                TEAM.isSample
+                                    ? 'Sample details for demonstration only. These are not real or official contact details.'
+                                    : undefined
+                            }
+                        />
 
                     </section>
 

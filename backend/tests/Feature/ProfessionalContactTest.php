@@ -73,7 +73,7 @@ class ProfessionalContactTest extends TestCase
         $contact = $this->getJson('/api/contacts')->json('data.0');
 
         $this->assertEqualsCanonicalizing(
-            ['id', 'name', 'title', 'email', 'phone', 'description'],
+            ['id', 'name', 'title', 'email', 'phone', 'description', 'photo_url'],
             array_keys($contact)
         );
     }

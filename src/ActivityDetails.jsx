@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { apiRequest } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
+import ActivityPicture from './ActivityPicture.jsx';
+import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { detailsCardClass } from './uiClasses.js';
 
@@ -76,6 +78,7 @@ function ActivityDetails() {
 
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadActivity = async () => {
             try {
@@ -114,6 +117,8 @@ function ActivityDetails() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -408,9 +413,16 @@ function ActivityDetails() {
 
                     {/* Activity Image */}
 
-                    <div className="flex h-[220px] items-center justify-center rounded-lg bg-[#e9eef3] text-[#8a96a3] tablet-sm:h-[180px]">
-                        Image
-                    </div>
+                    <ActivityPicture
+                        url={activity.image_url}
+                        alt={`Picture of ${activity.title}`}
+                        className="h-[220px] w-full rounded-lg object-cover tablet-sm:h-[180px]"
+                        fallback={
+                            <div className="flex h-[220px] items-center justify-center rounded-lg bg-[#e9eef3] text-[#8a96a3] tablet-sm:h-[180px]">
+                                Image
+                            </div>
+                        }
+                    />
 
 
                     {/* Activity Information */}

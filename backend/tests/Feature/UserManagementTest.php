@@ -116,6 +116,33 @@ class UserManagementTest extends TestCase
         }
     }
 
+    // The admin dashboard's "Total Users" card counts the rows of this list
+    // (there is no status column and no soft deletes, so every record counts).
+    public function test_the_account_list_the_dashboard_counts_matches_the_real_records(): void
+    {
+        $this->actingAsAdmin();
+        $this->makeUser('one@example.com');
+        $this->makeUser('two@example.com');
+
+        $this->getJson('/api/admin/users')->assertOk()->assertJsonCount(3, 'data');
+        $this->assertSame(3, User::count());
+
+        $created = $this->postJson('/api/admin/users', $this->validPayload())->assertCreated();
+        $this->getJson('/api/admin/users')->assertOk()->assertJsonCount(4, 'data');
+
+        $this->deleteJson('/api/admin/users/'.$created->json('data.id'))->assertOk();
+        $this->getJson('/api/admin/users')->assertOk()->assertJsonCount(3, 'data');
+    }
+
+    public function test_logged_out_accounts_are_still_counted(): void
+    {
+        $this->actingAsAdmin();
+        $parent = $this->makeUser('parent@example.com');
+        $this->assertSame(0, $parent->tokens()->count());
+
+        $this->getJson('/api/admin/users')->assertOk()->assertJsonCount(2, 'data');
+    }
+
     public function test_admin_can_view_one_account(): void
     {
         $this->actingAsAdmin();

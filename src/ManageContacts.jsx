@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
     apiRequest,
@@ -6,6 +7,7 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
 
 const emptyForm = {
@@ -15,6 +17,10 @@ const emptyForm = {
     phone: '',
     description: '',
 };
+
+// Picture rules (the server checks again, from the file's real content).
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
 
 function ManageContacts() {
 
@@ -34,6 +40,15 @@ function ManageContacts() {
     const [formError, setFormError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
+    // Profile picture: the saved one (a URL), a newly chosen file waiting to be
+    // uploaded with the form, and a flag to remove the saved one.
+    const photoInputRef = useRef(null);
+    const [savedPhotoUrl, setSavedPhotoUrl] = useState(null);
+    const [photoFile, setPhotoFile] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
+    const [removePhoto, setRemovePhoto] = useState(false);
+    const [photoError, setPhotoError] = useState('');
+
     const [confirmingId, setConfirmingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
 
@@ -52,6 +67,7 @@ function ManageContacts() {
     // Fetch the list whenever reloadKey changes.
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadContacts = async () => {
             try {
@@ -88,6 +104,8 @@ function ManageContacts() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -115,7 +133,58 @@ function ManageContacts() {
         setForm((current) => ({ ...current, [name]: value }));
     };
 
+    // Free the temporary preview of a chosen file when it is replaced or gone.
+    useEffect(() => {
+        if (!photoPreview) {
+            return undefined;
+        }
+
+        return () => URL.revokeObjectURL(photoPreview);
+    }, [photoPreview]);
+
+    const resetPhoto = (savedUrl = null) => {
+        setSavedPhotoUrl(savedUrl);
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        setRemovePhoto(false);
+        setPhotoError('');
+    };
+
+    const handlePhotoSelected = (event) => {
+        const file = event.target.files?.[0];
+
+        // Let the same file be chosen again later.
+        event.target.value = '';
+
+        if (!file) {
+            return;
+        }
+
+        if (!PHOTO_TYPES.includes(file.type)) {
+            setPhotoError('Choose a JPG, PNG or WebP image.');
+            return;
+        }
+
+        if (file.size > PHOTO_MAX_BYTES) {
+            setPhotoError('The picture must be 2 MB or smaller.');
+            return;
+        }
+
+        setPhotoError('');
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+        setRemovePhoto(false);
+    };
+
+    const handleRemovePhoto = () => {
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        setPhotoError('');
+        setRemovePhoto(savedPhotoUrl !== null);
+    };
+
     const closeForm = () => {
+        resetPhoto();
         setShowForm(false);
         setEditingId(null);
         setForm(emptyForm);
@@ -124,6 +193,7 @@ function ManageContacts() {
     };
 
     const openCreateForm = () => {
+        resetPhoto();
         setNotice(null);
         setConfirmingId(null);
         setEditingId(null);
@@ -152,6 +222,7 @@ function ManageContacts() {
             phone: contact.phone || '',
             description: contact.description || '',
         });
+        resetPhoto(contact.photo_url || null);
         setEditingId(contact.id);
         setFieldErrors({});
         setFormError('');
@@ -227,10 +298,59 @@ function ManageContacts() {
                 );
             }
 
-            setNotice({
-                type: 'success',
-                text: isEditing ? 'Contact updated.' : 'Contact added.',
-            });
+            // The picture is sent after the details are saved (it is a file, so
+            // it is a separate multipart request).
+            const savedId = isEditing ? editingId : result.data.data.id;
+            let photoProblem = '';
+
+            if (photoFile) {
+                const body = new FormData();
+
+                body.append('photo', photoFile);
+
+                const photoResult = await apiRequest(
+                    `/admin/contacts/${savedId}/photo`,
+                    { method: 'POST', body }
+                );
+
+                if (photoResult.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (!photoResult.ok) {
+                    photoProblem =
+                        photoResult.data.errors?.photo?.[0] ||
+                        photoResult.data.message ||
+                        'The picture could not be saved.';
+                }
+            } else if (removePhoto && isEditing) {
+                const photoResult = await apiRequest(
+                    `/admin/contacts/${savedId}/photo`,
+                    { method: 'DELETE' }
+                );
+
+                if (photoResult.status === 401) {
+                    handleUnauthorized();
+                    return;
+                }
+
+                if (!photoResult.ok) {
+                    photoProblem = 'The picture could not be removed.';
+                }
+            }
+
+            setNotice(
+                photoProblem
+                    ? {
+                          type: 'error',
+                          text: `The contact was saved, but: ${photoProblem} Edit the contact to try the picture again.`,
+                      }
+                    : {
+                          type: 'success',
+                          text: isEditing ? 'Contact updated.' : 'Contact added.',
+                      }
+            );
             closeForm();
             reload(false);
         } catch (error) {
@@ -371,142 +491,237 @@ function ManageContacts() {
                                 </p>
                             )}
 
-                            <div className={ui.formGroup}>
+                            <div className={ui.contactFormGrid}>
 
-                                <label className={ui.label} htmlFor="contact-name">
-                                    Name
-                                </label>
+                                {/* Left column: profile picture */}
 
-                                <input className={ui.input}
-                                    id="contact-name"
-                                    type="text"
-                                    placeholder="Enter full name"
-                                    value={form.name}
-                                    maxLength={255}
-                                    onChange={(event) =>
-                                        updateField('name', event.target.value)
-                                    }
-                                    required
-                                />
+                                <div className="flex flex-col items-center gap-3">
 
-                                {fieldErrors.name && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.name}
+                                    <span className={ui.label} id="contact-photo-label">
+                                        Profile Picture
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className={ui.avatarCircle}
+                                        onClick={() => photoInputRef.current?.click()}
+                                        disabled={isSaving}
+                                        aria-labelledby="contact-photo-label"
+                                    >
+                                        {photoPreview || (!removePhoto && savedPhotoUrl) ? (
+                                            <img
+                                                src={photoPreview || (!removePhoto && savedPhotoUrl)}
+                                                alt=""
+                                                className="h-full w-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="flex flex-col items-center gap-1 px-4 text-center text-[13px]">
+                                                <Camera size={28} aria-hidden="true" />
+                                                Choose a picture
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    <input
+                                        ref={photoInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        className="sr-only"
+                                        tabIndex={-1}
+                                        aria-hidden="true"
+                                        onChange={handlePhotoSelected}
+                                        disabled={isSaving}
+                                    />
+
+                                    <div className="flex flex-wrap justify-center gap-2">
+
+                                        <button
+                                            type="button"
+                                            className={ui.fileRemove}
+                                            onClick={() => photoInputRef.current?.click()}
+                                            disabled={isSaving}
+                                        >
+                                            {photoPreview || (!removePhoto && savedPhotoUrl) ? 'Replace picture' : 'Choose picture'}
+                                        </button>
+
+                                        {(photoFile || (savedPhotoUrl && !removePhoto)) && (
+                                            <button
+                                                type="button"
+                                                className={ui.fileRemove}
+                                                onClick={handleRemovePhoto}
+                                                disabled={isSaving}
+                                            >
+                                                Remove picture
+                                            </button>
+                                        )}
+
+                                    </div>
+
+                                    <p className={ui.fileHint}>
+                                        JPG, PNG or WebP, up to 2 MB.
                                     </p>
-                                )}
+
+                                    {photoError && (
+                                        <p className={ui.fieldError} role="alert">
+                                            {photoError}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                {/* Right column: contact details */}
+
+                                <div>
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="contact-name">
+                                        Name
+                                    </label>
+
+                                    <input className={ui.input}
+                                        id="contact-name"
+                                        type="text"
+                                        placeholder="Enter full name"
+                                        value={form.name}
+                                        maxLength={255}
+                                        onChange={(event) =>
+                                            updateField('name', event.target.value)
+                                        }
+                                        required
+                                    />
+
+                                    {fieldErrors.name && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.name}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="contact-title">
+                                        Title / Specialty
+                                    </label>
+
+                                    <input className={ui.input}
+                                        id="contact-title"
+                                        type="text"
+                                        placeholder="e.g. Occupational Therapist"
+                                        value={form.title}
+                                        maxLength={255}
+                                        onChange={(event) =>
+                                            updateField('title', event.target.value)
+                                        }
+                                        required
+                                    />
+
+                                    {fieldErrors.title && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.title}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="contact-email">
+                                        Email (optional if a phone is given)
+                                    </label>
+
+                                    <input className={ui.input}
+                                        id="contact-email"
+                                        type="email"
+                                        placeholder="name@example.com"
+                                        value={form.email}
+                                        maxLength={255}
+                                        onChange={(event) =>
+                                            updateField('email', event.target.value)
+                                        }
+                                    />
+
+                                    {fieldErrors.email && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.email}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="contact-phone">
+                                        Phone (optional if an email is given)
+                                    </label>
+
+                                    <input className={ui.input}
+                                        id="contact-phone"
+                                        type="tel"
+                                        placeholder="+63 917 123 4567"
+                                        value={form.phone}
+                                        maxLength={30}
+                                        onChange={(event) =>
+                                            updateField('phone', event.target.value)
+                                        }
+                                    />
+
+                                    {fieldErrors.phone && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.phone}
+                                        </p>
+                                    )}
+
+                                </div>
+
+
+                                <div className={ui.formGroup}>
+
+                                    <label className={ui.label} htmlFor="contact-description">
+                                        Description (optional)
+                                    </label>
+
+                                    <textarea className={`${ui.activityTextarea} h-20`}
+                                        id="contact-description"
+                                        placeholder="Short note about this professional"
+                                        value={form.description}
+                                        maxLength={5000}
+                                        onChange={(event) =>
+                                            updateField(
+                                                'description',
+                                                event.target.value
+                                            )
+                                        }
+                                    />
+
+                                    {fieldErrors.description && (
+                                        <p className={ui.fieldError}>
+                                            {fieldErrors.description}
+                                        </p>
+                                    )}
+
+                                </div>
+
+                                </div>
 
                             </div>
 
 
-                            <div className={ui.formGroup}>
+                            <div className={ui.activityFormActions}>
 
-                                <label className={ui.label} htmlFor="contact-title">
-                                    Title / Specialty
-                                </label>
-
-                                <input className={ui.input}
-                                    id="contact-title"
-                                    type="text"
-                                    placeholder="e.g. Occupational Therapist"
-                                    value={form.title}
-                                    maxLength={255}
-                                    onChange={(event) =>
-                                        updateField('title', event.target.value)
-                                    }
-                                    required
-                                />
-
-                                {fieldErrors.title && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.title}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="contact-email">
-                                    Email (optional if a phone is given)
-                                </label>
-
-                                <input className={ui.input}
-                                    id="contact-email"
-                                    type="email"
-                                    placeholder="name@example.com"
-                                    value={form.email}
-                                    maxLength={255}
-                                    onChange={(event) =>
-                                        updateField('email', event.target.value)
-                                    }
-                                />
-
-                                {fieldErrors.email && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.email}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="contact-phone">
-                                    Phone (optional if an email is given)
-                                </label>
-
-                                <input className={ui.input}
-                                    id="contact-phone"
-                                    type="tel"
-                                    placeholder="+63 917 123 4567"
-                                    value={form.phone}
-                                    maxLength={30}
-                                    onChange={(event) =>
-                                        updateField('phone', event.target.value)
-                                    }
-                                />
-
-                                {fieldErrors.phone && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.phone}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formGroup}>
-
-                                <label className={ui.label} htmlFor="contact-description">
-                                    Description (optional)
-                                </label>
-
-                                <textarea className={ui.textarea}
-                                    id="contact-description"
-                                    rows={3}
-                                    placeholder="Short note about this professional"
-                                    value={form.description}
-                                    maxLength={5000}
-                                    onChange={(event) =>
-                                        updateField(
-                                            'description',
-                                            event.target.value
-                                        )
-                                    }
-                                />
-
-                                {fieldErrors.description && (
-                                    <p className={ui.fieldError}>
-                                        {fieldErrors.description}
-                                    </p>
-                                )}
-
-                            </div>
-
-
-                            <div className={ui.formActions}>
+                                <button
+                                    type="button"
+                                    className={ui.cancelButton}
+                                    onClick={closeForm}
+                                    disabled={isSaving}
+                                >
+                                    Cancel
+                                </button>
 
                                 <button
                                     type="submit"
@@ -518,15 +733,6 @@ function ManageContacts() {
                                         : editingId === null
                                             ? 'Add Contact'
                                             : 'Save Changes'}
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={ui.cancelButton}
-                                    onClick={closeForm}
-                                    disabled={isSaving}
-                                >
-                                    Cancel
                                 </button>
 
                             </div>

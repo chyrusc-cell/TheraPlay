@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 
 // The API returns every feedback entry (there is no pagination yet), so the
 // dashboard only shows the newest few. Nothing is hidden on the server.
@@ -42,6 +43,12 @@ function ProfessionalDashboard() {
     const [feedbackError, setFeedbackError] = useState('');
     const [feedbackReloadKey, setFeedbackReloadKey] = useState(0);
 
+    // Number of accounts, counted from the admin accounts list. null = unknown.
+    const [userCount, setUserCount] = useState(null);
+    const [usersLoading, setUsersLoading] = useState(true);
+    const [usersError, setUsersError] = useState('');
+    const [usersReloadKey, setUsersReloadKey] = useState(0);
+
     useEffect(() => {
         const redirectToLogin = () => {
             ['theraplay_token', 'theraplay_user'].forEach((key) => {
@@ -63,6 +70,8 @@ function ProfessionalDashboard() {
         }
 
         const controller = new AbortController();
+
+        const startedAt = performance.now();
 
         const loadActivities = async () => {
             try {
@@ -96,6 +105,8 @@ function ProfessionalDashboard() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }
@@ -111,6 +122,7 @@ function ProfessionalDashboard() {
     // Submitted feedback (newest first, as returned by the API).
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadFeedback = async () => {
             try {
@@ -145,6 +157,8 @@ function ProfessionalDashboard() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setFeedbackLoading(false);
                 }
@@ -155,6 +169,65 @@ function ProfessionalDashboard() {
 
         return () => controller.abort();
     }, [feedbackReloadKey, navigate]);
+
+
+    // The accounts list (admin only) is the source of truth for the user count.
+    // There is no status or soft-delete column, so every account record counts.
+    useEffect(() => {
+        const controller = new AbortController();
+        const startedAt = performance.now();
+
+        const loadUsers = async () => {
+            try {
+                const result = await apiRequest('/admin/users', {
+                    signal: controller.signal,
+                });
+
+                if (result.status === 401) {
+                    clearSession();
+                    navigate('/login', {
+                        replace: true,
+                        state: { message: 'Please log in to continue.' },
+                    });
+                    return;
+                }
+
+                if (!result.ok || !Array.isArray(result.data?.data)) {
+                    throw new Error('Unable to load the account count.');
+                }
+
+                setUserCount(result.data.data.length);
+                setUsersError('');
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setUserCount(null);
+                setUsersError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                if (!controller.signal.aborted) {
+                    setUsersLoading(false);
+                }
+            }
+        };
+
+        loadUsers();
+
+        return () => controller.abort();
+    }, [usersReloadKey, navigate]);
+
+
+    const retryUsers = () => {
+        setUsersLoading(true);
+        setUsersError('');
+        setUsersReloadKey((key) => key + 1);
+    };
 
 
     const retryFeedback = () => {
@@ -225,16 +298,34 @@ function ProfessionalDashboard() {
                     <div className={cardClass}>
 
                         <div className="mb-[5px] text-[30px] font-bold">
-                            —
+                            {usersLoading ? (
+                                <>
+                                    <SkeletonBlock
+                                        style={{ width: 56, height: 32, margin: '0 auto' }}
+                                    />
+                                    <span className="sr-only">
+                                        Loading total users
+                                    </span>
+                                </>
+                            ) : usersError ? '—' : userCount}
                         </div>
 
                         <div className="text-[14px] text-[#666]">
                             Total Users
                         </div>
 
-                        <div className="mt-1 text-[13px] text-[#888]">
-                            Not available yet
-                        </div>
+                        {usersError && !usersLoading && (
+                            <div className="mt-1 text-[13px] text-[#d93025]" role="alert">
+                                {usersError}{' '}
+                                <button
+                                    type="button"
+                                    onClick={retryUsers}
+                                    className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-[#333] underline"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        )}
 
                     </div>
 

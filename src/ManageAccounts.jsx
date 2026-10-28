@@ -7,6 +7,7 @@ import {
     mapValidationErrors,
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
 
 const emptyForm = {
@@ -65,6 +66,7 @@ function ManageAccounts() {
 
     useEffect(() => {
         const controller = new AbortController();
+        const startedAt = performance.now();
 
         const loadAccounts = async () => {
             try {
@@ -101,6 +103,8 @@ function ManageAccounts() {
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
                 if (!controller.signal.aborted) {
                     setIsLoading(false);
                 }

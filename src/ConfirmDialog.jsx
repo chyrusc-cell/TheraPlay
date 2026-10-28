@@ -96,7 +96,7 @@ function ConfirmDialog({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.12s_ease] items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.2s_ease-out] items-center justify-center bg-black/40 p-4"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !busy) {
                     onCancel();
@@ -104,7 +104,7 @@ function ConfirmDialog({
             }}
         >
             <div
-                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.16s_ease] rounded-xl bg-white p-7 font-[Quicksand,sans-serif] shadow-[0_10px_40px_rgba(0,0,0,0.2)]"
+                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-xl bg-white p-7 font-[Quicksand,sans-serif] shadow-[0_10px_40px_rgba(0,0,0,0.2)]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-dialog-title"
