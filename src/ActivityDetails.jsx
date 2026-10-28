@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { apiRequest } from './api.js';
+import { ActivityDetailsSkeleton } from './Skeleton.jsx';
+import { difficultyBadgeClass } from './uiHelpers.js';
 import './css/ActivityDetails.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -8,6 +11,41 @@ const API_URL = 'http://127.0.0.1:8000/api';
 const getToken = () =>
     localStorage.getItem('theraplay_token') ||
     sessionStorage.getItem('theraplay_token');
+
+// Is this activity already completed for the logged-in parent? It reads the
+// saved progress from the server, so the answer survives refreshes and new
+// logins. Guests and failures count as "not completed" and never claim a
+// completion that was not saved.
+const fetchIsCompleted = async (activityId, signal) => {
+    if (!getToken()) {
+        return false;
+    }
+
+    try {
+        const result = await apiRequest('/progress', { signal });
+
+        if (!result.ok) {
+            return false;
+        }
+
+        const records = result.data.data?.records;
+
+        return (
+            Array.isArray(records) &&
+            records.some(
+                (record) =>
+                    String(record.activity_id) === String(activityId) &&
+                    record.status === 'completed'
+            )
+        );
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            throw error;
+        }
+
+        return false;
+    }
+};
 
 function ActivityDetails() {
 
@@ -40,13 +78,13 @@ function ActivityDetails() {
                 setError('');
                 setNotFound(false);
 
-                const response = await fetch(
-                    `${API_URL}/activities/${activityId}`,
-                    {
+                const [response, completed] = await Promise.all([
+                    fetch(`${API_URL}/activities/${activityId}`, {
                         headers: { Accept: 'application/json' },
                         signal: controller.signal,
-                    }
-                );
+                    }),
+                    fetchIsCompleted(activityId, controller.signal),
+                ]);
 
                 if (response.status === 404) {
                     setNotFound(true);
@@ -59,6 +97,8 @@ function ActivityDetails() {
 
                 const result = await response.json();
                 setActivity(result.data);
+                setIsCompleted(completed);
+                setMessage('');
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -288,8 +328,10 @@ function ActivityDetails() {
     if (isLoading) {
 
         return (
-            <div className="activity-not-found">
-                <p>Loading activity...</p>
+            <div className="activity-details-page">
+                <main className="activity-details-content">
+                    <ActivityDetailsSkeleton />
+                </main>
             </div>
         );
 
@@ -382,7 +424,7 @@ function ActivityDetails() {
                                 </span>
                             )}
 
-                            <span>
+                            <span className={difficultyBadgeClass(activity.difficulty)}>
                                 {activity.difficulty}
                             </span>
 

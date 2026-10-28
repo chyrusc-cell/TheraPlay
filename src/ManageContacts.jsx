@@ -5,6 +5,7 @@ import {
     clearSession,
     mapValidationErrors,
 } from './api.js';
+import { TableSkeleton } from './Skeleton.jsx';
 import './css/ManageActivities.css';
 import './css/ManageContacts.css';
 
@@ -542,9 +543,10 @@ function ManageContacts() {
 
                 {isLoading ? (
 
-                    <p className="list-state">
-                        Loading contacts...
-                    </p>
+                    <TableSkeleton
+                        label="Loading contacts..."
+                        columns={['Name', 'Title / Specialty', 'Contact', 'Actions']}
+                    />
 
                 ) : loadError ? (
 
@@ -615,7 +617,7 @@ function ManageContacts() {
 
                                     <tr key={contact.id}>
 
-                                        <td>
+                                        <td data-label="Name">
 
                                             {contact.name}
 
@@ -627,11 +629,11 @@ function ManageContacts() {
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Title / Specialty">
                                             {contact.title}
                                         </td>
 
-                                        <td>
+                                        <td data-label="Contact">
 
                                             {contact.email && (
                                                 <div>{contact.email}</div>
@@ -643,7 +645,7 @@ function ManageContacts() {
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Actions">
 
                                             {confirmingId === contact.id ? (
 
@@ -690,6 +692,7 @@ function ManageContacts() {
                                                     <button
                                                         type="button"
                                                         className="edit-button"
+                                                        aria-label={`Edit ${contact.name}`}
                                                         onClick={() =>
                                                             handleEdit(contact)
                                                         }
@@ -703,6 +706,7 @@ function ManageContacts() {
                                                     <button
                                                         type="button"
                                                         className="delete-button"
+                                                        aria-label={`Delete ${contact.name}`}
                                                         onClick={() =>
                                                             setConfirmingId(
                                                                 contact.id

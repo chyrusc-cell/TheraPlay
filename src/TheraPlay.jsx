@@ -20,6 +20,12 @@ import RequireRole from './RequireRole.jsx';
 import Contact from './Contact.jsx';
 import ManageContacts from './ManageContacts.jsx';
 import ManageAccounts from './ManageAccounts.jsx';
+import ResetPassword from './ResetPassword.jsx';
+
+// Shared look and responsive rules. Keep these LAST so they win over the
+// older page stylesheets imported above.
+import './css/ui.css';
+import './css/responsive.css';
 
 function TheraPlay() {
 
@@ -48,6 +54,12 @@ function TheraPlay() {
                 <Route
                     path="/forgot-password"
                     element={<ForgotPassword />}
+                />
+
+                {/* Opened from the link in the password reset email */}
+                <Route
+                    path="/reset-password"
+                    element={<ResetPassword />}
                 />
 
 

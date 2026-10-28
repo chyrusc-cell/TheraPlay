@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
+import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import './css/ProfessionalDashboard.css';
 
 // The API returns every feedback entry (there is no pagination yet), so the
@@ -197,7 +198,16 @@ function ProfessionalDashboard() {
                     <div className="stat-card">
 
                         <div className="stat-number">
-                            {isLoading || error ? '—' : activities.length}
+                            {isLoading ? (
+                                <>
+                                    <SkeletonBlock
+                                        style={{ width: 56, height: 32, margin: '0 auto' }}
+                                    />
+                                    <span className="sr-only">
+                                        Loading total activities
+                                    </span>
+                                </>
+                            ) : error ? '—' : activities.length}
                         </div>
 
                         <div className="stat-label">
@@ -282,9 +292,10 @@ function ProfessionalDashboard() {
                         <div className="recent-uploads">
 
                             {isLoading && (
-                                <p className="panel-note">
-                                    Loading activities...
-                                </p>
+                                <LinesSkeleton
+                                    label="Loading recent activities..."
+                                    lines={4}
+                                />
                             )}
 
                             {!isLoading && !error && recentUploads.length === 0 && (
@@ -347,9 +358,7 @@ function ProfessionalDashboard() {
 
                         {feedbackLoading ? (
 
-                            <p className="panel-note">
-                                Loading feedback...
-                            </p>
+                            <LinesSkeleton label="Loading feedback..." lines={5} />
 
                         ) : feedbackError ? (
 

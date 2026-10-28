@@ -6,6 +6,7 @@ import {
     clearSession,
     mapValidationErrors,
 } from './api.js';
+import { ContactCardsSkeleton } from './Skeleton.jsx';
 import './css/Contact.css';
 
 /*
@@ -311,9 +312,7 @@ function Contact() {
 
                     {isLoading ? (
 
-                        <p className="contact-status">
-                            Loading contacts...
-                        </p>
+                        <ContactCardsSkeleton />
 
                     ) : loadError ? (
 

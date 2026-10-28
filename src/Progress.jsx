@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CardsSkeleton } from './Skeleton.jsx';
 import './css/Progress.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -166,7 +167,7 @@ function Progress() {
         return (
             <div className="progress-page">
                 <main className="progress-content">
-                    <p className="progress-status">Loading your progress...</p>
+                    <CardsSkeleton label="Loading your progress..." cards={3} />
                 </main>
             </div>
         );

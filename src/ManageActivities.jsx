@@ -5,6 +5,8 @@ import {
     clearSession,
     mapValidationErrors,
 } from './api.js';
+import { TableSkeleton } from './Skeleton.jsx';
+import { difficultyBadgeClass } from './uiHelpers.js';
 import './css/ManageActivities.css';
 
 // Uploads: the server checks everything again; these only give quick feedback.
@@ -1010,9 +1012,10 @@ function ManageActivities() {
 
                 {isLoading ? (
 
-                    <p className="list-state">
-                        Loading activities...
-                    </p>
+                    <TableSkeleton
+                        label="Loading activities..."
+                        columns={['Activity', 'Category', 'Difficulty', 'Status', 'Actions']}
+                    />
 
                 ) : loadError ? (
 
@@ -1087,23 +1090,27 @@ function ManageActivities() {
 
                                     <tr key={activity.id}>
 
-                                        <td>
+                                        <td data-label="Activity">
                                             {activity.title}
                                         </td>
 
-                                        <td>
+                                        <td data-label="Category">
                                             {activity.category || '—'}
                                         </td>
 
-                                        <td>
+                                        <td data-label="Difficulty">
 
-                                            <span className="difficulty-badge">
+                                            <span
+                                                className={`difficulty-badge ${difficultyBadgeClass(
+                                                    activity.difficulty
+                                                )}`}
+                                            >
                                                 {activity.difficulty}
                                             </span>
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Status">
 
                                             <span
                                                 className={`difficulty-badge status-badge ${
@@ -1119,13 +1126,14 @@ function ManageActivities() {
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Actions">
 
                                             <div className="table-actions">
 
                                                 <button
                                                     type="button"
                                                     className="edit-button"
+                                                    aria-label={`Edit ${activity.title}`}
                                                     onClick={() =>
                                                         handleEdit(activity.id)
                                                     }
@@ -1140,7 +1148,16 @@ function ManageActivities() {
 
                                                 <button
                                                     type="button"
-                                                    className="publish-button"
+                                                    className={`publish-button ${
+                                                        activity.is_published
+                                                            ? 'is-unpublish'
+                                                            : 'is-publish'
+                                                    }`}
+                                                    aria-label={`${
+                                                        activity.is_published
+                                                            ? 'Unpublish'
+                                                            : 'Publish'
+                                                    } ${activity.title}`}
                                                     onClick={() =>
                                                         handleTogglePublish(
                                                             activity

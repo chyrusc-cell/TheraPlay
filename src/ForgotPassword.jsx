@@ -1,13 +1,87 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest, mapValidationErrors } from './api.js';
 import './css/ForgotPassword.css';
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');
+    const [isSending, setIsSending] = useState(false);
 
-    const handleSubmit = (event) => {
+    // { type: 'success' | 'warning' | 'error', text }
+    const [notice, setNotice] = useState(null);
+
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        alert(`Password reset request sent to ${email}`);
+
+        if (isSending) {
+            return;
+        }
+
+        const trimmed = email.trim();
+
+        // Quick feedback only; the server validates again.
+        if (!trimmed || !/^\S+@\S+\.\S+$/.test(trimmed)) {
+            setNotice({
+                type: 'error',
+                text: 'Please enter a valid email address.',
+            });
+            return;
+        }
+
+        setIsSending(true);
+        setNotice(null);
+
+        try {
+            // Public endpoint: nobody is logged in on this page.
+            const result = await apiRequest('/forgot-password', {
+                method: 'POST',
+                auth: false,
+                body: { email: trimmed },
+            });
+
+            if (result.status === 422) {
+                const errors = mapValidationErrors(result.data.errors);
+
+                setNotice({
+                    type: 'error',
+                    text: errors.email || 'Please enter a valid email address.',
+                });
+                return;
+            }
+
+            if (result.status === 429) {
+                setNotice({
+                    type: 'error',
+                    text: 'Too many requests. Please wait a minute and try again.',
+                });
+                return;
+            }
+
+            if (!result.ok) {
+                setNotice({
+                    type: 'error',
+                    text:
+                        result.data.message ||
+                        'Unable to send the request. Please try again.',
+                });
+                return;
+            }
+
+            // The server's wording is used as is. It never says whether an
+            // account exists, and it says plainly when email is not set up.
+            setNotice({
+                type: result.data.delivery_available ? 'success' : 'warning',
+                text: result.data.message,
+            });
+        } catch {
+            // The typed email stays in the box so it can be sent again.
+            setNotice({
+                type: 'error',
+                text: 'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setIsSending(false);
+        }
     };
 
     return (
@@ -40,13 +114,36 @@ function ForgotPassword() {
                             placeholder=" "
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
+                            disabled={isSending}
                             required
                         />
                         <label htmlFor="email">Email</label>
                     </div>
 
-                    <button type="submit" className="submit-button">
-                        Submit
+                    {notice && (
+                        <p
+                            role={notice.type === 'error' ? 'alert' : 'status'}
+                            style={{
+                                color:
+                                    notice.type === 'success'
+                                        ? '#188038'
+                                        : notice.type === 'warning'
+                                            ? '#b26a00'
+                                            : '#d93025',
+                                margin: '0 0 16px',
+                                fontSize: '14px',
+                            }}
+                        >
+                            {notice.text}
+                        </p>
+                    )}
+
+                    <button
+                        type="submit"
+                        className="submit-button"
+                        disabled={isSending}
+                    >
+                        {isSending ? 'Sending...' : 'Submit'}
                     </button>
                 </form>
 

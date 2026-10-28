@@ -6,6 +6,7 @@ import {
     clearSession,
     mapValidationErrors,
 } from './api.js';
+import { TableSkeleton } from './Skeleton.jsx';
 import './css/ManageActivities.css';
 import './css/ManageContacts.css';
 import './css/ManageAccounts.css';
@@ -363,6 +364,7 @@ function ManageAccounts() {
                 <button
                     type="button"
                     className="edit-button"
+                    aria-label={`Edit ${account.name}`}
                     onClick={() => handleEdit(account)}
                     disabled={busyId !== null}
                 >
@@ -372,6 +374,7 @@ function ManageAccounts() {
                 <button
                     type="button"
                     className="publish-button"
+                    aria-label={`${account.role === 'admin' ? 'Make parent' : 'Make admin'}: ${account.name}`}
                     onClick={() =>
                         setConfirming({ id: account.id, type: 'role' })
                     }
@@ -383,6 +386,7 @@ function ManageAccounts() {
                 <button
                     type="button"
                     className="delete-button"
+                    aria-label={`Delete ${account.name}`}
                     onClick={() =>
                         setConfirming({ id: account.id, type: 'delete' })
                     }
@@ -655,9 +659,10 @@ function ManageAccounts() {
 
                 {isLoading ? (
 
-                    <p className="list-state">
-                        Loading accounts...
-                    </p>
+                    <TableSkeleton
+                        label="Loading accounts..."
+                        columns={['Name', 'Email', 'Role', 'Actions']}
+                    />
 
                 ) : loadError ? (
 
@@ -726,7 +731,7 @@ function ManageAccounts() {
 
                                     <tr key={account.id}>
 
-                                        <td>
+                                        <td data-label="Name">
 
                                             {account.name}
 
@@ -744,11 +749,11 @@ function ManageAccounts() {
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Email">
                                             {account.email}
                                         </td>
 
-                                        <td>
+                                        <td data-label="Role">
 
                                             <span
                                                 className={`difficulty-badge role-badge ${account.role}`}
@@ -760,7 +765,7 @@ function ManageAccounts() {
 
                                         </td>
 
-                                        <td>
+                                        <td data-label="Actions">
                                             {renderActions(account)}
                                         </td>
 

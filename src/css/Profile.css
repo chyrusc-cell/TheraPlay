@@ -298,3 +298,41 @@ body {
 .btn-save:hover {
     background-color: #111;
 }
+
+/* --- Password reset request --- */
+.password-card h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 12px;
+}
+
+.password-help {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.password-card .btn-edit-pill:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.reset-notice {
+    margin-top: 16px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.reset-notice.success {
+    color: #188038;
+}
+
+.reset-notice.warning {
+    color: #b26a00;
+}
+
+.reset-notice.error {
+    color: #d93025;
+}

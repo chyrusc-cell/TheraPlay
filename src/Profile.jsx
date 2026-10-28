@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiRequest } from './api.js';
+import { CardsSkeleton } from './Skeleton.jsx';
 import './css/Profile.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -38,6 +40,10 @@ function Profile() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
+
+    // Password reset request (separate from saving the profile).
+    const [isSendingReset, setIsSendingReset] = useState(false);
+    const [resetNotice, setResetNotice] = useState(null);
 
     // Last profile that came from the server (used by Cancel).
     const [savedUser, setSavedUser] = useState(null);
@@ -219,6 +225,52 @@ function Profile() {
         setIsEditing(false);
     };
 
+    // Asks the server to email a reset link to this account's own address.
+    // No email or id is sent: the server uses the logged-in user.
+    const handleRequestReset = async () => {
+        if (isSendingReset) {
+            return;
+        }
+
+        setIsSendingReset(true);
+        setResetNotice(null);
+
+        try {
+            const result = await apiRequest('/profile/password-reset', {
+                method: 'POST',
+            });
+
+            if (result.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            // Success is shown only when the server says the email was really
+            // delivered. Otherwise its explanation is shown as a warning.
+            if (result.ok) {
+                setResetNotice({
+                    type: result.data.delivered ? 'success' : 'warning',
+                    text: result.data.message,
+                });
+                return;
+            }
+
+            setResetNotice({
+                type: 'error',
+                text:
+                    result.data.message ||
+                    'Unable to request a password reset. Please try again.',
+            });
+        } catch {
+            setResetNotice({
+                type: 'error',
+                text: 'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setIsSendingReset(false);
+        }
+    };
+
     const roleLabel = savedUser?.role
         ? savedUser.role.charAt(0).toUpperCase() + savedUser.role.slice(1)
         : '';
@@ -227,7 +279,7 @@ function Profile() {
         return (
             <div className="profile-page">
                 <main className="profile-content">
-                    <p>Loading your profile...</p>
+                    <CardsSkeleton label="Loading your profile..." cards={2} />
                 </main>
             </div>
         );
@@ -393,6 +445,36 @@ function Profile() {
                         </div>
                     )}
                 </form>
+
+                {/* Password reset request */}
+                <div className="card password-card">
+                    <h3>Password</h3>
+
+                    <p className="password-help">
+                        We can send a password reset link to your registered
+                        email address{savedUser?.email ? ` (${savedUser.email})` : ''}.
+                        Your password only changes after you open the link and
+                        choose a new one.
+                    </p>
+
+                    <button
+                        className="btn-edit-pill"
+                        type="button"
+                        onClick={handleRequestReset}
+                        disabled={isSendingReset || !savedUser}
+                    >
+                        {isSendingReset ? 'Sending...' : 'Reset Password'}
+                    </button>
+
+                    {resetNotice && (
+                        <p
+                            className={`reset-notice ${resetNotice.type}`}
+                            role={resetNotice.type === 'error' ? 'alert' : 'status'}
+                        >
+                            {resetNotice.text}
+                        </p>
+                    )}
+                </div>
             </main>
         </div>
     );

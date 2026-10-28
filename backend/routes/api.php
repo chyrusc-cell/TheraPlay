@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Admin\FeedbackManagementController;
 use App\Http\Controllers\Api\Admin\UserManagementController;
 use App\Http\Controllers\Api\Admin\ActivityResourceController;
 use App\Http\Controllers\Api\ActivityMaterialController;
+use App\Http\Controllers\Api\PasswordResetController;
 
 Route::post('/register', [RegisterController::class, 'store']);
 
@@ -40,15 +41,29 @@ Route::get('/activities/{activity}/resources/{resource}/download', [ActivityMate
     ->whereNumber(['activity', 'resource'])
     ->scopeBindings();
 
+// Progress belongs to a parent's own child, so only parents can record it.
 Route::post('/activities/{id}/complete', [ActivityCompletionController::class, 'store'])
     ->whereNumber('id')
-    ->middleware('auth:sanctum');
+    ->middleware(['auth:sanctum', 'role:parent']);
 
 Route::post('/children', [ChildController::class, 'store'])
     ->middleware('auth:sanctum');
 
 Route::put('/profile', [ProfileController::class, 'update'])
     ->middleware('auth:sanctum');
+
+// Password reset: the request is for the logged-in user's OWN email only;
+// completing it needs the emailed token and does not need a login.
+Route::post('/profile/password-reset', [PasswordResetController::class, 'request'])
+    ->middleware(['auth:sanctum', 'throttle:5,1']);
+
+// Forgot Password page (nobody is logged in). Rate limited per client; the
+// answer is identical for every email so accounts cannot be discovered.
+Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])
+    ->middleware('throttle:5,1');
+
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+    ->middleware('throttle:10,1');
 
 Route::get('/progress', [ProgressController::class, 'index'])
     ->middleware('auth:sanctum');

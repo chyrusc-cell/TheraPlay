@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { CardsSkeleton } from './Skeleton.jsx';
 import './css/Dashboard.css';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -192,7 +193,7 @@ function Dashboard() {
         return (
             <div className="dashboard-page">
                 <main className="dashboard-content">
-                    <p className="dashboard-status">Loading your dashboard...</p>
+                    <CardsSkeleton label="Loading your dashboard..." cards={3} />
                 </main>
             </div>
         );

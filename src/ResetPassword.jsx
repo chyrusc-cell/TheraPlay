@@ -1,0 +1,201 @@
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { apiRequest, mapValidationErrors } from './api.js';
+import './css/ForgotPassword.css';
+
+// Opened from the link in the password reset email:
+//   /reset-password?token=...&email=...
+// The token only comes from that link. The server checks it, decides whether
+// it is valid, and applies the new password.
+function ResetPassword() {
+    const navigate = useNavigate();
+    const [params] = useSearchParams();
+
+    const token = params.get('token') || '';
+    const email = params.get('email') || '';
+
+    const [password, setPassword] = useState('');
+    const [passwordConfirmation, setPasswordConfirmation] = useState('');
+    const [fieldError, setFieldError] = useState('');
+    const [message, setMessage] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+
+    const linkIsIncomplete = !token || !email;
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (isSaving) {
+            return;
+        }
+
+        // Quick feedback only; the server repeats these checks.
+        if (password.length < 8) {
+            setFieldError('The password must be at least 8 characters.');
+            return;
+        }
+
+        if (password !== passwordConfirmation) {
+            setFieldError('The password confirmation does not match.');
+            return;
+        }
+
+        setIsSaving(true);
+        setFieldError('');
+        setMessage('');
+
+        try {
+            const result = await apiRequest('/reset-password', {
+                method: 'POST',
+                auth: false,
+                body: {
+                    token,
+                    email,
+                    password,
+                    password_confirmation: passwordConfirmation,
+                },
+            });
+
+            if (result.status === 429) {
+                setMessage('Too many attempts. Please wait a minute and try again.');
+                return;
+            }
+
+            if (result.status === 422 && result.data.errors) {
+                const errors = mapValidationErrors(result.data.errors);
+
+                // Problems with the token or email are about the link itself.
+                if (errors.token || errors.email) {
+                    setMessage(
+                        'This password reset link is invalid or has expired. Please request a new one.'
+                    );
+                } else {
+                    setFieldError(errors.password || 'Please check the new password.');
+                }
+
+                return;
+            }
+
+            if (!result.ok) {
+                setMessage(
+                    result.data.message ||
+                    'Unable to reset the password. Please try again.'
+                );
+                return;
+            }
+
+            // Replace this page in the history so the token is not left behind.
+            navigate('/login', {
+                replace: true,
+                state: {
+                    message: 'Your password has been reset. Please log in with your new password.',
+                },
+            });
+        } catch {
+            setMessage('Unable to connect to the server. Please try again.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="forgot-password-page">
+            <div className="forgot-password-panel">
+
+                <div className="header-logo">
+                    <div className="logo-icon"></div>
+                    <h2>TheraPlay!</h2>
+                </div>
+
+                <Link to="/login" className="back-link">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Back to login
+                </Link>
+
+                <div className="header-text">
+                    <h1>Choose a new password</h1>
+                    <p className="subtitle">
+                        {linkIsIncomplete
+                            ? 'This reset link is incomplete.'
+                            : `Resetting the password for ${email}`}
+                    </p>
+                </div>
+
+                {linkIsIncomplete ? (
+
+                    <p
+                        role="alert"
+                        style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                    >
+                        Please open the link from your password reset email, or
+                        request a new link from your Profile page.
+                    </p>
+
+                ) : (
+
+                    <form onSubmit={handleSubmit}>
+                        <div className="input-group">
+                            <input
+                                type="password"
+                                id="new-password"
+                                placeholder=" "
+                                autoComplete="new-password"
+                                value={password}
+                                onChange={(event) => setPassword(event.target.value)}
+                                disabled={isSaving}
+                                required
+                            />
+                            <label htmlFor="new-password">New password</label>
+                        </div>
+
+                        <div className="input-group">
+                            <input
+                                type="password"
+                                id="confirm-password"
+                                placeholder=" "
+                                autoComplete="new-password"
+                                value={passwordConfirmation}
+                                onChange={(event) => setPasswordConfirmation(event.target.value)}
+                                disabled={isSaving}
+                                required
+                            />
+                            <label htmlFor="confirm-password">Confirm new password</label>
+                        </div>
+
+                        {fieldError && (
+                            <p
+                                role="alert"
+                                style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                            >
+                                {fieldError}
+                            </p>
+                        )}
+
+                        {message && (
+                            <p
+                                role="alert"
+                                style={{ color: '#d93025', fontSize: '14px', margin: '0 0 16px' }}
+                            >
+                                {message}
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            className="submit-button"
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving...' : 'Reset Password'}
+                        </button>
+                    </form>
+
+                )}
+
+            </div>
+        </div>
+    );
+}
+
+export default ResetPassword;

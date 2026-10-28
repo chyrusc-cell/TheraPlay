@@ -1,26 +1,77 @@
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { apiRequest, clearSession, getToken } from './api.js';
+import { ActivityCardsSkeleton } from './Skeleton.jsx';
+import { difficultyBadgeClass } from './uiHelpers.js';
 import './css/Activities.css';
+
+// Which activities has the logged-in parent completed? This reads the same
+// saved progress as the Progress page. Guests, expired logins and failures
+// simply mean "nothing completed"; they never mark anything as completed.
+const loadCompletedIds = async (signal) => {
+    if (!getToken()) {
+        return { completedIds: new Set(), failed: false };
+    }
+
+    try {
+        const result = await apiRequest('/progress', { signal });
+
+        if (result.status === 401) {
+            clearSession();
+            return { completedIds: new Set(), failed: false };
+        }
+
+        if (!result.ok) {
+            return { completedIds: new Set(), failed: true };
+        }
+
+        const records = Array.isArray(result.data.data?.records)
+            ? result.data.data.records
+            : [];
+
+        return {
+            completedIds: new Set(
+                records
+                    .filter((record) => record.status === 'completed')
+                    .map((record) => record.activity_id)
+            ),
+            failed: false,
+        };
+    } catch (err) {
+        if (err.name === 'AbortError') {
+            throw err;
+        }
+
+        return { completedIds: new Set(), failed: true };
+    }
+};
 
 function Activities() {
     const [activities, setActivities] = useState([]);
+    const [completedIds, setCompletedIds] = useState(new Set());
+    const [progressFailed, setProgressFailed] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
+        const controller = new AbortController();
+
         const fetchActivities = async () => {
             try {
                 setIsLoading(true);
                 setError('');
 
-                const response = await fetch(
-                    'http://127.0.0.1:8000/api/activities',
-                    {
+                // Both are loaded before anything is shown, so the cards do
+                // not appear in one order and then jump into another.
+                const [response, progress] = await Promise.all([
+                    fetch('http://127.0.0.1:8000/api/activities', {
                         headers: {
                             Accept: 'application/json',
                         },
-                    }
-                );
+                        signal: controller.signal,
+                    }),
+                    loadCompletedIds(controller.signal),
+                ]);
 
                 if (!response.ok) {
                     throw new Error('Unable to load activities.');
@@ -31,18 +82,38 @@ function Activities() {
                 setActivities(
                     Array.isArray(result.data) ? result.data : []
                 );
+                setCompletedIds(progress.completedIds);
+                setProgressFailed(progress.failed);
             } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
                 setError(
                     err.message ||
                     'Unable to connect to the server. Please try again.'
                 );
             } finally {
-                setIsLoading(false);
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
             }
         };
 
         fetchActivities();
+
+        return () => controller.abort();
     }, []);
+
+    // Not completed first, completed last. Each group keeps the order the
+    // server sent, and every activity appears exactly once.
+    const orderedActivities = useMemo(
+        () => [
+            ...activities.filter((activity) => !completedIds.has(activity.id)),
+            ...activities.filter((activity) => completedIds.has(activity.id)),
+        ],
+        [activities, completedIds]
+    );
 
     return (
         <div className="activities-page">
@@ -59,9 +130,7 @@ function Activities() {
 
                 {/* Activity Cards Grid */}
                 {isLoading ? (
-                    <p className="activities-status">
-                        Loading activities...
-                    </p>
+                    <ActivityCardsSkeleton />
                 ) : error ? (
                     <p
                         className="activities-status activities-error"
@@ -74,8 +143,16 @@ function Activities() {
                         No activities are available right now.
                     </p>
                 ) : (
+                    <>
+                    {progressFailed && (
+                        <p className="activities-status activities-note">
+                            We could not load your completion status, so
+                            completed activities are not marked right now.
+                        </p>
+                    )}
+
                     <div className="activities-grid">
-                        {activities.map((activity) => (
+                        {orderedActivities.map((activity) => (
                             <div
                                 className="activity-card"
                                 key={activity.id}
@@ -89,6 +166,24 @@ function Activities() {
                                 </div>
 
                                 <div className="activity-info">
+                                    <div className="activity-badges">
+                                        {activity.difficulty && (
+                                            <span
+                                                className={difficultyBadgeClass(
+                                                    activity.difficulty
+                                                )}
+                                            >
+                                                {activity.difficulty}
+                                            </span>
+                                        )}
+
+                                        {completedIds.has(activity.id) && (
+                                            <span className="activity-completed-tag">
+                                                ✓ Completed
+                                            </span>
+                                        )}
+                                    </div>
+
                                     <h2>{activity.title}</h2>
 
                                     <p className="activity-desc">
@@ -99,6 +194,7 @@ function Activities() {
                                     <Link
                                         to={`/activities/${activity.id}`}
                                         className="activity-link"
+                                        aria-label={`View activity: ${activity.title}`}
                                     >
                                         View Activity
                                         <svg
@@ -124,6 +220,7 @@ function Activities() {
                             </div>
                         ))}
                     </div>
+                    </>
                 )}
             </main>
         </div>

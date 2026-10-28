@@ -162,6 +162,14 @@ body {
 .img-placeholder-5 { background-color: #e8f5e9; }
 .img-placeholder-6 { background-color: #fff8e1; }
 
+/* The info block fills the card (a flex column), so the description can grow
+   and the "View Activity" link always sits at the bottom edge. */
+.activity-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
 .activity-info h2 {
     font-size: 20px;
     font-weight: 700;
@@ -201,4 +209,22 @@ body {
 
 .activities-error {
     color: #d93025;
+}
+
+
+/* Marks an activity the parent has already completed. */
+.activity-completed-tag {
+    align-self: flex-start;
+    margin-bottom: 10px;
+    padding: 3px 10px;
+    background-color: #e6f4ea;
+    border-radius: 12px;
+    color: #188038;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.activities-note {
+    padding: 0 0 20px;
+    font-size: 13px;
 }

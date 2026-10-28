@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from './authContext.js';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
 import logoFull from '../img/theraplaylogo2.png';
 import logoIcon from '../img/theraplaylogo.png';
@@ -28,6 +29,7 @@ const linkClass = ({ isActive }) =>
 function Sidebar() {
     const navigate = useNavigate();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
     // The role comes from the server (GET /api/user), not from the browser.
     // Hiding links is only a convenience: Laravel enforces access.
@@ -202,13 +204,25 @@ function Sidebar() {
                     type="button"
                     className="sidebar-logout"
                     title="Logout"
-                    onClick={handleLogout}
+                    onClick={() => setShowLogoutConfirm(true)}
                     disabled={isLoggingOut}
                 >
                     <LogOut size={20} aria-hidden="true" />
                     <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
             </div>
+
+            {/* Logging out only starts after the user confirms here. */}
+            <ConfirmDialog
+                open={showLogoutConfirm}
+                title="Log out?"
+                message="Are you sure you want to log out of TheraPlay?"
+                confirmLabel="Log Out"
+                busyLabel="Logging out..."
+                busy={isLoggingOut}
+                onConfirm={handleLogout}
+                onCancel={() => setShowLogoutConfirm(false)}
+            />
         </aside>
     );
 }
