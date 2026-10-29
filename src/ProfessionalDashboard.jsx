@@ -270,277 +270,257 @@ function ProfessionalDashboard() {
                 )}
 
 
-                {/* Statistics */}
+                {/*
+                  Two columns: the statistics and the recent uploads on the left,
+                  the parent feedback on the right, as tall as the left column
+                  (the right column adds no height of its own on desktop: the
+                  card fills it and its list scrolls). Stacked on tablets and
+                  phones.
+                */}
 
-                <section className="mb-[30px] grid grid-cols-3 gap-5 phone-lg:grid-cols-1">
+                <div className="grid grid-cols-2 items-stretch gap-5 tablet:grid-cols-1">
 
-                    <div className={cardClass}>
+                    {/* Left column */}
 
-                        <div className="mb-[5px] text-[30px] font-bold">
-                            {isLoading ? (
-                                <>
-                                    <SkeletonBlock
-                                        style={{ width: 56, height: 32, margin: '0 auto' }}
-                                    />
-                                    <span className="sr-only">
-                                        Loading total activities
-                                    </span>
-                                </>
-                            ) : error ? '—' : activities.length}
-                        </div>
+                    <div className="flex min-w-0 flex-col gap-5">
 
-                        <div className="text-[14px] text-[#666]">
-                            Total Activities
-                        </div>
+                        {/* Statistics */}
 
-                    </div>
+                        <section className="grid grid-cols-2 gap-5 phone:grid-cols-1">
 
+                        <div className={cardClass}>
 
-                    <div className={cardClass}>
-
-                        <div className="mb-[5px] text-[30px] font-bold">
-                            {usersLoading ? (
-                                <>
-                                    <SkeletonBlock
-                                        style={{ width: 56, height: 32, margin: '0 auto' }}
-                                    />
-                                    <span className="sr-only">
-                                        Loading total users
-                                    </span>
-                                </>
-                            ) : usersError ? '—' : userCount}
-                        </div>
-
-                        <div className="text-[14px] text-[#666]">
-                            Total Users
-                        </div>
-
-                        {usersError && !usersLoading && (
-                            <div className="mt-1 text-[13px] text-[#d93025]" role="alert">
-                                {usersError}{' '}
-                                <button
-                                    type="button"
-                                    onClick={retryUsers}
-                                    className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-[#333] underline"
-                                >
-                                    Try again
-                                </button>
+                            <div className="mb-[5px] text-[30px] font-bold">
+                                {isLoading ? (
+                                    <>
+                                        <SkeletonBlock
+                                            style={{ width: 56, height: 32, margin: '0 auto' }}
+                                        />
+                                        <span className="sr-only">
+                                            Loading total activities
+                                        </span>
+                                    </>
+                                ) : error ? '—' : activities.length}
                             </div>
-                        )}
 
-                    </div>
-
-
-                    <div className={cardClass}>
-
-                        <div className="mb-[5px] text-[30px] font-bold">
-                            —
-                        </div>
-
-                        <div className="text-[14px] text-[#666]">
-                            Completed Activities
-                        </div>
-
-                        <div className="mt-1 text-[13px] text-[#888]">
-                            Not available yet
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* Dashboard Sections */}
-
-                <section className="grid grid-cols-2 gap-5 tablet:grid-cols-1">
-
-                    {/* Activity Progress */}
-
-                    <div className={cardClass}>
-
-                        <h2 className="mb-[25px] text-[18px] font-bold">
-                            Activity Progress Overview
-                        </h2>
-
-                        <p className={noteClass}>
-                            Progress statistics are not available yet.
-                        </p>
-
-                    </div>
-
-
-                    {/* Recent Uploads */}
-
-                    <div className={cardClass}>
-
-                        <div className="mb-5 flex items-center justify-between">
-
-                            <h2 className="text-[18px] font-bold">
-                                Recent Activity Uploads
-                            </h2>
-
-                            <Link
-                                to="/manage-activities"
-                                className="text-[13px] font-bold text-[#333] no-underline"
-                            >
-                                View All
-                            </Link>
+                            <div className="text-[14px] text-[#666]">
+                                Total Activities
+                            </div>
 
                         </div>
 
 
-                        <div className="flex flex-col">
+                        <div className={cardClass}>
 
-                            {isLoading && (
-                                <LinesSkeleton
-                                    label="Loading recent activities..."
-                                    lines={4}
-                                />
-                            )}
+                            <div className="mb-[5px] text-[30px] font-bold">
+                                {usersLoading ? (
+                                    <>
+                                        <SkeletonBlock
+                                            style={{ width: 56, height: 32, margin: '0 auto' }}
+                                        />
+                                        <span className="sr-only">
+                                            Loading total users
+                                        </span>
+                                    </>
+                                ) : usersError ? '—' : userCount}
+                            </div>
 
-                            {!isLoading && !error && recentUploads.length === 0 && (
-                                <p className={noteClass}>
-                                    No activities yet.
-                                </p>
-                            )}
+                            <div className="text-[14px] text-[#666]">
+                                Total Users
+                            </div>
 
-                            {recentUploads.map((item) => (
-
-                                <div
-                                    className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-[#e5e5e5] py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
-                                    key={item.id}
-                                >
-
-                                    <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-[#e9eef3] text-[10px] text-[#8a96a3]">
-                                        Image
-                                    </div>
-
-                                    <div>
-
-                                        <h3 className="mb-1 text-[14px] font-bold">
-                                            {item.title}
-                                        </h3>
-
-                                        <p className="text-[12px] text-[#777]">
-                                            {item.category || 'No category'}
-                                            {' • '}
-                                            {item.is_published
-                                                ? 'Published'
-                                                : 'Draft'}
-                                        </p>
-
-                                    </div>
-
-                                    <div className="text-[11px] text-[#888] phone:col-start-2">
-                                        {formatDate(item.created_at)}
-                                    </div>
-
+                            {usersError && !usersLoading && (
+                                <div className="mt-1 text-[13px] text-[#d93025]" role="alert">
+                                    {usersError}{' '}
+                                    <button
+                                        type="button"
+                                        onClick={retryUsers}
+                                        className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-[#333] underline"
+                                    >
+                                        Try again
+                                    </button>
                                 </div>
-
-                            ))}
+                            )}
 
                         </div>
 
-                    </div>
-
-                </section>
+                        </section>
 
 
-                {/* Feedback from parents */}
+                        {/* Recent Uploads */}
 
-                <section className="mt-5">
+    <div className={`${cardClass} min-w-0 flex-1`}>
 
-                    <div className={cardClass}>
+                            <div className="mb-5 flex items-center justify-between">
 
-                        <h2 className="mb-[25px] text-[18px] font-bold">
-                            Parent Feedback
-                        </h2>
+                                <h2 className="text-[18px] font-bold">
+                                    Recent Activity Uploads
+                                </h2>
 
-                        {feedbackLoading ? (
-
-                            <LinesSkeleton label="Loading feedback..." lines={5} />
-
-                        ) : feedbackError ? (
-
-                            <div role="alert">
-
-                                <p className={noteErrorClass}>
-                                    {feedbackError}
-                                </p>
-
-                                <button
-                                    type="button"
-                                    className="cursor-pointer rounded-md border border-[#ccc] bg-white px-4 py-2 text-[13px] text-[#333] enabled:hover:bg-hover"
-                                    onClick={retryFeedback}
+                                <Link
+                                    to="/manage-activities"
+                                    className="text-[13px] font-bold text-[#333] no-underline"
                                 >
-                                    Try again
-                                </button>
+                                    View All
+                                </Link>
 
                             </div>
 
-                        ) : feedback.length === 0 ? (
 
-                            <p className={noteClass}>
-                                No feedback has been submitted yet.
-                            </p>
+                            <div className="flex flex-col">
 
-                        ) : (
+                                {isLoading && (
+                                    <LinesSkeleton
+                                        label="Loading recent activities..."
+                                        lines={4}
+                                    />
+                                )}
 
-                            <>
+                                {!isLoading && !error && recentUploads.length === 0 && (
+                                    <p className={noteClass}>
+                                        No activities yet.
+                                    </p>
+                                )}
 
-                                <div className="flex flex-col">
+                                {recentUploads.map((item) => (
 
-                                    {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
+                                    <div
+                                        className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-[#e5e5e5] py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
+                                        key={item.id}
+                                    >
 
-                                        <div
-                                            className="border-b border-[#e5e5e5] py-3.5 first:pt-0 last:border-b-0"
-                                            key={item.id}
-                                        >
+                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-[#e9eef3] text-[10px] text-[#8a96a3]">
+                                            Image
+                                        </div>
 
-                                            <div className="mb-1.5 flex justify-between gap-3 phone:flex-col phone:gap-0.5">
+                                        <div>
 
-                                                <span className="text-[13px] font-bold [word-break:break-word]">
-                                                    {item.user
-                                                        ? `${item.user.name} (${item.user.email})`
-                                                        : 'Former user'}
-                                                </span>
+                                            <h3 className="mb-1 text-[14px] font-bold">
+                                                {item.title}
+                                            </h3>
 
-                                                <span className="shrink-0 text-[12px] text-[#888]">
-                                                    {formatDate(item.created_at)}
-                                                </span>
-
-                                            </div>
-
-                                            {item.rating && (
-                                                <div className="mb-1.5 text-[12px] text-[#666]">
-                                                    Rating: {item.rating} / 5
-                                                </div>
-                                            )}
-
-                                            <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-[#444] [word-break:break-word]">
-                                                {item.message}
+                                            <p className="text-[12px] text-[#777]">
+                                                {item.category || 'No category'}
+                                                {' • '}
+                                                {item.is_published
+                                                    ? 'Published'
+                                                    : 'Draft'}
                                             </p>
 
                                         </div>
 
-                                    ))}
+                                        <div className="text-[11px] text-[#888] phone:col-start-2">
+                                            {formatDate(item.created_at)}
+                                        </div>
 
-                                </div>
+                                    </div>
 
-                                {feedback.length > FEEDBACK_LIMIT && (
-                                    <p className={noteClass}>
-                                        Showing the latest {FEEDBACK_LIMIT} of{' '}
-                                        {feedback.length} feedback entries.
-                                    </p>
-                                )}
+                                ))}
 
-                            </>
+                            </div>
 
-                        )}
+                        </div>
 
                     </div>
 
-                </section>
+
+                    {/* Right column: feedback from parents */}
+
+                    <section className="relative min-h-[320px] min-w-0 tablet:static tablet:min-h-0">
+
+    <div className={`${cardClass} absolute inset-0 flex flex-col tablet:relative tablet:max-h-[520px]`}>
+
+                            <h2 className="mb-[25px] shrink-0 text-[18px] font-bold">
+                                Parent Feedback
+                            </h2>
+
+                            {feedbackLoading ? (
+
+                                <LinesSkeleton label="Loading feedback..." lines={5} />
+
+                            ) : feedbackError ? (
+
+                                <div role="alert">
+
+                                    <p className={noteErrorClass}>
+                                        {feedbackError}
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        className="cursor-pointer rounded-md border border-[#ccc] bg-white px-4 py-2 text-[13px] text-[#333] enabled:hover:bg-hover"
+                                        onClick={retryFeedback}
+                                    >
+                                        Try again
+                                    </button>
+
+                                </div>
+
+                            ) : feedback.length === 0 ? (
+
+                                <p className={noteClass}>
+                                    No feedback has been submitted yet.
+                                </p>
+
+                            ) : (
+
+                                <div className="flex min-h-0 flex-1 flex-col">
+
+                                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+
+                                        {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
+
+                                            <div
+                                                className="border-b border-[#e5e5e5] py-3.5 first:pt-0 last:border-b-0"
+                                                key={item.id}
+                                            >
+
+                                                <div className="mb-1.5 flex justify-between gap-3 phone:flex-col phone:gap-0.5">
+
+                                                    <span className="text-[13px] font-bold [word-break:break-word]">
+                                                        {item.user
+                                                            ? `${item.user.name} (${item.user.email})`
+                                                            : 'Former user'}
+                                                    </span>
+
+                                                    <span className="shrink-0 text-[12px] text-[#888]">
+                                                        {formatDate(item.created_at)}
+                                                    </span>
+
+                                                </div>
+
+                                                {item.rating && (
+                                                    <div className="mb-1.5 text-[12px] text-[#666]">
+                                                        Rating: {item.rating} / 5
+                                                    </div>
+                                                )}
+
+                                                <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-[#444] [word-break:break-word]">
+                                                    {item.message}
+                                                </p>
+
+                                            </div>
+
+                                        ))}
+
+                                    </div>
+
+                                    {feedback.length > FEEDBACK_LIMIT && (
+                                        <p className={`${noteClass} mt-3 shrink-0`}>
+                                            Showing the latest {FEEDBACK_LIMIT} of{' '}
+                                            {feedback.length} feedback entries.
+                                        </p>
+                                    )}
+
+                                </div>
+
+                            )}
+
+                        </div>
+
+                    </section>
+
+                </div>
 
             </main>
 
