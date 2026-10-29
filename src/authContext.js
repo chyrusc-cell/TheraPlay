@@ -6,6 +6,8 @@ export const AuthContext = createContext({
     status: 'loading',
     user: null,
     retry: () => {},
+    // Merges fields into the verified user (for example a new photo_url).
+    updateUser: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);

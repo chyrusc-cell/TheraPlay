@@ -1,8 +1,8 @@
 import { Link, Outlet } from 'react-router-dom';
-import { User } from 'lucide-react';
 import Sidebar from './Sidebar.jsx';
 import AuthProvider from './AuthProvider.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
+import { CurrentUserAvatar } from './ProfileAvatar.jsx';
 
 function Layout() {
     return (
@@ -33,11 +33,11 @@ function Layout() {
                 */}
                 <Link
                     to="/profile"
-                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center justify-center rounded-full border border-[#dedede] bg-[#e9ecef] text-muted no-underline transition-[background-color,box-shadow] duration-150 hover:bg-[#dfe3e7] hover:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] tablet:right-4"
+                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center overflow-hidden justify-center rounded-full border border-[#dedede] bg-[#e9ecef] text-muted no-underline transition-[background-color,box-shadow] duration-150 hover:bg-[#dfe3e7] hover:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] tablet:right-4"
                     aria-label="Open profile"
                     title="Profile"
                 >
-                    <User size={18} aria-hidden="true" />
+                    <CurrentUserAvatar />
                 </Link>
 
                 {/* Everything to the right of the fixed sidebar. */}

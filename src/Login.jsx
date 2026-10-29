@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import * as auth from './authClasses.js';
+import { logo } from './brand.js';
 
 function Login() {
     
@@ -80,8 +81,7 @@ function Login() {
         <div className={auth.pageBg} style={auth.backgroundStyle}>
             <div className={auth.panel}>
                 <div className={auth.logoRowLeft}>
-                    <div></div>
-                    <h2 className={auth.logoTitleLogin}>TheraPlay!</h2>
+                    <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 
                 <div className={auth.headerTextLogin}>

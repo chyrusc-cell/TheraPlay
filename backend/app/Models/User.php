@@ -25,7 +25,30 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'photo_path',
     ];
+
+    // The picture is exposed only as a URL (never the stored path).
+    protected $appends = ['photo_url'];
+
+    public const PHOTO_DIRECTORY = 'profile-photos';
+
+    // Only paths made by the upload code count.
+    public function hasPhoto(): bool
+    {
+        return is_string($this->photo_path)
+            && str_starts_with($this->photo_path, self::PHOTO_DIRECTORY.'/');
+    }
+
+    // The URL of the account's own picture route (the file is private, so the
+    // app fetches it with the login token). The v= part changes when the
+    // picture changes.
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->hasPhoto()
+            ? url('/api/profile/photo').'?v='.substr(md5($this->photo_path), 0, 8)
+            : null;
+    }
 
     protected function casts(): array
     {

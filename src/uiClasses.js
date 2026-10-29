@@ -21,3 +21,19 @@ export const contactItemClass =
 // Activity details: image column + text column.
 export const detailsCardClass =
     'grid grid-cols-[280px_1fr] gap-[30px] rounded-xl border border-[#e1e5ea] bg-white p-[30px] tablet-sm:grid-cols-1 tablet-sm:p-5';
+
+// ---------- Page layout (every page uses these, so headings sit in the same place) ----------
+// The page content starts below the 56px top row. Same top padding everywhere, so
+// the heading never jumps when you move between pages.
+
+export const pageMain =
+    'mx-auto w-full max-w-[1100px] px-5 pt-10 pb-20 phone:px-4 phone:pt-6 phone:pb-[60px]';
+
+// Narrower pages made of forms (Profile).
+export const pageMainNarrow =
+    'mx-auto w-full max-w-[900px] px-5 pt-10 pb-20 phone:px-4 phone:pt-6 phone:pb-[60px]';
+
+export const pageHeader = 'mb-8';
+export const pageTitle =
+    'text-[36px] leading-[1.2] font-bold text-ink phone:text-[28px]';
+export const pageSubtitle = 'mt-2 text-[15px] font-medium text-muted';

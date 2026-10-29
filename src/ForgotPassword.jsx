@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest, mapValidationErrors } from './api.js';
 import * as auth from './authClasses.js';
+import { logo } from './brand.js';
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -89,9 +90,7 @@ function ForgotPassword() {
             <div className={auth.panel}>
                 
                 <div className={auth.logoRow}>
-                    {/* Placeholder for the TheraPlay logo icon */}
-                    <div></div>
-                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
+                    <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 
                 <Link to="/login" className={auth.backLink}>

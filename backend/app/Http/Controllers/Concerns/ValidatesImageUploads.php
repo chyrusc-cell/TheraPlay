@@ -13,6 +13,10 @@ trait ValidatesImageUploads
 {
     protected function imageExtension(UploadedFile $file): ?string
     {
+        if (! $file->isValid()) {
+            return null;
+        }
+
         $extension = match ($file->getMimeType()) {
             'image/jpeg' => 'jpg',
             'image/png' => 'png',

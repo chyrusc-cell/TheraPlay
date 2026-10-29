@@ -16,8 +16,7 @@ import {
 import { useAuth } from './authContext.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
-import logoFull from '../img/theraplaylogo2.png';
-import logoIcon from '../img/theraplaylogo.png';
+import { logo } from './brand.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -92,15 +91,16 @@ function Sidebar() {
         <aside className="fixed inset-y-0 left-0 z-[100] flex w-sidebar flex-col overflow-y-auto border-r border-[#e5e5e5] bg-white px-5 py-[30px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
             <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0">
                 <img
-                    src={logoFull}
+                    src={logo}
                     alt="TheraPlay"
                     className="block h-auto w-full max-w-[180px] tablet:sr-only"
                 />
+                {/* The narrow rail shows only the icon part (the left, square end) of the same logo. */}
                 <img
-                    src={logoIcon}
+                    src={logo}
                     alt=""
                     aria-hidden="true"
-                    className="hidden h-auto w-full max-w-14 tablet:mx-auto tablet:block"
+                    className="hidden h-10 w-10 object-cover object-left tablet:mx-auto tablet:block"
                 />
             </div>
 

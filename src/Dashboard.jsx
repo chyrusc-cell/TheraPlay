@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
+import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -209,7 +210,7 @@ function Dashboard() {
     if (isLoading) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
+                <main className={pageMain}>
                     <CardsSkeleton label="Loading your dashboard..." cards={3} />
                 </main>
             </div>
@@ -219,7 +220,7 @@ function Dashboard() {
     if (error) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
+                <main className={pageMain}>
                     <p className="text-[14px] font-medium text-[#d93025]" role="alert">
                         {error}
                     </p>
@@ -271,11 +272,11 @@ function Dashboard() {
     return (
         <div className="flex min-h-page flex-col">
 
-            <main className="mx-auto w-full max-w-[1000px] px-5 pt-10 pb-20">
+            <main className={pageMain}>
 
-                <header className="mb-8">
-                    <h1 className="mb-2 text-[32px] font-bold text-ink">Hello, {user?.name}!</h1>
-                    <p className="mb-4 text-[15px] font-medium text-muted">We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
+                <header className={pageHeader}>
+                    <h1 className={pageTitle}>Hello, {user?.name}!</h1>
+                    <p className={`${pageSubtitle} mb-4`}>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
                     <span className="text-[12px] font-medium text-[#888]">Week of {formatWeekRange(weekStart)}</span>
                 </header>
 

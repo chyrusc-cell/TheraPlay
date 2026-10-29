@@ -138,7 +138,12 @@ class UserManagementController extends Controller
         // Tokens are not linked by a foreign key, so remove them explicitly.
         // Feedback and created activities are kept (their user columns become null).
         $user->tokens()->delete();
+        $photo = $user->hasPhoto() ? $user->photo_path : null;
         $user->delete();
+
+        if ($photo) {
+            \Illuminate\Support\Facades\Storage::disk(config('filesystems.activity_materials.disk'))->delete($photo);
+        }
 
         return response()->json(['message' => 'Account deleted.']);
     }

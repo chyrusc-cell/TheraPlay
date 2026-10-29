@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiRequest, mapValidationErrors } from './api.js';
 import * as auth from './authClasses.js';
+import { logo } from './brand.js';
 
 // Opened from the link in the password reset email:
 //   /reset-password?token=...&email=...
@@ -103,8 +104,7 @@ function ResetPassword() {
             <div className={auth.panel}>
 
                 <div className={auth.logoRow}>
-                    <div></div>
-                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
+                    <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 
                 <Link to="/login" className={auth.backLink}>

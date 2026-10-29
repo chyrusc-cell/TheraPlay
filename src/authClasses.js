@@ -31,6 +31,7 @@ export const registerContainer = 'flex w-full max-w-[600px] flex-col bg-white';
 
 export const logoRow = 'mb-[60px] flex items-center justify-center gap-2.5';
 export const logoRowLeft = 'mb-[60px] flex items-center gap-2.5';
+export const logoImage = 'block h-11 w-auto';
 export const logoTitle = 'text-[24px] font-bold text-ink';
 export const logoTitleLogin = 'text-[24px] font-bold';
 

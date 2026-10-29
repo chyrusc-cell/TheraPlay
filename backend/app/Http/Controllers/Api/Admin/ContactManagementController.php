@@ -102,6 +102,7 @@ class ContactManagementController extends Controller
 
         $request->validate([
             'photo' => [
+                'bail',
                 'required',
                 'file',
                 "max:{$maxKb}",

@@ -13,11 +13,12 @@
 export const page = 'min-h-page bg-[#f5f7fa]';
 
 export const content =
-    'mx-auto max-w-[1100px] px-[30px] py-[50px] phone:px-4 phone:py-[30px]';
+    'mx-auto w-full max-w-[1100px] px-5 pt-10 pb-20 phone:px-4 phone:pt-6 phone:pb-[60px]';
 
-export const header = 'mb-[30px] flex flex-wrap items-center justify-between gap-4';
-export const title = 'mb-2 text-[32px] font-bold';
-export const subtitle = 'text-[#666]';
+export const header = 'mb-8 flex flex-wrap items-center justify-between gap-4';
+export const title =
+    'text-[36px] leading-[1.2] font-bold text-ink phone:text-[28px]';
+export const subtitle = 'mt-2 text-[15px] font-medium text-muted';
 export const headerActions = 'flex flex-wrap gap-2.5';
 
 export const messageSuccess =

@@ -5,7 +5,7 @@ import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
-import { activityGridClass } from './uiClasses.js';
+import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
 // Which activities has the logged-in parent completed? This reads the same
 // saved progress as the Progress page. Guests, expired logins and failures
@@ -176,10 +176,10 @@ function Activities() {
         <div className="flex min-h-page flex-col">
 
             {/* Main Content */}
-            <main className="mx-auto w-full max-w-[1100px] px-5 pt-[60px] pb-20">
-                <div className="mb-10">
-                    <h1 className="mb-3 text-[36px] font-bold text-ink">Activities</h1>
-                    <p className="text-base font-medium text-muted">
+            <main className={pageMain}>
+                <div className={pageHeader}>
+                    <h1 className={pageTitle}>Activities</h1>
+                    <p className={pageSubtitle}>
                         Explore activities designed to help develop
                         different skills.
                     </p>

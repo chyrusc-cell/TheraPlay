@@ -71,8 +71,13 @@ function AuthProvider({ children }) {
         setAttempt((n) => n + 1);
     };
 
+    const updateUser = (patch) =>
+        setState((current) =>
+            current.user ? { ...current, user: { ...current.user, ...patch } } : current
+        );
+
     return (
-        <AuthContext.Provider value={{ ...state, retry }}>
+        <AuthContext.Provider value={{ ...state, retry, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

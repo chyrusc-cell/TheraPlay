@@ -8,6 +8,7 @@ import {
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
+import DeveloperTeamAdmin from './DeveloperTeamAdmin.jsx';
 import * as ui from './adminClasses.js';
 
 const emptyForm = {
@@ -322,7 +323,7 @@ function ManageContacts() {
                     photoProblem =
                         photoResult.data.errors?.photo?.[0] ||
                         photoResult.data.message ||
-                        'The picture could not be saved.';
+                        `The picture could not be saved (server error ${photoResult.status}). Check that the server can accept uploads.`;
                 }
             } else if (removePhoto && isEditing) {
                 const photoResult = await apiRequest(
@@ -941,6 +942,13 @@ function ManageContacts() {
                     </section>
 
                 )}
+
+
+                {/* The Developer Team card of the Contact Us page (separate from the contacts above) */}
+
+                <div className="mt-[25px]">
+                    <DeveloperTeamAdmin />
+                </div>
 
             </main>
 

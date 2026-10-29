@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\Admin\ActivityResourceController;
 use App\Http\Controllers\Api\Admin\ActivityImageController;
 use App\Http\Controllers\Api\ActivityMaterialController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfilePhotoController;
+use App\Http\Controllers\Api\DeveloperTeamController;
+use App\Http\Controllers\Api\Admin\DeveloperTeamManagementController;
 
 // Rate limited per client to slow down automated sign-ups.
 Route::post('/register', [RegisterController::class, 'store'])
@@ -62,6 +65,13 @@ Route::post('/children', [ChildController::class, 'store'])
 Route::put('/profile', [ProfileController::class, 'update'])
     ->middleware('auth:sanctum');
 
+// The logged-in user's own profile picture (no user id: it is always the token's account).
+Route::middleware('auth:sanctum')->prefix('profile/photo')->group(function () {
+    Route::get('/', [ProfilePhotoController::class, 'show']);
+    Route::post('/', [ProfilePhotoController::class, 'store']);
+    Route::delete('/', [ProfilePhotoController::class, 'destroy']);
+});
+
 // Password reset: the request is for the logged-in user's OWN email only;
 // completing it needs the emailed token and does not need a login.
 Route::post('/profile/password-reset', [PasswordResetController::class, 'request'])
@@ -80,6 +90,9 @@ Route::get('/progress', [ProgressController::class, 'index'])
 
 // Public, read-only list of professional contacts (Contact Us page).
 Route::get('/contacts', [ContactController::class, 'index']);
+
+// The Developer Team card on the Contact Us page (edited by admins).
+Route::get('/developer-team', [DeveloperTeamController::class, 'show']);
 
 Route::get('/contacts/{contact}/photo', [ContactController::class, 'photo'])
     ->whereNumber('contact');
@@ -138,6 +151,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])
 
         // Accounts: list, create, update (name, email, role) and guarded delete.
         Route::apiResource('users', UserManagementController::class);
+
+        // The Developer Team card shown on the Contact Us page (one settings row).
+        Route::get('developer-team', [DeveloperTeamManagementController::class, 'show'])
+            ->name('developer-team.show');
+
+        Route::put('developer-team', [DeveloperTeamManagementController::class, 'update'])
+            ->name('developer-team.update');
 
         // Feedback: view only.
         Route::get('feedback', [FeedbackManagementController::class, 'index'])

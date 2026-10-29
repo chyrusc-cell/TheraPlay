@@ -30,6 +30,7 @@ class ActivityImageController extends Controller
     {
         $request->validate([
             'image' => [
+                'bail',
                 'required',
                 'file',
                 'max:'.self::MAX_KB,

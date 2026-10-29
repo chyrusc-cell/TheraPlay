@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
+import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
 // The API returns every feedback entry (there is no pagination yet), so the
 // dashboard only shows the newest few. Nothing is hidden on the server.
@@ -247,15 +248,15 @@ function ProfessionalDashboard() {
 
             {/* Main Content */}
 
-            <main className="mx-auto max-w-[1100px] px-[30px] py-[50px]">
+            <main className={pageMain}>
 
-                <div className="mb-[30px]">
+                <div className={pageHeader}>
 
-                    <h1 className="mb-2 text-[32px] font-bold">
+                    <h1 className={pageTitle}>
                         Dashboard
                     </h1>
 
-                    <p className="text-[#666]">
+                    <p className={pageSubtitle}>
                         Overview of your TheraPlay activities and users.
                     </p>
 

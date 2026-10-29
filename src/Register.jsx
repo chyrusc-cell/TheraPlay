@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as auth from './authClasses.js';
+import { logo } from './brand.js';
 
 function Register() {
     const navigate = useNavigate();
@@ -90,8 +91,7 @@ function Register() {
             <div className={auth.registerContainer}>
 
                 <div className={auth.logoRow}>
-                    <div className="h-8 w-8 rounded-md bg-[#ddd]"></div>
-                    <h2 className={auth.logoTitle}>TheraPlay!</h2>
+                    <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 
                 <div className={auth.headerText}>

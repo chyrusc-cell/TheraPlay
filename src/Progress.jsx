@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
+import { pageMain, pageHeader, pageTitle } from './uiClasses.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -186,7 +187,7 @@ function Progress() {
     if (isLoading) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
+                <main className={pageMain}>
                     <CardsSkeleton label="Loading your progress..." cards={3} />
                 </main>
             </div>
@@ -196,7 +197,7 @@ function Progress() {
     if (error) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
+                <main className={pageMain}>
                     <p className="text-[14px] font-medium text-[#d93025]" role="alert">
                         {error}
                     </p>
@@ -246,9 +247,9 @@ function Progress() {
 
     return (
         <div className="flex min-h-page flex-col">
-            <main className="mx-auto w-full max-w-[1100px] px-5 pt-[50px] pb-20">
-                <div className="mb-6">
-                    <h1 className="text-[36px] font-bold text-ink">My Progress</h1>
+            <main className={pageMain}>
+                <div className={pageHeader}>
+                    <h1 className={pageTitle}>My Progress</h1>
                 </div>
 
                 <div className="mb-[30px] flex items-center justify-between">

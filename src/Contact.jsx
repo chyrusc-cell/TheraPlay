@@ -11,23 +11,7 @@ import {
 import { ContactCardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import StarRating from './StarRating.jsx';
-import { contactItemClass, contactPanelClass } from './uiClasses.js';
-
-/*
- * DEVELOPER TEAM DETAILS.
- * One shared card is shown for the whole team.
- * IMPORTANT: the email and phone below are SAMPLE / DEMO values only. They are
- * not real or official contact details, and the page says so. Replace them (and
- * set isSample to false) once the team has real contact details.
- */
-const TEAM = {
-    name: 'TheraPlay Development Team',
-    description:
-        'The team responsible for developing and maintaining the TheraPlay website.',
-    email: 'theraplay.team@example.com',
-    phone: '+63 900 123 4567',
-    isSample: true,
-};
+import { contactItemClass, contactPanelClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
 // The feedback message length limit (the same limit the server enforces).
 const MESSAGE_MAX = 5000;
@@ -175,6 +159,12 @@ function Contact() {
     const [loadError, setLoadError] = useState('');
     const [reloadKey, setReloadKey] = useState(0);
 
+    // The Developer Team card comes from the server (edited by admins).
+    const [team, setTeam] = useState(null);
+    const [teamLoading, setTeamLoading] = useState(true);
+    const [teamError, setTeamError] = useState('');
+    const [teamReloadKey, setTeamReloadKey] = useState(0);
+
     const [message, setMessage] = useState('');
     // 0 = no rating chosen, otherwise 1 to 5.
     const [rating, setRating] = useState(0);
@@ -232,6 +222,49 @@ function Contact() {
         return () => controller.abort();
     }, [reloadKey]);
 
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadTeam = async () => {
+            try {
+                const result = await apiRequest('/developer-team', {
+                    auth: false,
+                    signal: controller.signal,
+                });
+
+                if (!result.ok || !result.data.data) {
+                    throw new Error('Unable to load the developer team details.');
+                }
+
+                setTeam(result.data.data);
+                setTeamError('');
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                setTeamError(
+                    error.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                if (!controller.signal.aborted) {
+                    setTeamLoading(false);
+                }
+            }
+        };
+
+        loadTeam();
+
+        return () => controller.abort();
+    }, [teamReloadKey]);
+
+    const retryTeam = () => {
+        setTeamLoading(true);
+        setTeamError('');
+        setTeamReloadKey((key) => key + 1);
+    };
 
     const retry = () => {
         setIsLoading(true);
@@ -460,15 +493,15 @@ function Contact() {
     return (
         <div className="min-h-page">
 
-            <main className="mx-auto w-full max-w-[1100px] px-5 pt-[30px] pb-20 phone:px-4 phone:pt-5 phone:pb-[60px]">
+            <main className={pageMain}>
 
-                <div className="mb-[30px]">
+                <div className={pageHeader}>
 
-                    <h1 className="mb-1.5 text-[36px] font-bold text-ink">
+                    <h1 className={pageTitle}>
                         Contact Us
                     </h1>
 
-                    <p className="text-[15px] text-muted">
+                    <p className={pageSubtitle}>
                         Reach out to our professionals, or send us your
                         feedback.
                     </p>
@@ -557,18 +590,44 @@ function Contact() {
                             Development Team
                         </h2>
 
-                        <ContactCard
-                            name={TEAM.name}
-                            email={TEAM.email}
-                            phone={TEAM.phone}
-                            description={TEAM.description}
-                            Fallback={Users}
-                            note={
-                                TEAM.isSample
-                                    ? 'Sample details for demonstration only. These are not real or official contact details.'
-                                    : undefined
-                            }
-                        />
+                        {teamLoading ? (
+
+                            <ContactCardsSkeleton count={1} />
+
+                        ) : teamError ? (
+
+                            <div className={errorClass} role="alert">
+
+                                <p>
+                                    {teamError}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className={retryClass}
+                                    onClick={retryTeam}
+                                >
+                                    Try again
+                                </button>
+
+                            </div>
+
+                        ) : (
+
+                            <ContactCard
+                                name={team.name}
+                                email={team.email}
+                                phone={team.phone}
+                                description={team.description}
+                                Fallback={Users}
+                                note={
+                                    team.is_sample
+                                        ? 'Sample details for demonstration only. These are not real or official contact details.'
+                                        : undefined
+                                }
+                            />
+
+                        )}
 
                     </section>
 

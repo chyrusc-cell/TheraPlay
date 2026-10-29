@@ -5,7 +5,7 @@ import { ActivityDetailsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
-import { detailsCardClass } from './uiClasses.js';
+import { detailsCardClass, pageMain } from './uiClasses.js';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 
@@ -339,7 +339,7 @@ function ActivityDetails() {
 
         return (
             <div className="min-h-page bg-[#f5f7fa]">
-                <main className="mx-auto max-w-[1100px] px-[30px] py-10 tablet-sm:px-4 tablet-sm:py-6">
+                <main className={pageMain}>
                     <ActivityDetailsSkeleton />
                 </main>
             </div>
@@ -399,7 +399,7 @@ function ActivityDetails() {
 
             {/* Main Content */}
 
-            <main className="mx-auto max-w-[1100px] px-[30px] py-10 tablet-sm:px-4 tablet-sm:py-6">
+            <main className={pageMain}>
 
                 <Link
                     to="/activities"
