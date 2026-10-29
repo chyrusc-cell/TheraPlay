@@ -11,6 +11,8 @@ import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import * as ui from './adminClasses.js';
+import Modal from './Modal.jsx';
+import ConditionsAdmin from './ConditionsAdmin.jsx';
 
 // Uploads: the server checks everything again; these only give quick feedback.
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'txt'];
@@ -40,6 +42,8 @@ const emptyForm = {
     objective: '',
     instructions: '',
     materials: '',
+    conditionIds: [],
+    isForAllConditions: false,
 };
 
 // Picture rules (the server checks again, from the file's real content).
@@ -74,6 +78,12 @@ function ManageActivities() {
     const [fileErrors, setFileErrors] = useState([]);
     const [fileInputKey, setFileInputKey] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
+
+    // The predefined conditions (admin-managed). An activity is shown to a child
+    // whose conditions match at least one of its conditions, or to everyone when
+    // it is marked suitable for all conditions.
+    const [conditions, setConditions] = useState([]);
+    const [conditionsOpen, setConditionsOpen] = useState(false);
 
     // Activity picture: the saved one (shown through a temporary blob URL,
     // because the admin picture route needs the login token), a newly chosen
@@ -180,6 +190,44 @@ function ManageActivities() {
         return [...found.entries()].map(([id, name]) => ({ id, name }));
     }, [activities]);
 
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadConditions = async () => {
+            try {
+                const result = await apiRequest('/admin/conditions', { signal: controller.signal });
+
+                if (result.ok && Array.isArray(result.data.data)) {
+                    setConditions(result.data.data);
+                }
+            } catch {
+                // The field just shows no conditions; the page keeps working.
+            }
+        };
+
+        loadConditions();
+
+        return () => controller.abort();
+    }, []);
+
+    // Merge one saved condition (added or changed in the modal) into the list.
+    const mergeCondition = (saved) => {
+        setConditions((current) =>
+            current.some((item) => item.id === saved.id)
+                ? current.map((item) => (item.id === saved.id ? saved : item))
+                : [...current, saved].sort((a, b) => a.name.localeCompare(b.name))
+        );
+    };
+
+    const toggleFormCondition = (id) => {
+        setForm((current) => ({
+            ...current,
+            conditionIds: current.conditionIds.includes(id)
+                ? current.conditionIds.filter((value) => value !== id)
+                : [...current.conditionIds, id],
+        }));
+    };
 
     const updateField = (name, value) => {
         setForm((current) => ({ ...current, [name]: value }));
@@ -471,6 +519,8 @@ function ManageActivities() {
                 objective: activity.objective || '',
                 instructions: arrayToLines(activity.instructions),
                 materials: arrayToLines(activity.materials),
+                conditionIds: Array.isArray(activity.condition_ids) ? activity.condition_ids : [],
+                isForAllConditions: Boolean(activity.is_for_all_conditions),
             });
             setEditingId(activity.id);
             setFieldErrors({});
@@ -526,6 +576,8 @@ function ManageActivities() {
             objective: form.objective.trim() || null,
             instructions,
             materials: linesToArray(form.materials),
+            condition_ids: form.conditionIds,
+            is_for_all_conditions: form.isForAllConditions,
         };
 
         const isEditing = editingId !== null;
@@ -743,6 +795,14 @@ function ManageActivities() {
 
                         <button
                             type="button"
+                            className={ui.cancelButton}
+                            onClick={() => setConditionsOpen(true)}
+                        >
+                            Manage Conditions
+                        </button>
+
+                        <button
+                            type="button"
                             className={ui.addButton}
                             onClick={handleToggleForm}
                         >
@@ -766,18 +826,17 @@ function ManageActivities() {
 
                 {/* Add / Edit Activity Form */}
 
-                {showForm && (
-
-                    <section className={ui.formCard}>
-
-                        <h2 className={ui.formTitle}>
-                            {editingId === null
+                <Modal
+                    open={showForm}
+                    onClose={closeForm}
+                    busy={isSaving}
+                    size="xl"
+                    title={editingId === null
                                 ? 'Add New Activity'
                                 : 'Edit Activity'}
-                        </h2>
+                >
 
-
-                        <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit}>
 
                             {formError && (
                                 <p className={ui.messageError} role="alert">
@@ -1229,6 +1288,73 @@ function ManageActivities() {
 
                                     </div>
 
+
+                                    <div className={ui.formGroup}>
+
+                                        <span className={ui.label} id="activity-conditions-label">
+                                            Relevant Conditions
+                                        </span>
+
+                                        <p className={ui.fileHint}>
+                                            A child sees this activity when one of their conditions is selected
+                                            here (or when it is marked suitable for all).
+                                        </p>
+
+                                        <label className="mb-2 flex cursor-pointer items-center gap-2 text-[14px] text-ink">
+                                            <input
+                                                type="checkbox"
+                                                className="accent-accent"
+                                                checked={form.isForAllConditions}
+                                                onChange={(event) =>
+                                                    updateField('isForAllConditions', event.target.checked)
+                                                }
+                                            />
+                                            Suitable for all conditions
+                                        </label>
+
+                                        {conditions.length === 0 ? (
+                                            <p className={ui.fileHint}>
+                                                No conditions yet. Use "Manage Conditions" at the top of the page
+                                                to add some.
+                                            </p>
+                                        ) : (
+                                            <ul
+                                                className="max-h-40 list-none overflow-y-auto rounded-md border border-edge-strong p-2"
+                                                aria-labelledby="activity-conditions-label"
+                                            >
+                                                {conditions
+                                                    .filter(
+                                                        (condition) =>
+                                                            condition.is_active ||
+                                                            form.conditionIds.includes(condition.id)
+                                                    )
+                                                    .map((condition) => (
+                                                        <li key={condition.id}>
+                                                            <label className="flex cursor-pointer items-start gap-2 rounded px-1 py-1 text-[14px] text-ink hover:bg-hover">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    className="mt-0.5 shrink-0 accent-accent"
+                                                                    checked={form.conditionIds.includes(condition.id)}
+                                                                    onChange={() => toggleFormCondition(condition.id)}
+                                                                />
+                                                                <span className="[overflow-wrap:anywhere]">
+                                                                    {condition.name}
+                                                                    {!condition.is_active && ' (switched off)'}
+                                                                </span>
+                                                            </label>
+                                                        </li>
+                                                    ))}
+                                            </ul>
+                                        )}
+
+                                        {(fieldErrors.condition_ids || fieldErrors.is_for_all_conditions) && (
+                                            <p className={ui.fieldError}>
+                                                {fieldErrors.condition_ids || fieldErrors.is_for_all_conditions}
+                                            </p>
+                                        )}
+
+                                    </div>
+
                                 </div>
 
                             </div>
@@ -1263,9 +1389,7 @@ function ManageActivities() {
 
                         </form>
 
-                    </section>
-
-                )}
+                </Modal>
 
 
                 {/* Activities Table */}
@@ -1437,6 +1561,16 @@ function ManageActivities() {
                     </section>
 
                 )}
+
+
+                <Modal
+                    open={conditionsOpen}
+                    onClose={() => setConditionsOpen(false)}
+                    size="md"
+                    title="Manage Conditions"
+                >
+                    <ConditionsAdmin conditions={conditions} onSaved={mergeCondition} />
+                </Modal>
 
             </main>
 

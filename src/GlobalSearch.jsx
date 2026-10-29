@@ -12,7 +12,7 @@ import useScrolled from './useScrolled.js';
 // pill around it (below). It fills the whole pill and is fully rounded, so the
 // global focus ring follows the pill's shape.
 const inputClass =
-    'h-11 w-full rounded-full border-0 bg-transparent pr-9 pl-10 [font-family:inherit] text-[14px] font-medium text-ink placeholder:text-[#888]';
+    'h-11 w-full rounded-full border-0 bg-transparent pr-9 pl-10 [font-family:inherit] text-[14px] font-medium text-ink placeholder:text-faint';
 
 // The floating pill. It is fixed to the viewport, so it stays in view while the
 // page scrolls, and it is the only thing that floats (no bar behind it).
@@ -24,7 +24,7 @@ const inputClass =
 // the narrow rail, and on phones the pill sits just beside it. Its width is
 // capped at 460px and always leaves room on the right for the profile shortcut.
 const pillBase =
-    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_90px))] rounded-full border border-black/10 transition duration-200 motion-reduce:transition-none [--search-left:calc(var(--sidebar-width)_+_(100vw_-_var(--sidebar-width))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-width-collapsed)_+_(100vw_-_var(--sidebar-width-collapsed))_*_0.06)] phone:[--search-left:calc(var(--sidebar-width-collapsed)_+_12px)]';
+    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_var(--search-reserve,90px)))] rounded-full border border-black/10 transition duration-200 motion-reduce:transition-none [--search-left:calc(var(--sidebar-width)_+_(100vw_-_var(--sidebar-width))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-width-collapsed)_+_(100vw_-_var(--sidebar-width-collapsed))_*_0.06)] phone:[--search-left:calc(var(--sidebar-width-collapsed)_+_12px)]';
 
 // At the top of the page the pill is only lightly tinted. After scrolling its
 // OWN background becomes more visible and blurs whatever passes behind it
@@ -34,7 +34,7 @@ const pillScrolled =
     'bg-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md';
 
 const dropdownClass =
-    'absolute top-full right-0 left-0 z-50 mt-2 max-h-[340px] animate-[ui-pop-in_0.18s_ease-out] overflow-y-auto rounded-xl border border-[#eaeaea] bg-white p-1.5 shadow-[0_10px_30px_rgba(0,0,0,0.12)]';
+    'absolute top-full right-0 left-0 z-50 mt-2 max-h-[340px] animate-[ui-pop-in_0.18s_ease-out] overflow-y-auto rounded-2xl glass-panel p-1.5';
 
 const optionBase =
     'flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-[14px] text-ink';
@@ -216,7 +216,7 @@ function GlobalSearch() {
             <Search
                 size={18}
                 aria-hidden="true"
-                className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-[#888]"
+                className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-faint"
             />
 
             <input
@@ -250,7 +250,7 @@ function GlobalSearch() {
                     type="button"
                     onClick={clear}
                     aria-label="Clear search"
-                    className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-1 text-[#888] enabled:hover:text-ink"
+                    className="absolute top-1/2 right-2 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-1 text-faint enabled:hover:text-ink"
                 >
                     <X size={16} aria-hidden="true" />
                 </button>
@@ -274,7 +274,7 @@ function GlobalSearch() {
                             onMouseEnter={() => setActiveIndex(index)}
                             onClick={() => choose(item)}
                             className={`${optionBase} ${
-                                index === activeIndex ? 'bg-[#e9ecef]' : 'bg-transparent'
+                                index === activeIndex ? 'bg-sunken' : 'bg-transparent'
                             }`}
                         >
                             <span className="min-w-0">

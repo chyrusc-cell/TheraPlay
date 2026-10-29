@@ -60,9 +60,9 @@ class ChildProfileTest extends TestCase
             'name' => 'Sam',
         ]);
 
-        // Only safe fields come back.
+        // Only safe fields come back (no user_id).
         $this->assertSame(
-            ['id', 'name', 'created_at'],
+            ['id', 'name', 'date_of_birth', 'created_at', 'has_progress', 'conditions'],
             array_keys($response->json('data.child'))
         );
     }
@@ -86,17 +86,16 @@ class ChildProfileTest extends TestCase
         $this->assertSame(0, Child::count());
     }
 
-    public function test_parent_cannot_create_a_second_child(): void
+    public function test_a_parent_can_have_several_children(): void
     {
         $parent = $this->makeUser('a@example.com');
         Child::create(['user_id' => $parent->id, 'name' => 'First']);
         Sanctum::actingAs($parent);
 
-        $this->postJson('/api/children', ['name' => 'Second'])
-            ->assertStatus(422)
-            ->assertJsonPath('code', 'child_profile_exists');
+        $this->postJson('/api/children', ['name' => 'Second'])->assertCreated();
 
-        $this->assertSame(1, Child::where('user_id', $parent->id)->count());
+        $this->assertSame(2, Child::where('user_id', $parent->id)->count());
+        // child() is the oldest one.
         $this->assertSame('First', $parent->child->name);
     }
 

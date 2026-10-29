@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
+import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle } from './uiClasses.js';
 
@@ -90,27 +91,39 @@ const getLongestStreak = (completed) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
 const cardHeaderClass = 'px-6 pt-5 pb-2.5';
-const cardHeaderRuleClass = 'border-b border-[#f0f0f0] px-6 pt-5 pb-5';
+const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5';
 const cardTitleClass = 'text-[16px] font-bold text-ink';
 const cardBodyClass = 'px-6 pt-5 pb-6';
 const statusClass = 'text-[14px] font-medium text-muted';
 const bigNumberClass = 'text-[28px] leading-[1.2] font-bold text-ink';
 const bigLabelClass = 'text-[13px] font-medium text-muted';
-const barTrackClass = 'h-2 w-full overflow-hidden rounded-lg bg-[#f0f0f0]';
-const barFillClass = 'h-full rounded-lg bg-[#404040]';
+const barTrackClass = 'h-2 w-full overflow-hidden rounded-lg bg-sunken';
+const barFillClass = 'h-full rounded-lg bg-accent';
 const iconCircleClass =
-    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#ddd] bg-white text-[#333]';
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-edge-strong bg-white text-ink';
 
 function Progress() {
     const navigate = useNavigate();
+    // Everything here is for the globally selected child.
+    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
+    const [loadedChildId, setLoadedChildId] = useState(null);
 
     const [records, setRecords] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // The selection changed but its records have not arrived: show the skeleton,
+    // not the previous child's progress.
+    const isLoading =
+        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+
     useEffect(() => {
+        if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
+            return;
+        }
+
         // Token missing or rejected: clear it and send the user to login.
         const redirectToLogin = () => {
             ['theraplay_token', 'theraplay_user'].forEach((key) => {
@@ -137,7 +150,10 @@ function Progress() {
 
         const loadProgress = async () => {
             try {
-                const response = await fetch(`${API_URL}/progress`, {
+                setIsLoading(true);
+                setError('');
+
+                const response = await fetch(`${API_URL}/progress?child_id=${selectedChildId}`, {
                     headers: {
                         Accept: 'application/json',
                         Authorization: `Bearer ${token}`,
@@ -161,6 +177,7 @@ function Progress() {
                         ? result.data.records
                         : []
                 );
+                setLoadedChildId(selectedChildId);
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -182,7 +199,15 @@ function Progress() {
         loadProgress();
 
         return () => controller.abort();
-    }, [navigate]);
+    }, [navigate, waiting, childStatus, selectedChildId]);
+
+    if (blocked) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <main className={pageMain}>{blocked}</main>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -250,10 +275,15 @@ function Progress() {
             <main className={pageMain}>
                 <div className={pageHeader}>
                     <h1 className={pageTitle}>My Progress</h1>
+                    {selectedChild && (
+                        <p className="mt-2 text-[15px] font-medium text-muted">
+                            Progress for {selectedChild.name}
+                        </p>
+                    )}
                 </div>
 
                 <div className="mb-[30px] flex items-center justify-between">
-                    <button className="flex cursor-pointer items-center gap-2 rounded-[20px] border border-[#ddd] bg-white px-4 py-2 [font-family:inherit] text-[13px] font-medium text-[#333]" type="button">
+                    <button className="flex cursor-pointer items-center gap-2 rounded-[20px] border border-edge-strong btn-glass px-4 py-2 [font-family:inherit] text-[13px] font-medium text-ink" type="button">
                         {formatWeekLabel(weekStart)}
                         <svg
                             viewBox="0 0 24 24"
@@ -268,7 +298,7 @@ function Progress() {
                     </button>
 
                     {records.length === 0 && (
-                        <span className="text-[13px] font-medium text-[#888]">
+                        <span className="text-[13px] font-medium text-faint">
                             No activity has been recorded yet.
                         </span>
                     )}
@@ -297,7 +327,7 @@ function Progress() {
                                     </div>
                                 </div>
 
-                                <div className="mb-6 h-3 w-full overflow-hidden rounded-lg bg-[#f0f0f0]">
+                                <div className="mb-6 h-3 w-full overflow-hidden rounded-lg bg-sunken">
                                     <div
                                         className={barFillClass}
                                         style={{ width: `${completionRate}%` }}
@@ -305,7 +335,7 @@ function Progress() {
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-[#f9f9f9] p-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-warm p-4">
                                         <span className="text-[12px] font-medium text-muted">
                                             Active days this week
                                         </span>
@@ -314,7 +344,7 @@ function Progress() {
                                         </span>
                                     </div>
 
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-[#f9f9f9] p-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-warm p-4">
                                         <span className="text-[12px] font-medium text-muted">
                                             Longest streak
                                         </span>
@@ -346,7 +376,7 @@ function Progress() {
 
                                         return (
                                             <div className="mb-5 last:mb-0" key={name}>
-                                                <div className="mb-2 flex items-center justify-between text-[14px] font-medium text-[#333]">
+                                                <div className="mb-2 flex items-center justify-between text-[14px] font-medium text-ink">
                                                     <span>{name}</span>
                                                     <span className="text-[12px] font-bold text-muted">
                                                         {count}{' '}
@@ -381,7 +411,7 @@ function Progress() {
                             <div className={cardBodyClass}>
                                 <div className="mb-[30px] flex items-center justify-between text-[13px] font-medium text-muted">
                                     <span>Activities completed per day</span>
-                                    <span className="rounded-xl bg-[#f0f0f0] px-2.5 py-1 text-[11px] font-bold text-[#333]">
+                                    <span className="rounded-xl bg-sunken px-2.5 py-1 text-[11px] font-bold text-ink">
                                         {completedThisWeek} total
                                     </span>
                                 </div>
@@ -392,7 +422,7 @@ function Progress() {
                                             <div
                                                 className={`w-6 rounded-t-md ${
                                                     dailyCounts[index] > 0
-                                                        ? 'bg-[#4b4b4b]'
+                                                        ? 'bg-accent-2'
                                                         : 'bg-transparent'
                                                 }`}
                                                 style={{
@@ -444,7 +474,7 @@ function Progress() {
 
                                             return (
                                                 <div
-                                                    className="flex items-start gap-3 rounded-lg bg-[#f9f9f9] p-4"
+                                                    className="flex items-start gap-3 rounded-lg bg-warm p-4"
                                                     key={record.id}
                                                 >
                                                     <div

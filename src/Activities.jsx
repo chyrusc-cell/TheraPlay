@@ -3,6 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
+import ActivityDetails from './ActivityDetails.jsx';
+import Modal from './Modal.jsx';
+import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
@@ -10,13 +13,16 @@ import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from
 // Which activities has the logged-in parent completed? This reads the same
 // saved progress as the Progress page. Guests, expired logins and failures
 // simply mean "nothing completed"; they never mark anything as completed.
-const loadCompletedIds = async (signal) => {
+const loadCompletedIds = async (signal, childId) => {
     if (!getToken()) {
         return { completedIds: new Set(), failed: false };
     }
 
     try {
-        const result = await apiRequest('/progress', { signal });
+        const result = await apiRequest(
+            childId ? `/progress?child_id=${childId}` : '/progress',
+            { signal }
+        );
 
         if (result.status === 401) {
             clearSession();
@@ -51,17 +57,18 @@ const loadCompletedIds = async (signal) => {
 // Soft background for the card image area, picked by activity id. Written as
 // a lookup so Tailwind can see every class name (it cannot read names that are
 // built from pieces).
+// Soft warm tints for activities without a picture.
 const imagePlaceholders = [
-    'bg-[#e3f2fd]',
-    'bg-[#fbe9e7]',
-    'bg-[#fce4ec]',
-    'bg-[#f3e5f5]',
-    'bg-[#e8f5e9]',
-    'bg-[#fff8e1]',
+    'bg-accent-soft',
+    'bg-[#f5e6d6]',
+    'bg-warm',
+    'bg-[#f4ead8]',
+    'bg-sunken',
+    'bg-[#fbeedd]',
 ];
 
 const cardClass =
-    'flex flex-col rounded-2xl border border-[#eaeaea] bg-white p-5 shadow-[0_4px_15px_rgba(0,0,0,0.02)] transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-[0_8px_25px_rgba(0,0,0,0.06)] motion-reduce:hover:translate-y-0';
+    'flex flex-col rounded-2xl border border-edge bg-white p-5 card-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-[3px] hover:shadow-[0_16px_32px_-12px_rgba(120,80,30,0.26)] motion-reduce:hover:translate-y-0';
 
 const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 
@@ -70,18 +77,35 @@ const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
 const filterLabelClass = 'text-[13px] font-bold text-muted';
 const filterSelectClass =
-    'min-w-[180px] cursor-pointer rounded-lg border border-[#ddd] bg-white px-3 py-2 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0 phone:flex-1';
+    'min-w-[180px] cursor-pointer rounded-full border border-edge-strong btn-glass px-3 py-2 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0 phone:flex-1';
 
 function Activities() {
+    // The globally selected child (Choose Child in the top bar) decides which
+    // activities are shown. Guests and admins have no child: the full list.
+    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
+    const [loadedChildId, setLoadedChildId] = useState(null);
+    const [requiresConditions, setRequiresConditions] = useState(false);
     const [activities, setActivities] = useState([]);
     const [completedIds, setCompletedIds] = useState(new Set());
     const [progressFailed, setProgressFailed] = useState(false);
+    // The activity opened in the View Activity modal (null = closed).
+    const [openActivity, setOpenActivity] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // While the selection changed but its list has not arrived yet, show the
+    // skeleton, never the previous child's activities.
+    const isLoading =
+        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+
     useEffect(() => {
+        // Parents wait for their children; with no child there is nothing to load.
+        if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
+            return undefined;
+        }
+
         const controller = new AbortController();
         const startedAt = performance.now();
 
@@ -93,13 +117,21 @@ function Activities() {
                 // Both are loaded before anything is shown, so the cards do
                 // not appear in one order and then jump into another.
                 const [response, progress] = await Promise.all([
-                    fetch('http://127.0.0.1:8000/api/activities', {
-                        headers: {
-                            Accept: 'application/json',
-                        },
-                        signal: controller.signal,
-                    }),
-                    loadCompletedIds(controller.signal),
+                    fetch(
+                        selectedChildId
+                            ? `http://127.0.0.1:8000/api/activities?child_id=${selectedChildId}`
+                            : 'http://127.0.0.1:8000/api/activities',
+                        {
+                            headers: {
+                                Accept: 'application/json',
+                                ...(selectedChildId && getToken()
+                                    ? { Authorization: `Bearer ${getToken()}` }
+                                    : {}),
+                            },
+                            signal: controller.signal,
+                        }
+                    ),
+                    loadCompletedIds(controller.signal, selectedChildId),
                 ]);
 
                 if (!response.ok) {
@@ -113,6 +145,8 @@ function Activities() {
                 );
                 setCompletedIds(progress.completedIds);
                 setProgressFailed(progress.failed);
+                setRequiresConditions(Boolean(result.meta?.requires_conditions));
+                setLoadedChildId(selectedChildId);
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -134,7 +168,7 @@ function Activities() {
         fetchActivities();
 
         return () => controller.abort();
-    }, []);
+    }, [waiting, childStatus, selectedChildId]);
 
     // Not completed first, completed last. Each group keeps the order the
     // server sent, and every activity appears exactly once.
@@ -186,7 +220,9 @@ function Activities() {
                 </div>
 
                 {/* Activity Cards Grid */}
-                {isLoading ? (
+                {blocked ? (
+                    blocked
+                ) : isLoading ? (
                     <ActivityCardsSkeleton />
                 ) : error ? (
                     <p
@@ -195,9 +231,24 @@ function Activities() {
                     >
                         {error}
                     </p>
+                ) : requiresConditions ? (
+                    <div className={statusClass} role="status">
+                        <p className="mb-3 font-bold text-ink">
+                            Select {selectedChild?.name ? `${selectedChild.name}'s` : 'your child\'s'} conditions first
+                        </p>
+                        <p className="mb-4">
+                            Activities are chosen to suit the conditions you pick for each
+                            child, so none can be shown until at least one is selected.
+                        </p>
+                        <Link to="/profile" className="font-bold text-accent">
+                            Go to the Profile page
+                        </Link>
+                    </div>
                 ) : activities.length === 0 ? (
                     <p className={statusClass}>
-                        No activities are available right now.
+                        {selectedChild
+                            ? `No published activities match ${selectedChild.name}'s conditions yet.`
+                            : 'No activities are available right now.'}
                     </p>
                 ) : (
                     <>
@@ -315,6 +366,22 @@ function Activities() {
 
                                     <Link
                                         to={`/activities/${activity.id}`}
+                                        // A normal click opens the modal; ctrl/cmd/middle click and
+                                        // "open in new tab" still go to the real page.
+                                        onClick={(event) => {
+                                            if (
+                                                event.button !== 0 ||
+                                                event.metaKey ||
+                                                event.ctrlKey ||
+                                                event.shiftKey ||
+                                                event.altKey
+                                            ) {
+                                                return;
+                                            }
+
+                                            event.preventDefault();
+                                            setOpenActivity({ id: activity.id, title: activity.title });
+                                        }}
                                         className="flex items-center gap-2 text-[14px] font-bold text-ink no-underline transition-colors duration-200 hover:text-muted"
                                         aria-label={`View activity: ${activity.title}`}
                                     >
@@ -346,6 +413,23 @@ function Activities() {
                     </>
                 )}
             </main>
+
+            <Modal
+                open={openActivity !== null}
+                onClose={() => setOpenActivity(null)}
+                size="xl"
+                title="Activity details"
+            >
+                {openActivity && (
+                    <ActivityDetails
+                        activityId={openActivity.id}
+                        embedded
+                        onCompleted={(id) =>
+                            setCompletedIds((current) => new Set([...current, Number(id)]))
+                        }
+                    />
+                )}
+            </Modal>
         </div>
     );
 }

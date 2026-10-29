@@ -35,6 +35,18 @@
     --color-line: var(--ui-border);
     --color-hover: var(--ui-surface-hover);
 
+    --color-page: var(--ui-page);
+    --color-warm: var(--ui-surface-warm);
+    --color-sunken: var(--ui-sunken);
+    --color-edge: var(--ui-edge);
+    --color-edge-strong: var(--ui-edge-strong);
+    --color-accent: var(--ui-accent);
+    --color-accent-hover: var(--ui-accent-hover);
+    --color-accent-2: var(--ui-accent-2);
+    --color-accent-soft: var(--ui-accent-soft);
+    --color-body: var(--ui-body);
+    --color-faint: var(--ui-faint);
+
     --color-success: var(--ui-success);
     --color-success-bg: var(--ui-success-bg);
     --color-success-bg-hover: var(--ui-success-bg-hover);
@@ -59,6 +71,143 @@
     --spacing-sidebar: var(--sidebar-width);
     --spacing-sidebar-rail: var(--sidebar-width-collapsed);
     --spacing-topbar: var(--topbar-height);
+}
+
+/*
+ * Warm glass system. Small shared utilities, used by adding the class name:
+ *   btn-solid  the solid brown primary button: a soft warm shadow, a thin top
+ *              highlight, lifts 2px on hover, presses back down when clicked.
+ *   btn-glass  secondary / compact controls: a translucent cream surface with
+ *              blur, a thin light edge, the same gentle lift.
+ *   glass-panel  floating surfaces (dropdowns, popovers): warm, 85% opaque,
+ *              blurred, softly shadowed.
+ *   card-soft  panels and cards: a faint top highlight and a soft warm shadow
+ *              (the card stays solid white/cream).
+ * The colors come from the warm palette (see --ui-* in ui.css). Browsers without
+ * backdrop-filter get an opaque cream instead, and reduced-motion users get no
+ * movement (rules at the bottom of ui.css).
+ */
+@utility btn-solid {
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%);
+    box-shadow:
+        0 6px 16px -6px rgba(161, 98, 7, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        opacity 0.2s ease;
+
+    &:enabled:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 12px 22px -8px rgba(161, 98, 7, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    }
+
+    &:enabled:active {
+        transform: translateY(0);
+        box-shadow:
+            0 2px 6px -2px rgba(161, 98, 7, 0.4),
+            inset 0 1px 3px rgba(0, 0, 0, 0.14);
+    }
+
+    &:disabled {
+        box-shadow: none;
+    }
+}
+
+@utility btn-glass {
+    background-color: rgba(255, 252, 247, 0.72);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(250, 243, 233, 0.5));
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    box-shadow:
+        0 2px 8px -3px rgba(120, 80, 30, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 0 rgba(160, 120, 70, 0.16);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+
+    &:enabled:hover,
+    a&:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 10px 20px -8px rgba(120, 80, 30, 0.24),
+            inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    &:enabled:active {
+        transform: translateY(0);
+        box-shadow:
+            0 1px 3px rgba(120, 80, 30, 0.14),
+            inset 0 1px 2px rgba(120, 80, 30, 0.1);
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        background-color: #fffcf7;
+    }
+}
+
+@utility glass-panel {
+    background-color: rgba(255, 252, 248, 0.86);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(231, 222, 211, 0.9);
+    box-shadow:
+        0 14px 34px -12px rgba(90, 60, 20, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        background-color: #fffcf8;
+    }
+}
+
+@utility card-soft {
+    box-shadow:
+        0 6px 20px -10px rgba(120, 80, 30, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+/*
+ * Navigation items (sidebar). nav-item is the resting + hover look: no
+ * decoration until hovered, then a frosted cream pill with a soft shadow.
+ * nav-item-active is the CURRENT page: a persistent warm highlight (soft amber
+ * fill, a thin brown edge and a light rim) that does not depend on hover. They
+ * are used exclusively (a link has one or the other), so nothing fights over the
+ * same property. Nothing moves, so hovering never shifts the layout.
+ */
+@utility nav-item {
+    border: 1px solid transparent;
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        color 0.2s ease;
+
+    &:hover {
+        background-color: rgba(255, 252, 247, 0.9);
+        border-color: rgba(231, 222, 211, 0.95);
+        box-shadow:
+            0 4px 12px -6px rgba(120, 80, 30, 0.24),
+            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+        color: var(--ui-text);
+    }
+}
+
+@utility nav-item-active {
+    color: var(--ui-accent);
+    background-color: var(--ui-accent-soft);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(254, 243, 231, 0));
+    border: 1px solid rgba(161, 98, 7, 0.3);
+    box-shadow:
+        0 4px 12px -6px rgba(161, 98, 7, 0.38),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 0 rgba(161, 98, 7, 0.12);
 }
 
 /*

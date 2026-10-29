@@ -137,7 +137,7 @@ class ActivityCompletionTest extends TestCase
         $this->assertSame(1, ActivityProgress::count());
     }
 
-    public function test_client_supplied_ids_are_ignored_and_other_users_are_untouched(): void
+    public function test_another_parents_child_id_is_rejected_and_other_users_are_untouched(): void
     {
         $activity = $this->makeActivity();
         $me = $this->makeUser('a@example.com');
@@ -146,10 +146,16 @@ class ActivityCompletionTest extends TestCase
         $otherChild = Child::create(['user_id' => $other->id, 'name' => 'Other']);
         Sanctum::actingAs($me);
 
+        // Someone else's child is "not found": nothing is recorded for anyone.
         $this->postJson("/api/activities/{$activity->id}/complete", [
             'child_id' => $otherChild->id,
             'user_id' => $other->id,
-        ])->assertCreated();
+        ])->assertNotFound();
+
+        $this->assertSame(0, ActivityProgress::count());
+
+        // A forged user_id alone is ignored; the parent's own child is used.
+        $this->postJson("/api/activities/{$activity->id}/complete", ['user_id' => $other->id])->assertCreated();
 
         $this->assertSame(1, ActivityProgress::where('child_id', $myChild->id)->count());
         $this->assertSame(0, ActivityProgress::where('child_id', $otherChild->id)->count());

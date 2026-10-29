@@ -22,7 +22,7 @@ class ActivityManagementController extends Controller
     {
         // Unlike the public list, this includes unpublished (draft) activities.
         $activities = Activity::query()
-            ->with('category:id,name', 'resources')
+            ->with('category:id,name', 'resources', 'conditions:id')
             ->orderByDesc('id')
             ->get()
             ->map(fn (Activity $activity) => $this->format($activity));
@@ -41,9 +41,13 @@ class ActivityManagementController extends Controller
 
         // Only validated fields are used, so a client cannot set created_by or
         // is_published. New activities start as unpublished drafts.
+        $conditionIds = $validated['condition_ids'] ?? [];
+        unset($validated['condition_ids']);
+
         $activity = new Activity($validated);
         $activity->created_by = $request->user()->id;
         $activity->save();
+        $activity->conditions()->sync($conditionIds);
 
         return response()->json([
             'message' => 'Activity created.',
@@ -57,7 +61,14 @@ class ActivityManagementController extends Controller
 
         // created_by and is_published are not in the validated data, so
         // ownership and publication cannot change through an update.
+        $conditionIds = $validated['condition_ids'] ?? null;
+        unset($validated['condition_ids']);
+
         $activity->update($validated);
+
+        if ($conditionIds !== null) {
+            $activity->conditions()->sync($conditionIds);
+        }
 
         return response()->json([
             'message' => 'Activity updated.',
@@ -103,12 +114,16 @@ class ActivityManagementController extends Controller
             'materials' => [$creating ? 'present' : 'sometimes', 'array'],
             'materials.*' => ['required', 'string', 'max:255'],
             'difficulty' => ['sometimes', 'string', Rule::in(['Easy', 'Medium', 'Hard'])],
+            // Which conditions this activity is relevant to (existing ids only).
+            'condition_ids' => ['sometimes', 'array', 'max:100'],
+            'condition_ids.*' => ['integer', 'distinct', 'exists:conditions,id'],
+            'is_for_all_conditions' => ['sometimes', 'boolean'],
         ];
     }
 
     private function format(Activity $activity): array
     {
-        $activity->loadMissing('category:id,name', 'resources');
+        $activity->loadMissing('category:id,name', 'resources', 'conditions:id');
 
         return [
             'id' => $activity->id,
@@ -126,6 +141,8 @@ class ActivityManagementController extends Controller
                 'file_type' => $resource->file_type,
             ])->values(),
             'difficulty' => $activity->difficulty,
+            'condition_ids' => $activity->conditions->pluck('id')->values(),
+            'is_for_all_conditions' => $activity->is_for_all_conditions,
             'image_url' => $activity->imageUrl(),
             'is_published' => $activity->is_published,
             'created_by' => $activity->created_by,

@@ -6,9 +6,9 @@ import { createPortal } from 'react-dom';
 const buttonBase =
     'cursor-pointer rounded-3xl px-[22px] py-2.5 [font-family:inherit] text-sm font-bold';
 
-const cancelClass = `${buttonBase} border border-[#333] bg-white text-[#333] enabled:hover:bg-hover`;
+const cancelClass = `${buttonBase} border border-accent bg-white text-ink enabled:hover:bg-hover`;
 
-const confirmClass = `${buttonBase} border-0 bg-primary text-white enabled:hover:bg-primary-hover`;
+const confirmClass = `${buttonBase} border-0 bg-primary text-white enabled:hover:bg-primary-hover btn-solid`;
 
 /*
  * A small reusable "are you sure?" dialog.
@@ -96,7 +96,7 @@ function ConfirmDialog({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.2s_ease-out] items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.2s_ease-out] items-center justify-center bg-[rgba(41,37,36,0.4)] p-4"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !busy) {
                     onCancel();
@@ -104,7 +104,7 @@ function ConfirmDialog({
             }}
         >
             <div
-                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-xl bg-white p-7 font-[Quicksand,sans-serif] shadow-[0_10px_40px_rgba(0,0,0,0.2)]"
+                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-[22px] border border-white/70 bg-[rgba(255,254,252,0.94)] p-7 font-[Quicksand,sans-serif] shadow-[0_24px_60px_-18px_rgba(60,40,10,0.45),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-[14px]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-dialog-title"

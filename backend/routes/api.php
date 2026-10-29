@@ -21,6 +21,8 @@ use App\Http\Controllers\Api\Admin\ActivityImageController;
 use App\Http\Controllers\Api\ActivityMaterialController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfilePhotoController;
+use App\Http\Controllers\Api\ConditionController;
+use App\Http\Controllers\Api\Admin\ConditionManagementController;
 use App\Http\Controllers\Api\DeveloperTeamController;
 use App\Http\Controllers\Api\Admin\DeveloperTeamManagementController;
 
@@ -58,9 +60,17 @@ Route::post('/activities/{id}/complete', [ActivityCompletionController::class, '
     ->whereNumber('id')
     ->middleware(['auth:sanctum', 'role:parent']);
 
-// A child profile belongs to a parent account (admins have none).
-Route::post('/children', [ChildController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:parent']);
+// A parent's own children (several per parent). Every route works only on the
+// logged-in parent's children; admins have none.
+Route::middleware(['auth:sanctum', 'role:parent'])->prefix('children')->group(function () {
+    Route::get('/', [ChildController::class, 'index']);
+    Route::post('/', [ChildController::class, 'store']);
+    Route::put('/{child}', [ChildController::class, 'update'])->whereNumber('child');
+    Route::delete('/{child}', [ChildController::class, 'destroy'])->whereNumber('child');
+});
+
+// The conditions parents can choose from (active ones; public, read-only).
+Route::get('/conditions', [ConditionController::class, 'index']);
 
 Route::put('/profile', [ProfileController::class, 'update'])
     ->middleware('auth:sanctum');
@@ -151,6 +161,16 @@ Route::middleware(['auth:sanctum', 'role:admin'])
 
         // Accounts: list, create, update (name, email, role) and guarded delete.
         Route::apiResource('users', UserManagementController::class);
+
+        // Predefined conditions: list, add, edit, switch on/off (no delete on purpose).
+        Route::get('conditions', [ConditionManagementController::class, 'index'])
+            ->name('conditions.index');
+
+        Route::post('conditions', [ConditionManagementController::class, 'store'])
+            ->name('conditions.store');
+
+        Route::put('conditions/{condition}', [ConditionManagementController::class, 'update'])
+            ->name('conditions.update');
 
         // The Developer Team card shown on the Contact Us page (one settings row).
         Route::get('developer-team', [DeveloperTeamManagementController::class, 'show'])

@@ -8,8 +8,8 @@ import {
 } from './api.js';
 import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
-import DeveloperTeamAdmin from './DeveloperTeamAdmin.jsx';
 import * as ui from './adminClasses.js';
+import Modal from './Modal.jsx';
 
 const emptyForm = {
     name: '',
@@ -473,18 +473,17 @@ function ManageContacts() {
 
                 {/* Add / Edit Contact Form */}
 
-                {showForm && (
-
-                    <section className={ui.formCard}>
-
-                        <h2 className={ui.formTitle}>
-                            {editingId === null
+                <Modal
+                    open={showForm}
+                    onClose={closeForm}
+                    busy={isSaving}
+                    size="lg"
+                    title={editingId === null
                                 ? 'Add New Contact'
                                 : 'Edit Contact'}
-                        </h2>
+                >
 
-
-                        <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit}>
 
                             {formError && (
                                 <p className={ui.messageError} role="alert">
@@ -740,9 +739,7 @@ function ManageContacts() {
 
                         </form>
 
-                    </section>
-
-                )}
+                </Modal>
 
 
                 {/* Contacts Table */}
@@ -943,12 +940,6 @@ function ManageContacts() {
 
                 )}
 
-
-                {/* The Developer Team card of the Contact Us page (separate from the contacts above) */}
-
-                <div className="mt-[25px]">
-                    <DeveloperTeamAdmin />
-                </div>
 
             </main>
 

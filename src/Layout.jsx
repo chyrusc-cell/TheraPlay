@@ -1,18 +1,21 @@
 import { Link, Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import AuthProvider from './AuthProvider.jsx';
+import ChildProvider from './ChildProvider.jsx';
+import ChildSelector from './ChildSelector.jsx';
 import GlobalSearch from './GlobalSearch.jsx';
 import { CurrentUserAvatar } from './ProfileAvatar.jsx';
 
 function Layout() {
     return (
         <AuthProvider>
+            <ChildProvider>
             {/*
               The app area sets its own background and font, because every old
               page stylesheet sets a global "body" background and the winner
               would otherwise depend on bundle order.
             */}
-            <div className="min-h-screen w-full bg-[#f7f8fa] font-[Quicksand,sans-serif]">
+            <div className="min-h-screen w-full font-[Quicksand,sans-serif]">
                 <Sidebar />
 
                 {/*
@@ -31,9 +34,12 @@ function Layout() {
                   so the two never overlap. z-40 matches the pill and stays
                   below dialogs and the search dropdown.
                 */}
+                {/* The global Choose Child switcher (parents only). */}
+                <ChildSelector />
+
                 <Link
                     to="/profile"
-                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center overflow-hidden justify-center rounded-full border border-[#dedede] bg-[#e9ecef] text-muted no-underline transition-[background-color,box-shadow] duration-150 hover:bg-[#dfe3e7] hover:shadow-[0_0_0_3px_rgba(0,0,0,0.05)] tablet:right-4"
+                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center overflow-hidden justify-center rounded-full border border-white/70 btn-glass text-muted no-underline tablet:right-4"
                     aria-label="Open profile"
                     title="Profile"
                 >
@@ -54,6 +60,7 @@ function Layout() {
                     </main>
                 </div>
             </div>
+            </ChildProvider>
         </AuthProvider>
     );
 }

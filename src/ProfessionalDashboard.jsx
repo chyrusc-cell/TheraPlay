@@ -11,8 +11,8 @@ const FEEDBACK_LIMIT = 5;
 
 // Class strings used more than once on this page. Colors and breakpoints come
 // from css/tailwind.css; the focus ring is the global one in css/ui.css.
-const cardClass = 'rounded-[10px] border border-[#e1e5ea] bg-white p-[25px]';
-const noteClass = 'text-[13px] text-[#888]';
+const cardClass = 'rounded-[10px] border border-edge bg-white p-[25px]';
+const noteClass = 'text-[13px] text-faint';
 const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
 
 const API_URL = 'http://127.0.0.1:8000/api';
@@ -244,7 +244,7 @@ function ProfessionalDashboard() {
 
 
     return (
-        <div className="min-h-page bg-[#f5f7fa]">
+        <div className="min-h-page">
 
             {/* Main Content */}
 
@@ -303,7 +303,7 @@ function ProfessionalDashboard() {
                                 ) : error ? '—' : activities.length}
                             </div>
 
-                            <div className="text-[14px] text-[#666]">
+                            <div className="text-[14px] text-muted">
                                 Total Activities
                             </div>
 
@@ -325,7 +325,7 @@ function ProfessionalDashboard() {
                                 ) : usersError ? '—' : userCount}
                             </div>
 
-                            <div className="text-[14px] text-[#666]">
+                            <div className="text-[14px] text-muted">
                                 Total Users
                             </div>
 
@@ -335,7 +335,7 @@ function ProfessionalDashboard() {
                                     <button
                                         type="button"
                                         onClick={retryUsers}
-                                        className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-[#333] underline"
+                                        className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-ink underline"
                                     >
                                         Try again
                                     </button>
@@ -359,7 +359,7 @@ function ProfessionalDashboard() {
 
                                 <Link
                                     to="/manage-activities"
-                                    className="text-[13px] font-bold text-[#333] no-underline"
+                                    className="text-[13px] font-bold text-ink no-underline"
                                 >
                                     View All
                                 </Link>
@@ -385,11 +385,11 @@ function ProfessionalDashboard() {
                                 {recentUploads.map((item) => (
 
                                     <div
-                                        className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-[#e5e5e5] py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
+                                        className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-edge py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
                                         key={item.id}
                                     >
 
-                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-[#e9eef3] text-[10px] text-[#8a96a3]">
+                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-sunken text-[10px] text-faint">
                                             Image
                                         </div>
 
@@ -399,7 +399,7 @@ function ProfessionalDashboard() {
                                                 {item.title}
                                             </h3>
 
-                                            <p className="text-[12px] text-[#777]">
+                                            <p className="text-[12px] text-muted">
                                                 {item.category || 'No category'}
                                                 {' • '}
                                                 {item.is_published
@@ -409,7 +409,7 @@ function ProfessionalDashboard() {
 
                                         </div>
 
-                                        <div className="text-[11px] text-[#888] phone:col-start-2">
+                                        <div className="text-[11px] text-faint phone:col-start-2">
                                             {formatDate(item.created_at)}
                                         </div>
 
@@ -448,7 +448,7 @@ function ProfessionalDashboard() {
 
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-md border border-[#ccc] bg-white px-4 py-2 text-[13px] text-[#333] enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
                                         onClick={retryFeedback}
                                     >
                                         Try again
@@ -471,7 +471,7 @@ function ProfessionalDashboard() {
                                         {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
 
                                             <div
-                                                className="border-b border-[#e5e5e5] py-3.5 first:pt-0 last:border-b-0"
+                                                className="border-b border-edge py-3.5 first:pt-0 last:border-b-0"
                                                 key={item.id}
                                             >
 
@@ -483,19 +483,19 @@ function ProfessionalDashboard() {
                                                             : 'Former user'}
                                                     </span>
 
-                                                    <span className="shrink-0 text-[12px] text-[#888]">
+                                                    <span className="shrink-0 text-[12px] text-faint">
                                                         {formatDate(item.created_at)}
                                                     </span>
 
                                                 </div>
 
                                                 {item.rating && (
-                                                    <div className="mb-1.5 text-[12px] text-[#666]">
+                                                    <div className="mb-1.5 text-[12px] text-muted">
                                                         Rating: {item.rating} / 5
                                                     </div>
                                                 )}
 
-                                                <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-[#444] [word-break:break-word]">
+                                                <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-body [word-break:break-word]">
                                                     {item.message}
                                                 </p>
 

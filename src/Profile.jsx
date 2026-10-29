@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiRequest } from './api.js';
 import { useAuth } from './authContext.js';
 import { ProfileAvatar } from './ProfileAvatar.jsx';
+import ChildrenSection from './ChildrenSection.jsx';
+import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { CardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMainNarrow, pageHeader, pageTitle } from './uiClasses.js';
@@ -38,21 +40,21 @@ const toFormValues = (user) => ({
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
 const cardTitleClass = 'mb-[30px] text-[18px] font-bold text-ink';
 
 // Form fields: a floating label on the top border of each input.
 const fieldClass = 'relative mb-[30px] flex flex-col gap-2';
 const fieldLabelClass =
-    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-[#888]';
+    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-faint';
 const fieldInputClass =
-    'w-full rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
+    'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 const pillButtonClass =
-    'cursor-pointer rounded-[20px] border border-[#333] bg-white px-6 py-2 [font-family:inherit] text-[14px] font-bold text-[#333] transition-colors enabled:hover:bg-[#333] enabled:hover:text-white';
+    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white';
 
 const smallPillClass =
-    'cursor-pointer rounded-[20px] border border-[#333] bg-white px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-[#333] transition-colors enabled:hover:bg-[#333] enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60';
 
 // Picture rules (the server checks again, from the file's real content).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -466,7 +468,7 @@ function Profile() {
 
                 {/* Profile Avatar Card */}
                 <div className={`${cardClass} flex items-center gap-6 phone:flex-col phone:items-start`}>
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-[#ddd] bg-[#e9ecef] text-[#888]">
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-edge-strong bg-sunken text-faint">
                         <ProfileAvatar
                             photoUrl={authUser?.photo_url}
                             previewSrc={photoPreview}
@@ -533,7 +535,7 @@ function Profile() {
                             disabled={photoBusy}
                         />
 
-                        <p className="mt-2 text-[12px] text-[#888]">JPG, PNG or WebP, up to 2 MB.</p>
+                        <p className="mt-2 text-[12px] text-faint">JPG, PNG or WebP, up to 2 MB.</p>
 
                         {photoNotice && (
                             <p
@@ -567,22 +569,22 @@ function Profile() {
                         {!isEditing ? (
                             <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[12px] font-medium text-[#888]">First Name</span>
+                                    <span className="text-[12px] font-medium text-faint">First Name</span>
                                     <span className="text-[15px] font-bold text-ink">{firstName}</span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[12px] font-medium text-[#888]">Last Name</span>
+                                    <span className="text-[12px] font-medium text-faint">Last Name</span>
                                     <span className="text-[15px] font-bold text-ink">{lastName}</span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[12px] font-medium text-[#888]">Email Address</span>
+                                    <span className="text-[12px] font-medium text-faint">Email Address</span>
                                     <span className="text-[15px] font-bold text-ink">{email}</span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <span className="text-[12px] font-medium text-[#888]">Phone Number</span>
+                                    <span className="text-[12px] font-medium text-faint">Phone Number</span>
                                     <span className="text-[15px] font-bold text-ink">{phone}</span>
                                 </div>
 
@@ -640,7 +642,7 @@ function Profile() {
                         <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="cursor-pointer rounded-3xl border border-[#333] bg-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-[#333] enabled:hover:bg-hover"
+                                className="cursor-pointer rounded-full border border-accent/45 btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
                                 onClick={handleCancel}
                                 disabled={isSaving}
                             >
@@ -649,7 +651,7 @@ function Profile() {
 
                             <button
                                 type="submit"
-                                className="cursor-pointer rounded-3xl border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover"
+                                className="cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid"
                                 disabled={isSaving}
                             >
                                 {isSaving ? 'Saving...' : 'Save Changes'}
@@ -658,11 +660,16 @@ function Profile() {
                     )}
                 </form>
 
+                {/* The parent's children (parents only; shows nothing for admins) */}
+                <SectionErrorBoundary label="The children section">
+                    <ChildrenSection />
+                </SectionErrorBoundary>
+
                 {/* Password reset request */}
                 <div className={cardClass}>
                     <h3 className="mb-3 text-[18px] font-bold text-ink">Password</h3>
 
-                    <p className="mb-4 text-[14px] leading-[1.5] text-[#666]">
+                    <p className="mb-4 text-[14px] leading-[1.5] text-muted">
                         We can send a password reset link to your registered
                         email address{savedUser?.email ? ` (${savedUser.email})` : ''}.
                         Your password only changes after you open the link and

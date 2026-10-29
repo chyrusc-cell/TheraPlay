@@ -14,12 +14,30 @@
  */
 
 :root {
-    --ui-primary: #222;
-    --ui-primary-hover: #000;
-    --ui-text: #1a1a1a;
-    --ui-muted: #666;
-    --ui-border: #ccc;
-    --ui-surface-hover: #f1f3f5;
+    /*
+     * Warm Neutral theme. Every neutral color in the app comes from these
+     * variables (exposed as Tailwind colors in tailwind.css): change them here
+     * to re-theme the whole site.
+     */
+    --ui-page: #faf8f5;            /* page background */
+    --ui-surface-warm: #f5f0e9;    /* secondary warm surface (inner cards, list rows) */
+    --ui-sunken: #f0ece6;          /* muted / disabled surface, tracks, avatar fill */
+    --ui-edge: #e7ded3;            /* borders and dividers */
+    --ui-edge-strong: #d6c9ba;     /* input and button borders */
+    --ui-accent: #a16207;          /* primary accent (buttons, active links) */
+    --ui-accent-hover: #854d0e;
+    --ui-accent-2: #d97706;        /* secondary accent (highlights, chart series) */
+    --ui-accent-soft: #fef3e7;     /* soft accent background */
+
+    --ui-text: #292524;            /* primary text */
+    --ui-body: #57534e;            /* body copy */
+    --ui-muted: #78716c;           /* secondary text */
+    --ui-faint: #857c74;           /* hints and placeholders */
+
+    --ui-primary: var(--ui-accent);
+    --ui-primary-hover: var(--ui-accent-hover);
+    --ui-border: var(--ui-edge-strong);
+    --ui-surface-hover: #f3eee7;
 
     --ui-success: #188038;
     --ui-success-bg: #e6f4ea;
@@ -39,7 +57,7 @@
     --ui-hard-bg: #7f1d1d;
     --ui-hard-text: #fff;
 
-    --ui-focus: #1a73e8;
+    --ui-focus: #a16207;
 
     --ui-transition: 0.15s ease;
 
@@ -66,7 +84,7 @@ summary:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+    box-shadow: 0 0 0 3px rgba(161, 98, 7, 0.25);
 }
 
 
@@ -147,12 +165,12 @@ textarea {
 }
 
 .skeleton {
-    background-color: #eceff1;
+    background-color: #efe9e1;
     background-image: linear-gradient(
         90deg,
-        #eceff1 25%,
-        #f6f8f9 50%,
-        #eceff1 75%
+        #efe9e1 25%,
+        #f8f4ee 50%,
+        #efe9e1 75%
     );
     background-size: 200% 100%;
     animation: ui-shimmer 1.4s ease-in-out infinite;
@@ -171,9 +189,71 @@ textarea {
         scroll-behavior: auto !important;
     }
 
+    /* No lifting or pressing movement. */
+    .btn-solid,
+    .btn-glass,
+    .btn-solid:hover,
+    .btn-glass:hover,
+    .btn-solid:active,
+    .btn-glass:active {
+        transform: none !important;
+    }
+
     /* A static placeholder instead of a moving one. */
     .skeleton {
         animation: none;
         background-image: none;
     }
+}
+
+
+/* The page color also shows in overscroll areas and behind short pages. */
+html {
+    background-color: var(--ui-page);
+}
+
+/*
+ * Room the search pill leaves on its right for the top-right controls: the
+ * profile shortcut alone (the default 90px), or the profile shortcut plus the
+ * Choose Child selector, which sets data-child-selector on <html> while it is
+ * shown (parents).
+ */
+html[data-child-selector] {
+    --search-reserve: 285px;
+}
+
+@media (max-width: 900px) {
+    html[data-child-selector] {
+        --search-reserve: 235px;
+    }
+}
+
+@media (max-width: 560px) {
+    html[data-child-selector] {
+        --search-reserve: 135px;
+    }
+}
+
+/*
+ * Site background: a soft, blurred-looking three-color gradient (blush pink,
+ * buttery yellow, pale aqua, pastel versions of #ff0055 / #ffff69 / #00ffff)
+ * over the warm ivory page color. It is pure CSS (no image) and lives on a fixed
+ * layer BEHIND the page, so it covers the whole window however long the page is,
+ * never scrolls or repaints with the content, and nothing on the page is blurred.
+ * Pages must not paint their own opaque background over it (the layout, the admin
+ * pages and the auth pages are transparent for that reason).
+ * To change the mood, edit the three rgba() colors and their sizes here.
+ */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--ui-page);
+    background-image:
+        radial-gradient(ellipse 70% 60% at 6% 8%, rgba(255, 150, 185, 0.24) 0%, rgba(255, 150, 185, 0) 100%),
+        radial-gradient(ellipse 65% 55% at 94% 10%, rgba(255, 248, 150, 0.34) 0%, rgba(255, 248, 150, 0) 100%),
+        radial-gradient(ellipse 75% 65% at 72% 98%, rgba(150, 235, 240, 0.28) 0%, rgba(150, 235, 240, 0) 100%),
+        radial-gradient(ellipse 60% 50% at 8% 92%, rgba(255, 215, 170, 0.16) 0%, rgba(255, 215, 170, 0) 100%);
 }

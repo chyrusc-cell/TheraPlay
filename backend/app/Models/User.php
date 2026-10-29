@@ -58,9 +58,16 @@ class User extends Authenticatable
         ];
     }
 
+    // The oldest child (a parent can have several: see children()). Kept for
+    // the "has any child" checks.
     public function child(): HasOne
     {
-        return $this->hasOne(Child::class);
+        return $this->hasOne(Child::class)->oldestOfMany();
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Child::class);
     }
 
     public function createdActivities(): HasMany

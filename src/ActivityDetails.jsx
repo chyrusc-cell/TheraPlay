@@ -4,6 +4,7 @@ import { apiRequest } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
 import { holdSkeleton } from './minLoading.js';
+import { useChildren } from './childContext.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { detailsCardClass, pageMain } from './uiClasses.js';
 
@@ -18,13 +19,17 @@ const getToken = () =>
 // saved progress from the server, so the answer survives refreshes and new
 // logins. Guests and failures count as "not completed" and never claim a
 // completion that was not saved.
-const fetchIsCompleted = async (activityId, signal) => {
+// Completion is per child: this asks about the selected child's progress.
+const fetchIsCompleted = async (activityId, signal, childId) => {
     if (!getToken()) {
         return false;
     }
 
     try {
-        const result = await apiRequest('/progress', { signal });
+        const result = await apiRequest(
+            childId ? `/progress?child_id=${childId}` : '/progress',
+            { signal }
+        );
 
         if (!result.ok) {
             return false;
@@ -50,13 +55,22 @@ const fetchIsCompleted = async (activityId, signal) => {
 };
 
 const completeButtonBase =
-    'cursor-pointer rounded-md border-0 bg-primary p-3 text-[15px] text-white enabled:hover:bg-primary-hover';
+    'cursor-pointer rounded-full border-0 bg-primary p-3 text-[15px] text-white enabled:hover:bg-primary-hover btn-solid';
 
 const messageBase = 'mt-3 text-[14px] font-medium';
 
-function ActivityDetails() {
+/*
+ * The activity page. Used as the /activities/:activityId route, and inside the
+ * View Activity modal on the Activities page (embedded: it gets the id as a
+ * prop and drops the page wrapper and the "Back" link). onCompleted lets the
+ * Activities page mark its card as completed.
+ */
+function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompleted }) {
 
-    const { activityId } = useParams();
+    const params = useParams();
+    const activityId = activityIdProp ?? params.activityId;
+    // The globally selected child (completion is recorded for this child).
+    const { selectedChildId, status: childStatus, refreshChildren } = useChildren();
     const navigate = useNavigate();
 
     const [activity, setActivity] = useState(null);
@@ -77,6 +91,11 @@ function ActivityDetails() {
     const [downloadError, setDownloadError] = useState('');
 
     useEffect(() => {
+        // A parent's children are still loading: the completed state depends on them.
+        if (childStatus === 'loading') {
+            return undefined;
+        }
+
         const controller = new AbortController();
         const startedAt = performance.now();
 
@@ -91,7 +110,7 @@ function ActivityDetails() {
                         headers: { Accept: 'application/json' },
                         signal: controller.signal,
                     }),
-                    fetchIsCompleted(activityId, controller.signal),
+                    fetchIsCompleted(activityId, controller.signal, selectedChildId),
                 ]);
 
                 if (response.status === 404) {
@@ -128,7 +147,7 @@ function ActivityDetails() {
         loadActivity();
 
         return () => controller.abort();
-    }, [activityId]);
+    }, [activityId, childStatus, selectedChildId]);
 
     // Token missing or rejected: clear it and send the user to login.
     const redirectToLogin = (text) => {
@@ -142,15 +161,20 @@ function ActivityDetails() {
 
     // Asks the backend to save the completion. Returns true only when the
     // backend confirms it was saved.
-    const completeActivity = async (token) => {
+    const completeActivity = async (token, childIdOverride) => {
+        const childId = childIdOverride ?? selectedChildId;
+
         const response = await fetch(
             `${API_URL}/activities/${activityId}/complete`,
             {
                 method: 'POST',
                 headers: {
+                    'Content-Type': 'application/json',
                     Accept: 'application/json',
                     Authorization: `Bearer ${token}`,
                 },
+                // Which child (the server checks it is the parent's own).
+                body: JSON.stringify(childId ? { child_id: childId } : {}),
             }
         );
 
@@ -176,6 +200,7 @@ function ActivityDetails() {
 
         setShowChildForm(false);
         setIsCompleted(true);
+        onCompleted?.(activityId);
         setMessage(data.message || 'Activity marked as completed.');
         return true;
     };
@@ -268,8 +293,11 @@ function ActivityDetails() {
             setShowChildForm(false);
             setChildName('');
 
+            // Make the new child the selected one everywhere, then complete for it.
+            await refreshChildren();
+
             try {
-                await completeActivity(token);
+                await completeActivity(token, data.data?.child?.id);
             } catch (err) {
                 setIsMessageError(true);
                 setMessage(
@@ -338,8 +366,8 @@ function ActivityDetails() {
     if (isLoading) {
 
         return (
-            <div className="min-h-page bg-[#f5f7fa]">
-                <main className={pageMain}>
+            <div className={embedded ? '' : 'min-h-page'}>
+                <main className={embedded ? '' : pageMain}>
                     <ActivityDetailsSkeleton />
                 </main>
             </div>
@@ -351,7 +379,7 @@ function ActivityDetails() {
     if (error) {
 
         return (
-            <div className="flex min-h-page flex-col items-center justify-center gap-[15px]">
+            <div className={`flex flex-col items-center justify-center gap-[15px] ${embedded ? 'py-10' : 'min-h-page'}`}>
 
                 <h1>
                     Something Went Wrong
@@ -361,9 +389,11 @@ function ActivityDetails() {
                     {error}
                 </p>
 
-                <Link to="/activities" className="text-[#333]">
-                    Back to Activities
-                </Link>
+                {!embedded && (
+                    <Link to="/activities" className="text-ink">
+                        Back to Activities
+                    </Link>
+                )}
 
             </div>
         );
@@ -374,7 +404,7 @@ function ActivityDetails() {
     if (notFound || !activity) {
 
         return (
-            <div className="flex min-h-page flex-col items-center justify-center gap-[15px]">
+            <div className={`flex flex-col items-center justify-center gap-[15px] ${embedded ? 'py-10' : 'min-h-page'}`}>
 
                 <h1>
                     Activity Not Found
@@ -384,9 +414,11 @@ function ActivityDetails() {
                     The activity you are looking for does not exist.
                 </p>
 
-                <Link to="/activities" className="text-[#333]">
-                    Back to Activities
-                </Link>
+                {!embedded && (
+                    <Link to="/activities" className="text-ink">
+                        Back to Activities
+                    </Link>
+                )}
 
             </div>
         );
@@ -395,18 +427,20 @@ function ActivityDetails() {
 
 
     return (
-        <div className="min-h-page bg-[#f5f7fa]">
+        <div className={embedded ? '' : 'min-h-page'}>
 
             {/* Main Content */}
 
-            <main className={pageMain}>
+            <main className={embedded ? '' : pageMain}>
 
-                <Link
-                    to="/activities"
-                    className="mb-[25px] inline-block text-[14px] text-[#333] no-underline"
-                >
-                    ← Back to Activities
-                </Link>
+                {!embedded && (
+                    <Link
+                        to="/activities"
+                        className="mb-[25px] inline-block text-[14px] text-ink no-underline"
+                    >
+                        ← Back to Activities
+                    </Link>
+                )}
 
 
                 <div className={detailsCardClass}>
@@ -418,7 +452,7 @@ function ActivityDetails() {
                         alt={`Picture of ${activity.title}`}
                         className="h-[220px] w-full rounded-lg object-cover tablet-sm:h-[180px]"
                         fallback={
-                            <div className="flex h-[220px] items-center justify-center rounded-lg bg-[#e9eef3] text-[#8a96a3] tablet-sm:h-[180px]">
+                            <div className="flex h-[220px] items-center justify-center rounded-lg bg-sunken text-faint tablet-sm:h-[180px]">
                                 Image
                             </div>
                         }
@@ -456,7 +490,7 @@ function ActivityDetails() {
                                 Objective
                             </h2>
 
-                            <p className="leading-[1.5] text-[#666]">
+                            <p className="leading-[1.5] text-muted">
                                 {activity.objective}
                             </p>
 
@@ -471,7 +505,7 @@ function ActivityDetails() {
                                 Instructions
                             </h2>
 
-                            <ol className="list-decimal pl-5 leading-[1.8] text-[#555]">
+                            <ol className="list-decimal pl-5 leading-[1.8] text-body">
 
                                 {activity.instructions.map(
                                     (instruction, index) => (
@@ -496,7 +530,7 @@ function ActivityDetails() {
                                 Materials
                             </h2>
 
-                            <ul className="list-disc pl-5 leading-[1.8] text-[#555]">
+                            <ul className="list-disc pl-5 leading-[1.8] text-body">
 
                                 {activity.materials.map(
                                     (material, index) => (
@@ -516,7 +550,7 @@ function ActivityDetails() {
                             {Array.isArray(activity.resources) &&
                                 activity.resources.length > 0 && (
 
-                                <ul className="mt-3 list-none pl-5 leading-[1.8] text-[#555]">
+                                <ul className="mt-3 list-none pl-5 leading-[1.8] text-body">
 
                                     {activity.resources.map((resource) => (
 
@@ -524,7 +558,7 @@ function ActivityDetails() {
 
                                             <button
                                                 type="button"
-                                                className="cursor-pointer rounded-md border border-[#ccc] bg-white px-3 py-2 text-left text-[13px] text-[#333] [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
+                                                className="cursor-pointer rounded-xl border border-edge-strong btn-glass px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
                                                 onClick={() =>
                                                     handleDownload(resource)
                                                 }
@@ -554,24 +588,24 @@ function ActivityDetails() {
 
                         {showChildForm && (
                             <form
-                                className="mb-4 flex flex-col gap-2 rounded-md border border-[#ddd] p-4"
+                                className="mb-4 flex flex-col gap-2 rounded-md border border-edge-strong p-4"
                                 onSubmit={handleChildSubmit}
                             >
                                 <h2 className="text-[16px] font-bold">
                                     Add Your Child
                                 </h2>
 
-                                <p className="text-[13px] text-[#666]">
+                                <p className="text-[13px] text-muted">
                                     Your child's name is needed to record
                                     completed activities.
                                 </p>
 
-                                <label htmlFor="childName" className="text-[13px] text-[#666]">
+                                <label htmlFor="childName" className="text-[13px] text-muted">
                                     Child's name
                                 </label>
 
                                 <input
-                                    className="rounded-md border border-[#ddd] px-3 py-2.5 text-[14px]"
+                                    className="rounded-xl border border-edge-strong px-3 py-2.5 text-[14px]"
                                     id="childName"
                                     type="text"
                                     value={childName}
@@ -593,7 +627,7 @@ function ActivityDetails() {
                                 <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-md border border-[#333] bg-white px-5 py-3 text-[15px] text-[#333] enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border border-accent/45 btn-glass px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >

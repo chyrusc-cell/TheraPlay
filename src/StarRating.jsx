@@ -39,7 +39,7 @@ function StarRating({ value, onChange, disabled = false, label = 'Rating' }) {
                             onClick={() => onChange(value === star ? 0 : star)}
                             onMouseEnter={() => setHovered(star)}
                             className={`cursor-pointer rounded-md border-0 bg-transparent p-1 transition-transform duration-150 motion-safe:enabled:hover:scale-110 ${
-                                filled ? 'text-[#b26a00]' : 'text-[#8a8a8a]'
+                                filled ? 'text-[#b26a00]' : 'text-muted'
                             }`}
                         >
                             <Star

@@ -9,6 +9,7 @@ import {
 import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
+import Modal from './Modal.jsx';
 
 const emptyForm = {
     name: '',
@@ -460,16 +461,15 @@ function ManageAccounts() {
                 )}
 
 
-                {showForm && (
+                <Modal
+                    open={showForm}
+                    onClose={closeForm}
+                    busy={isSaving}
+                    size="md"
+                    title={isEditing ? 'Edit Account' : 'Create New Account'}
+                >
 
-                    <section className={ui.formCard}>
-
-                        <h2 className={ui.formTitle}>
-                            {isEditing ? 'Edit Account' : 'Create New Account'}
-                        </h2>
-
-
-                        <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit}>
 
                             {formError && (
                                 <p className={ui.messageError} role="alert">
@@ -654,9 +654,7 @@ function ManageAccounts() {
 
                         </form>
 
-                    </section>
-
-                )}
+                </Modal>
 
 
                 {isLoading ? (

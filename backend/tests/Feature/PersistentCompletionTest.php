@@ -141,9 +141,13 @@ class PersistentCompletionTest extends TestCase
         $activity = $this->makeActivity();
         Sanctum::actingAs($me);
 
-        // Forged identifiers in the request body are ignored.
+        // Another parent's child_id is rejected (404), and a forged user_id is ignored.
         $this->postJson("/api/activities/{$activity->id}/complete", [
             'child_id' => $otherChild->id,
+        ])->assertNotFound();
+        $this->assertSame(0, ActivityProgress::count());
+
+        $this->postJson("/api/activities/{$activity->id}/complete", [
             'user_id' => $other->id,
         ])->assertCreated();
 

@@ -33,7 +33,7 @@ function RequireRole({ role }) {
                 <button
                     type="button"
                     onClick={retry}
-                    className="mt-3 cursor-pointer rounded-md border border-primary bg-white px-5 py-2 [font-family:inherit] font-bold text-[#333] hover:bg-hover"
+                    className="mt-3 cursor-pointer rounded-full border border-primary btn-glass px-5 py-2 [font-family:inherit] font-bold text-ink hover:bg-hover"
                 >
                     Try again
                 </button>

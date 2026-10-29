@@ -9,23 +9,22 @@
 // Every string is written out in full so Tailwind can find the classes. The
 // focus ring on fields and buttons is the global one from css/ui.css.
 
-import background from '../img/occu_therapy.bg.jpg';
-
-// The page photo is imported (not a CSS url) so Vite handles the asset path.
-export const backgroundStyle = { backgroundImage: `url(${background})` };
+// The page background is the site-wide gradient (css/ui.css, body::before), so
+// the sign-in pages set none of their own.
 
 // ---------- Page frames ----------
 
-// Login and Forgot/Reset Password: photo background and a white side panel.
-export const pageBg = 'flex min-h-screen bg-cover bg-center';
+// Login and Forgot/Reset Password: a white side panel over the gradient.
+export const pageBg = 'flex min-h-screen';
 
 export const panel =
     'flex w-full max-w-[500px] flex-col justify-center rounded-r-[40px] bg-white px-20 py-[60px] shadow-[4px_0_20px_rgba(0,0,0,0.05)] phone:max-w-none phone:rounded-none phone:px-6 phone:py-10';
 
 // Register: a centered white column.
 export const registerPage =
-    'flex min-h-screen items-center justify-center bg-white px-5 py-10 phone:px-4 phone:py-6';
-export const registerContainer = 'flex w-full max-w-[600px] flex-col bg-white';
+    'flex min-h-screen items-center justify-center px-5 py-10 phone:px-4 phone:py-6';
+export const registerContainer =
+    'flex w-full max-w-[600px] flex-col rounded-[28px] border border-white/70 bg-white/85 px-10 py-10 card-soft backdrop-blur-[12px] phone:rounded-3xl phone:px-5 phone:py-6';
 
 // ---------- Headings ----------
 
@@ -39,11 +38,11 @@ export const headerText = 'mb-10';
 export const headerTextLogin = 'mb-[30px]';
 export const headerTitle = 'mb-3 text-[32px] font-bold text-ink';
 export const headerTitleLogin = 'mb-2 text-[32px] font-bold text-ink';
-export const subtitle = 'text-[14px] font-normal text-[#888]';
+export const subtitle = 'text-[14px] font-normal text-faint';
 export const subtitleLogin = 'text-[14px] font-normal text-muted';
 
 export const backLink =
-    'mb-5 flex items-center gap-1.5 text-[13px] font-medium text-[#666] no-underline transition-colors hover:text-[#333]';
+    'mb-5 flex items-center gap-1.5 text-[13px] font-medium text-muted no-underline transition-colors hover:text-ink';
 
 // ---------- Form fields (floating label on the input's top border) ----------
 
@@ -51,10 +50,10 @@ export const field = 'relative mb-[30px] flex flex-col gap-2';
 export const fieldInRow = 'relative mb-[30px] flex flex-1 flex-col gap-2';
 
 export const label =
-    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-[#888]';
+    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-faint';
 
 export const input =
-    'w-full rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
+    'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 export const inputRow = 'flex gap-5 phone:flex-col phone:gap-0';
 
@@ -64,13 +63,13 @@ export const showPassword =
 // ---------- Buttons ----------
 
 export const loginButton =
-    'mb-4 w-full cursor-pointer rounded-lg border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover';
+    'mb-4 w-full cursor-pointer rounded-full border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
 
 export const submitButton =
-    'mb-10 w-full cursor-pointer rounded-lg border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover';
+    'mb-10 w-full cursor-pointer rounded-full border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
 
 export const registerButton =
-    'mb-5 w-full cursor-pointer rounded border-0 bg-primary p-4 [font-family:inherit] text-[15px] font-bold text-white enabled:hover:bg-primary-hover';
+    'mb-5 w-full cursor-pointer rounded border-0 bg-primary p-4 [font-family:inherit] text-[15px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
 
 // ---------- Messages ----------
 
@@ -86,28 +85,28 @@ export const registerMessageSuccess = 'my-3 text-[14px] text-[#188038]';
 
 export const loginOptions =
     'mb-6 flex items-center justify-between text-[13px] font-medium';
-export const rememberMe = 'flex cursor-pointer items-center gap-2 text-[#333]';
-export const forgotLink = 'text-[#666] no-underline';
+export const rememberMe = 'flex cursor-pointer items-center gap-2 text-ink';
+export const forgotLink = 'text-muted no-underline';
 
 export const switchLinkLogin =
-    'mb-[30px] text-center text-[13px] font-medium text-[#333]';
+    'mb-[30px] text-center text-[13px] font-medium text-ink';
 export const switchLinkRegister =
-    'mb-[30px] text-center text-[13px] font-medium text-[#666]';
+    'mb-[30px] text-center text-[13px] font-medium text-muted';
 export const switchLinkAnchor = 'font-bold text-ink no-underline';
 
 export const divider =
-    `relative mb-6 text-center before:absolute before:top-1/2 before:right-0 before:left-0 before:z-[1] before:h-px before:bg-[#eee] before:content-['']`;
-export const dividerText = 'relative z-[2] bg-white px-4 text-[12px] font-medium text-[#999]';
+    `relative mb-6 text-center before:absolute before:top-1/2 before:right-0 before:left-0 before:z-[1] before:h-px before:bg-sunken before:content-['']`;
+export const dividerText = 'relative z-[2] bg-white px-4 text-[12px] font-medium text-faint';
 
 export const socialRow = 'flex gap-4';
 export const socialButton =
-    'flex flex-1 cursor-pointer items-center justify-center rounded-lg border border-[#ddd] bg-white p-3 transition-colors hover:bg-[#f9f9f9]';
+    'flex flex-1 cursor-pointer items-center justify-center rounded-full border border-edge-strong btn-glass p-3 hover:bg-warm';
 
 // ---------- Register: terms checkbox ----------
 
 export const termsGroup = 'mb-6';
 export const termsLabel =
-    'flex cursor-pointer items-center gap-3 text-[13px] font-medium text-[#666]';
+    'flex cursor-pointer items-center gap-3 text-[13px] font-medium text-muted';
 export const termsCheckbox =
-    'h-[18px] w-[18px] cursor-pointer rounded-[4px] border-2 border-[#333]';
-export const termsStrong = 'font-bold text-[#333]';
+    'h-[18px] w-[18px] cursor-pointer rounded-[4px] border-2 border-accent';
+export const termsStrong = 'font-bold text-ink';

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from './authContext.js';
+import { clearSession } from './api.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 import { logo } from './brand.js';
@@ -24,12 +25,12 @@ const API_URL = 'http://127.0.0.1:8000/api';
 // readers (sr-only) and the icon is centered. Active and inactive links are
 // written out in full so no two classes set the same property.
 const linkCommon =
-    'flex items-center gap-3 rounded-lg px-[15px] py-3 text-[15px] whitespace-nowrap no-underline transition-colors tablet:justify-center tablet:px-2';
+    'flex items-center gap-3 rounded-xl px-[15px] py-3 text-[15px] whitespace-nowrap no-underline tablet:justify-center tablet:rounded-2xl tablet:px-2';
 
 const linkClass = ({ isActive }) =>
     isActive
-        ? `${linkCommon} bg-[#e9ecef] font-bold text-primary`
-        : `${linkCommon} font-medium text-[#555] hover:bg-hover`;
+        ? `${linkCommon} nav-item-active font-bold`
+        : `${linkCommon} nav-item font-medium text-body`;
 
 const labelClass = 'tablet:sr-only';
 
@@ -79,16 +80,14 @@ function Sidebar() {
         }
 
         // Always clear the browser's copy so the user is logged out here.
-        ['theraplay_token', 'theraplay_user'].forEach((key) => {
-            localStorage.removeItem(key);
-            sessionStorage.removeItem(key);
-        });
+        // (This also forgets the selected child.)
+        clearSession();
 
         navigate('/login', { replace: true, state: { message } });
     };
 
     return (
-        <aside className="fixed inset-y-0 left-0 z-[100] flex w-sidebar flex-col overflow-y-auto border-r border-[#e5e5e5] bg-white px-5 py-[30px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
+        <aside className="fixed inset-y-0 left-0 z-[100] flex w-sidebar flex-col backdrop-blur-[10px] overflow-y-auto border-r border-edge bg-white/80 px-5 py-[30px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
             <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0">
                 <img
                     src={logo}
@@ -210,7 +209,7 @@ function Sidebar() {
             <div className="mt-auto pt-5 tablet:w-full">
                 <button
                     type="button"
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-lg border-0 bg-transparent px-[15px] py-3 text-left [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-[#555] enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-[15px] py-3 text-left transition-colors tablet:rounded-2xl [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-body enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
                     title="Logout"
                     onClick={() => setShowLogoutConfirm(true)}
                     disabled={isLoggingOut}

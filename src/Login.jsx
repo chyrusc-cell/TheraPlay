@@ -78,7 +78,7 @@ function Login() {
     };
 
     return (
-        <div className={auth.pageBg} style={auth.backgroundStyle}>
+        <div className={auth.pageBg}>
             <div className={auth.panel}>
                 <div className={auth.logoRowLeft}>
                     <img src={logo} alt="TheraPlay" className={auth.logoImage} />

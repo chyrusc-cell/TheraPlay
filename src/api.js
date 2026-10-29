@@ -14,6 +14,12 @@ export const clearSession = () => {
         localStorage.removeItem(key);
         sessionStorage.removeItem(key);
     });
+
+    // The remembered child choice goes too, so it cannot carry over to the next
+    // login on this browser.
+    Object.keys(localStorage)
+        .filter((key) => key.startsWith('theraplay_selected_child:'))
+        .forEach((key) => localStorage.removeItem(key));
 };
 
 // Sends a request and resolves with { ok, status, data }.

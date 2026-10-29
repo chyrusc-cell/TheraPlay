@@ -15,7 +15,7 @@ import {
 // The real cards and their skeletons share class strings from uiClasses.js so
 // they always have the same shape.
 
-const cardClass = 'rounded-2xl border border-[#eaeaea] bg-white p-5';
+const cardClass = 'rounded-2xl border border-edge bg-white card-soft p-5';
 
 function SkeletonStatus({ label, children, className }) {
     return (
@@ -81,7 +81,7 @@ export function TableSkeleton({ label, columns, rows = 5 }) {
 
             {Array.from({ length: rows }, (_, index) => (
                 <div
-                    className="flex gap-3 border-b border-[#e5e5e5] p-4 last:border-b-0"
+                    className="flex gap-3 border-b border-edge p-4 last:border-b-0"
                     key={index}
                 >
                     {columns.map((column) => (

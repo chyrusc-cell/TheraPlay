@@ -86,7 +86,7 @@ function ForgotPassword() {
     };
 
     return (
-        <div className={auth.pageBg} style={auth.backgroundStyle}>
+        <div className={auth.pageBg}>
             <div className={auth.panel}>
                 
                 <div className={auth.logoRow}>

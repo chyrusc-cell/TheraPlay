@@ -20,6 +20,12 @@ class Condition extends Model
         ];
     }
 
+    public function activities(): BelongsToMany
+    {
+        return $this->belongsToMany(Activity::class, 'activity_condition')
+            ->withTimestamps();
+    }
+
     public function children(): BelongsToMany
     {
         return $this->belongsToMany(Child::class)

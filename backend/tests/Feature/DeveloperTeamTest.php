@@ -104,4 +104,70 @@ class DeveloperTeamTest extends TestCase
         $this->putJson('/api/admin/developer-team', $this->payload())->assertForbidden();
         $this->assertDatabaseCount('developer_team', 0);
     }
+
+    public function test_it_can_hold_several_emails_and_phones_and_keeps_the_first_for_older_code(): void
+    {
+        $this->login('admin');
+
+        $this->putJson('/api/admin/developer-team', [
+            'name' => 'Team Alpha',
+            'emails' => ['one@theraplay.test', ' two@theraplay.test '],
+            'phones' => ['+63 917 000 1111', '0917-000-2222'],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.emails', ['one@theraplay.test', 'two@theraplay.test'])
+            ->assertJsonPath('data.phones', ['+63 917 000 1111', '0917-000-2222'])
+            ->assertJsonPath('data.email', 'one@theraplay.test')
+            ->assertJsonPath('data.phone', '+63 917 000 1111');
+
+        $this->app['auth']->forgetGuards();
+        $this->getJson('/api/developer-team')
+            ->assertOk()
+            ->assertJsonPath('data.emails.1', 'two@theraplay.test')
+            ->assertJsonPath('data.phones.1', '0917-000-2222');
+
+        $row = DeveloperTeam::find(1);
+        $this->assertSame('one@theraplay.test', $row->email);
+        $this->assertSame('+63 917 000 1111', $row->phone);
+    }
+
+    public function test_the_sample_and_older_single_value_rows_are_shown_as_lists(): void
+    {
+        $this->getJson('/api/developer-team')
+            ->assertJsonPath('data.emails', ['theraplay.team@example.com'])
+            ->assertJsonPath('data.phones', ['+63 900 123 4567']);
+
+        // A row from before the lists existed (only the single columns).
+        DeveloperTeam::query()->insert(['id' => 1, 'name' => 'Old', 'email' => 'old@theraplay.test', 'phone' => '0917 111 2222', 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->getJson('/api/developer-team')
+            ->assertJsonPath('data.emails', ['old@theraplay.test'])
+            ->assertJsonPath('data.phones', ['0917 111 2222']);
+    }
+
+    public function test_lists_are_validated(): void
+    {
+        $this->login('admin');
+        $url = '/api/admin/developer-team';
+
+        $this->putJson($url, $this->payload(['emails' => ['good@theraplay.test', 'nope']]))->assertStatus(422)->assertJsonValidationErrors('emails.1');
+        $this->putJson($url, $this->payload(['emails' => ['a@theraplay.test', 'A@theraplay.test']]))->assertStatus(422)->assertJsonValidationErrors('emails.1');
+        $this->putJson($url, $this->payload(['emails' => ['']]))->assertStatus(422)->assertJsonValidationErrors('emails.0');
+        $this->putJson($url, $this->payload(['phones' => ['abc']]))->assertStatus(422)->assertJsonValidationErrors('phones.0');
+        $this->putJson($url, $this->payload(['phones' => ['0917 1', '0917 1']]))->assertStatus(422)->assertJsonValidationErrors('phones.1');
+        $this->putJson($url, $this->payload(['emails' => array_fill(0, 11, 'x@theraplay.test')]))->assertStatus(422);
+        $this->assertDatabaseCount('developer_team', 0);
+    }
+
+    public function test_an_empty_list_clears_the_contact_methods(): void
+    {
+        $this->login('admin');
+
+        $this->putJson('/api/admin/developer-team', $this->payload())->assertOk();
+        $this->putJson('/api/admin/developer-team', ['name' => 'Team Alpha', 'emails' => [], 'phones' => []])
+            ->assertOk()
+            ->assertJsonPath('data.emails', [])
+            ->assertJsonPath('data.phones', [])
+            ->assertJsonPath('data.email', null);
+    }
 }

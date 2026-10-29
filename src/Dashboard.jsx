@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
+import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
@@ -86,26 +87,38 @@ const getCurrentStreak = (completedDayKeys) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-[#eaeaea] bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
-const cardHeaderClass = 'border-b border-[#f0f0f0] px-6 py-4';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+const cardHeaderClass = 'border-b border-edge px-6 py-4';
 const cardHeaderFlexClass =
-    'flex items-center justify-between border-b border-[#f0f0f0] px-6 py-4';
-const cardTitleClass = 'text-[15px] font-bold text-[#333]';
+    'flex items-center justify-between border-b border-edge px-6 py-4';
+const cardTitleClass = 'text-[15px] font-bold text-ink';
 const cardBodyClass = 'px-6 pt-5 pb-6';
 const statusClass = 'text-[14px] font-medium text-muted';
 const iconCircleClass =
-    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#ddd] bg-white text-[#333]';
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-edge-strong bg-white text-ink';
 
 function Dashboard() {
     const navigate = useNavigate();
+    // Everything here is for the globally selected child.
+    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
+    const [loadedChildId, setLoadedChildId] = useState(null);
 
     const [user, setUser] = useState(null);
     const [records, setRecords] = useState([]);
     const [activities, setActivities] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
+    // The selection changed but its data has not arrived: show the skeleton, not
+    // the previous child's numbers.
+    const isLoading =
+        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+
     useEffect(() => {
+        if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
+            return;
+        }
+
         // Token missing or rejected: clear it and send the user to login.
         const redirectToLogin = () => {
             ['theraplay_token', 'theraplay_user'].forEach((key) => {
@@ -137,13 +150,16 @@ function Dashboard() {
 
         const loadDashboard = async () => {
             try {
+                setIsLoading(true);
+                setError('');
+
                 const [userResponse, progressResponse, activitiesResponse] =
                     await Promise.all([
                         fetch(`${API_URL}/user`, {
                             headers: authHeaders,
                             signal: controller.signal,
                         }),
-                        fetch(`${API_URL}/progress`, {
+                        fetch(`${API_URL}/progress?child_id=${selectedChildId}`, {
                             headers: authHeaders,
                             signal: controller.signal,
                         }),
@@ -174,6 +190,7 @@ function Dashboard() {
                 const activitiesData = await activitiesResponse.json();
 
                 setUser(userData);
+                setLoadedChildId(selectedChildId);
                 setRecords(
                     Array.isArray(progressData.data?.records)
                         ? progressData.data.records
@@ -205,7 +222,15 @@ function Dashboard() {
         loadDashboard();
 
         return () => controller.abort();
-    }, [navigate]);
+    }, [navigate, waiting, childStatus, selectedChildId]);
+
+    if (blocked) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <main className={pageMain}>{blocked}</main>
+            </div>
+        );
+    }
 
     if (isLoading) {
         return (
@@ -277,7 +302,7 @@ function Dashboard() {
                 <header className={pageHeader}>
                     <h1 className={pageTitle}>Hello, {user?.name}!</h1>
                     <p className={`${pageSubtitle} mb-4`}>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
-                    <span className="text-[12px] font-medium text-[#888]">Week of {formatWeekRange(weekStart)}</span>
+                    <span className="text-[12px] font-medium text-faint">{selectedChild ? `${selectedChild.name} · ` : ''}Week of {formatWeekRange(weekStart)}</span>
                 </header>
 
                 <div className="mb-6 grid grid-cols-2 gap-6 tablet-sm:grid-cols-1">
@@ -291,12 +316,12 @@ function Dashboard() {
                                     <div className="mb-3 flex items-center justify-between">
                                         <h2 className="text-[20px] font-bold text-ink">{featured.title}</h2>
                                     </div>
-                                    <p className="mb-5 text-[14px] leading-[1.5] text-[#666]">
+                                    <p className="mb-5 text-[14px] leading-[1.5] text-muted">
                                         {featured.description ||
                                             'Explore this activity and its learning objectives.'}
                                     </p>
                                     <button
-                                        className="cursor-pointer rounded-md border-0 bg-primary px-5 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover"
+                                        className="cursor-pointer rounded-full border-0 bg-primary px-5 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid"
                                         type="button"
                                         onClick={() =>
                                             navigate(`/activities/${featured.id}`)
@@ -308,7 +333,7 @@ function Dashboard() {
                                     </button>
                                 </>
                             ) : (
-                                <p className="mb-5 text-[14px] leading-[1.5] text-[#666]">
+                                <p className="mb-5 text-[14px] leading-[1.5] text-muted">
                                     No activities are available right now.
                                 </p>
                             )}
@@ -326,15 +351,15 @@ function Dashboard() {
                                     <span className="text-[13px] font-medium text-muted">Day practice streak</span>
                                 </div>
                             </div>
-                            <p className="mb-3 text-[12px] font-medium text-[#888]">This week • {formatWeekRange(weekStart)}</p>
+                            <p className="mb-3 text-[12px] font-medium text-faint">This week • {formatWeekRange(weekStart)}</p>
 
                             <div className="flex gap-2">
                                 {DAY_LETTERS.map((letter, index) => (
                                     <div
                                         className={`flex-1 rounded-md py-2 text-center text-[13px] font-bold ${
                                             completedDayKeys.has(weekKeys[index])
-                                                ? 'bg-[#404040] text-white'
-                                                : 'bg-[#f0f0f0] text-[#999]'
+                                                ? 'bg-accent text-white'
+                                                : 'bg-sunken text-faint'
                                         }`}
                                         key={weekKeys[index]}
                                     >
@@ -352,23 +377,23 @@ function Dashboard() {
                     </div>
                     <div className={cardBodyClass}>
                         <div className="mb-5 flex gap-4 tablet-sm:flex-col">
-                            <div className="flex-1 rounded-lg bg-[#f9f9f9] p-5">
+                            <div className="flex-1 rounded-lg bg-warm p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
                                 <h2 className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</h2>
-                                <span className="text-[12px] text-[#888]">completed this week</span>
+                                <span className="text-[12px] text-faint">completed this week</span>
                             </div>
-                            <div className="flex-1 rounded-lg bg-[#f9f9f9] p-5">
+                            <div className="flex-1 rounded-lg bg-warm p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
                                 <h2 className="mb-1 text-[24px] font-bold text-ink">{skills.length}</h2>
-                                <span className="text-[12px] text-[#888]">
+                                <span className="text-[12px] text-faint">
                                     {skills.length > 0
                                         ? skills.join(', ')
                                         : 'No completed activities yet'}
                                 </span>
                             </div>
                         </div>
-                        <div className="border-t border-[#f0f0f0] pt-4">
-                            <Link to="/progress" className="flex items-center justify-between text-[13px] font-bold text-[#333] no-underline">
+                        <div className="border-t border-edge pt-4">
+                            <Link to="/progress" className="flex items-center justify-between text-[13px] font-bold text-ink no-underline">
                                 View detailed progress report
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -398,7 +423,7 @@ function Dashboard() {
                                     : record.started_at;
 
                                 return (
-                                    <div className="mb-3 flex items-center justify-between rounded-lg bg-[#f9f9f9] p-4 last:mb-0" key={record.id}>
+                                    <div className="mb-3 flex items-center justify-between rounded-lg bg-warm p-4 last:mb-0" key={record.id}>
                                         <div className="flex items-center gap-4">
                                             {isDone ? (
                                                 <div className={iconCircleClass}>
@@ -411,14 +436,14 @@ function Dashboard() {
                                             )}
                                             <div>
                                                 <h4 className="mb-1 text-[14px] font-bold text-ink">{record.activity_title || 'Activity'}</h4>
-                                                {when && <span className="text-[12px] text-[#888]">{formatDate(when)}</span>}
+                                                {when && <span className="text-[12px] text-faint">{formatDate(when)}</span>}
                                             </div>
                                         </div>
                                         <span
                                             className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
                                                 isDone
-                                                    ? 'bg-[#eee] text-[#333]'
-                                                    : 'border border-[#ddd] bg-[#f5f5f5] text-muted'
+                                                    ? 'bg-sunken text-ink'
+                                                    : 'border border-edge-strong bg-warm text-muted'
                                             }`}
                                         >
                                             {isDone

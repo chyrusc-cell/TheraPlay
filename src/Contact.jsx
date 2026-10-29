@@ -2,6 +2,8 @@ import { useState, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Phone, User, Users } from 'lucide-react';
 import Collapsible from './Collapsible.jsx';
+import Modal from './Modal.jsx';
+import DeveloperTeamEditor from './DeveloperTeamEditor.jsx';
 import { useAuth } from './authContext.js';
 import {
     apiRequest,
@@ -23,17 +25,19 @@ const statusClass = 'text-[14px] font-medium text-muted';
 const errorClass = 'text-[14px] font-medium text-[#d93025]';
 const detailLinkClass =
     'text-[14px] font-medium text-ink underline [overflow-wrap:anywhere]';
+const editTeamButtonClass =
+    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white';
 const toggleClass =
     'mt-2 cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-medium text-ink underline underline-offset-4';
 const fieldClass = 'mb-[18px] flex flex-col gap-2';
-const fieldLabelClass = 'text-[12px] font-medium text-[#888]';
+const fieldLabelClass = 'text-[12px] font-medium text-faint';
 const fieldErrorClass = 'text-[13px] text-[#d93025]';
 const messageBase =
     'mb-4 animate-[ui-fade-in_0.2s_ease-out] text-[14px] font-medium';
 const retryClass =
-    'mt-3 cursor-pointer rounded-3xl border border-[#333] bg-white px-5 py-2 [font-family:inherit] text-[14px] font-bold text-[#333] enabled:hover:bg-hover';
+    'mt-3 cursor-pointer rounded-full border border-accent/45 btn-glass px-5 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 const submitClass =
-    'cursor-pointer rounded-3xl border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover phone:w-full';
+    'cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid phone:w-full';
 
 // How much of the next contact card peeks out below the second one, so it is
 // clear the list scrolls.
@@ -42,7 +46,7 @@ const LIST_PEEK = 20;
 // A fixed height with resizing turned off: a long message scrolls INSIDE the box
 // instead of making the feedback container grow.
 const textareaClass =
-    'h-40 w-full resize-none overflow-y-auto rounded-lg border border-[#ddd] px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-[#333]';
+    'h-40 w-full resize-none overflow-y-auto rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 /*
  * One contact card: picture on the left, details on the right. Used for the
@@ -51,7 +55,7 @@ const textareaClass =
  * hidden until "View More..." is pressed, and the toggle only exists when there
  * is a description.
  */
-function ContactCard({ name, title, email, phone, description, photoUrl, Fallback = User, note }) {
+function ContactCard({ name, title, emails = [], phones = [], description, photoUrl, Fallback = User, note }) {
     const [expanded, setExpanded] = useState(false);
     // Remember WHICH url failed, so a replaced picture is tried again.
     const [failedUrl, setFailedUrl] = useState(null);
@@ -63,7 +67,7 @@ function ContactCard({ name, title, email, phone, description, photoUrl, Fallbac
     return (
         <article className={`${contactItemClass} flex items-start gap-4 phone:gap-3`}>
 
-            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e1e5ea] bg-[#e9ecef] text-[#888] phone:h-20 phone:w-20">
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-edge bg-sunken text-faint phone:h-20 phone:w-20">
                 {hasPhoto ? (
                     <img
                         src={photoUrl}
@@ -88,28 +92,28 @@ function ContactCard({ name, title, email, phone, description, photoUrl, Fallbac
                     </p>
                 )}
 
-                {(email || phone) && (
+                {(emails.length > 0 || phones.length > 0) && (
                     <ul className="mt-2 flex list-none flex-col gap-1.5">
 
-                        {email && (
-                            <li className="flex items-start gap-2">
-                                <Mail size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[#888]" />
+                        {emails.map((email) => (
+                            <li className="flex items-start gap-2" key={`email-${email}`}>
+                                <Mail size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-faint" />
                                 <span className="sr-only">Email: </span>
                                 <a href={`mailto:${email}`} className={detailLinkClass}>
                                     {email}
                                 </a>
                             </li>
-                        )}
+                        ))}
 
-                        {phone && (
-                            <li className="flex items-start gap-2">
-                                <Phone size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-[#888]" />
+                        {phones.map((phone) => (
+                            <li className="flex items-start gap-2" key={`phone-${phone}`}>
+                                <Phone size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-faint" />
                                 <span className="sr-only">Phone: </span>
                                 <a href={`tel:${phone.replace(/\s+/g, '')}`} className={detailLinkClass}>
                                     {phone}
                                 </a>
                             </li>
-                        )}
+                        ))}
 
                     </ul>
                 )}
@@ -118,7 +122,7 @@ function ContactCard({ name, title, email, phone, description, photoUrl, Fallbac
                     <div>
 
                         <Collapsible open={expanded} id={descriptionId}>
-                            <p className="pt-2 text-[14px] leading-[1.5] whitespace-pre-wrap text-[#555] [overflow-wrap:anywhere]">
+                            <p className="pt-2 text-[14px] leading-[1.5] whitespace-pre-wrap text-body [overflow-wrap:anywhere]">
                                 {text}
                             </p>
                         </Collapsible>
@@ -137,7 +141,7 @@ function ContactCard({ name, title, email, phone, description, photoUrl, Fallbac
                 )}
 
                 {note && (
-                    <p className="mt-3 text-[12px] text-[#888]">
+                    <p className="mt-3 text-[12px] text-faint">
                         {note}
                     </p>
                 )}
@@ -164,6 +168,9 @@ function Contact() {
     const [teamLoading, setTeamLoading] = useState(true);
     const [teamError, setTeamError] = useState('');
     const [teamReloadKey, setTeamReloadKey] = useState(0);
+    const [editingTeam, setEditingTeam] = useState(false);
+    const [teamSaving, setTeamSaving] = useState(false);
+    const isAdmin = user?.role === 'admin';
 
     const [message, setMessage] = useState('');
     // 0 = no rating chosen, otherwise 1 to 5.
@@ -410,7 +417,7 @@ function Contact() {
                         disabled={isSending}
                     />
 
-                    <span className="self-end text-[12px] text-[#888]">
+                    <span className="self-end text-[12px] text-faint">
                         {message.length} / {MESSAGE_MAX}
                     </span>
 
@@ -566,8 +573,8 @@ function Contact() {
                                         <ContactCard
                                             name={contact.name}
                                             title={contact.title}
-                                            email={contact.email}
-                                            phone={contact.phone}
+                                            emails={contact.email ? [contact.email] : []}
+                                            phones={contact.phone ? [contact.phone] : []}
                                             description={contact.description}
                                             photoUrl={contact.photo_url}
                                         />
@@ -586,9 +593,23 @@ function Contact() {
 
                     <section className={`${contactPanelClass} min-w-0`}>
 
-                        <h2 className={panelTitleClass}>
-                            Development Team
-                        </h2>
+                        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+
+                            <h2 className="text-[20px] font-bold text-ink">
+                                Development Team
+                            </h2>
+
+                            {isAdmin && team && (
+                                <button
+                                    type="button"
+                                    className={editTeamButtonClass}
+                                    onClick={() => setEditingTeam(true)}
+                                >
+                                    Edit Developer Team
+                                </button>
+                            )}
+
+                        </div>
 
                         {teamLoading ? (
 
@@ -616,8 +637,8 @@ function Contact() {
 
                             <ContactCard
                                 name={team.name}
-                                email={team.email}
-                                phone={team.phone}
+                                emails={team.emails}
+                                phones={team.phones}
                                 description={team.description}
                                 Fallback={Users}
                                 note={
@@ -645,6 +666,34 @@ function Contact() {
                     {renderFeedbackForm()}
 
                 </section>
+
+
+                {isAdmin && team && (
+                    <Modal
+                        open={editingTeam}
+                        onClose={() => setEditingTeam(false)}
+                        busy={teamSaving}
+                        size="md"
+                        title="Edit Developer Team"
+                    >
+                        <DeveloperTeamEditor
+                            team={team}
+                            onBusyChange={setTeamSaving}
+                            onCancel={() => setEditingTeam(false)}
+                            onSaved={(saved) => {
+                                setTeam(saved);
+                                setEditingTeam(false);
+                            }}
+                            onUnauthorized={() => {
+                                clearSession();
+                                navigate('/login', {
+                                    replace: true,
+                                    state: { message: 'Please log in to continue.' },
+                                });
+                            }}
+                        />
+                    </Modal>
+                )}
 
             </main>
 

@@ -10,7 +10,7 @@
 
 // ---------- Page, header, messages ----------
 
-export const page = 'min-h-page bg-[#f5f7fa]';
+export const page = 'min-h-page';
 
 export const content =
     'mx-auto w-full max-w-[1100px] px-5 pt-10 pb-20 phone:px-4 phone:pt-6 phone:pb-[60px]';
@@ -33,17 +33,17 @@ export const listError =
 // ---------- Buttons ----------
 
 export const addButton =
-    'cursor-pointer rounded-md border-0 bg-primary px-[18px] py-[11px] text-[14px] text-white enabled:hover:bg-primary-hover';
+    'cursor-pointer rounded-full border-0 bg-primary px-[18px] py-[11px] text-[14px] text-white enabled:hover:bg-primary-hover btn-solid';
 
 export const saveButton =
-    'cursor-pointer rounded-md border-0 bg-primary px-[18px] py-2.5 text-[14px] text-white enabled:hover:bg-primary-hover';
+    'cursor-pointer rounded-full border-0 bg-primary px-[18px] py-2.5 text-[14px] text-white enabled:hover:bg-primary-hover btn-solid';
 
 export const cancelButton =
-    'cursor-pointer rounded-md border border-[#ccc] bg-white px-[18px] py-2.5 text-[14px] text-[#333] enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
 // Small buttons inside table rows and file lists.
 export const editButton =
-    'cursor-pointer rounded-[5px] border border-[#ccc] bg-white px-[11px] py-[7px] text-[12px] text-[#333] enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-edge-strong btn-glass px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // Delete is red. The label always says "Delete" as well.
 export const deleteButton =
@@ -58,22 +58,22 @@ export const unpublishButton =
 
 // A neutral row button (for example "Make Admin" / "Make Parent").
 export const neutralRowButton =
-    'cursor-pointer rounded-[5px] border border-[#ddd] bg-[#f5f5f5] px-[11px] py-[7px] text-[12px] text-[#333] enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-edge-strong bg-warm px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Form ----------
 
 export const formCard =
-    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-[#e1e5ea] bg-white p-[25px] phone:p-4';
+    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-edge bg-white p-[25px] phone:p-4';
 
 export const formTitle = 'mb-5 text-[20px] font-bold';
 export const formGroup = 'mb-[18px] flex flex-col';
 export const label = 'mb-[7px] text-[14px] font-bold';
 
 export const input =
-    'rounded-md border border-[#ccc] p-[11px] text-[14px]';
+    'rounded-xl border border-edge-strong p-[11px] text-[14px]';
 
 export const textarea =
-    'resize-y rounded-md border border-[#ccc] p-[11px] [font-family:inherit] text-[14px]';
+    'resize-y rounded-xl border border-edge-strong p-[11px] [font-family:inherit] text-[14px]';
 
 export const fieldError = 'mt-1.5 text-[13px] text-[#d93025]';
 
@@ -89,32 +89,32 @@ export const formActions =
 // header stays available to screen readers (sr-only).
 
 export const tableContainer =
-    'overflow-hidden rounded-[10px] border border-[#e1e5ea] bg-white';
+    'overflow-hidden rounded-[10px] border border-edge bg-white';
 
 export const table = 'w-full border-collapse phone-lg:block';
 export const thead = 'phone-lg:sr-only';
 export const tbody = 'phone-lg:block';
 
 export const th =
-    'border-b border-[#e5e5e5] bg-hover p-4 text-left text-[13px] font-bold';
+    'border-b border-edge bg-hover p-4 text-left text-[13px] font-bold';
 
 // A data row. The last row has no bottom line on desktop (its cells) and none
 // on phones (the row itself).
 export const row =
-    'transition-colors hover:bg-[#fafbfc] [&:last-child>td]:border-b-0 phone-lg:block phone-lg:border-b phone-lg:border-[#e5e5e5] phone-lg:py-2 phone-lg:last:border-b-0';
+    'transition-colors hover:bg-warm [&:last-child>td]:border-b-0 phone-lg:block phone-lg:border-b phone-lg:border-edge phone-lg:py-2 phone-lg:last:border-b-0';
 
 export const td =
-    'border-b border-[#e5e5e5] p-4 text-left text-[14px] phone-lg:flex phone-lg:items-start phone-lg:justify-between phone-lg:gap-3 phone-lg:border-b-0 phone-lg:px-4 phone-lg:py-2 phone-lg:text-right phone-lg:[word-break:break-word] phone-lg:before:shrink-0 phone-lg:before:text-left phone-lg:before:text-[12px] phone-lg:before:font-bold phone-lg:before:text-[#666] phone-lg:before:content-[attr(data-label)]';
+    'border-b border-edge p-4 text-left text-[14px] phone-lg:flex phone-lg:items-start phone-lg:justify-between phone-lg:gap-3 phone-lg:border-b-0 phone-lg:px-4 phone-lg:py-2 phone-lg:text-right phone-lg:[word-break:break-word] phone-lg:before:shrink-0 phone-lg:before:text-left phone-lg:before:text-[12px] phone-lg:before:font-bold phone-lg:before:text-muted phone-lg:before:content-[attr(data-label)]';
 
 // The "nothing here yet" cell has no column label.
 export const tdEmpty =
-    'border-b border-[#e5e5e5] p-4 text-left text-[14px] phone-lg:block phone-lg:border-b-0';
+    'border-b border-edge p-4 text-left text-[14px] phone-lg:block phone-lg:border-b-0';
 
 export const actions = 'flex flex-wrap gap-2 phone-lg:justify-end';
 
 // ---------- Table cell details ----------
 
-export const cellSub = 'mt-1 text-[12px] leading-[1.4] text-[#888]';
+export const cellSub = 'mt-1 text-[12px] leading-[1.4] text-faint';
 export const confirmText = 'self-center text-[12px] text-[#d93025]';
 
 // Status and role badges (difficulty badges live in uiHelpers.js).
@@ -122,7 +122,7 @@ const badge = 'inline-block rounded-md px-2.5 py-1 text-xs font-bold leading-[1.
 
 export const badgePublished = `${badge} bg-success-bg text-success`;
 export const badgeDraft = `${badge} bg-hover text-muted`;
-export const badgeAdmin = `${badge} bg-[#e8eaf6] text-[#3f4a8a]`;
+export const badgeAdmin = `${badge} bg-accent-soft text-accent-hover`;
 export const badgeParent = `${badge} bg-hover text-muted`;
 
 export const youTag =
@@ -130,18 +130,18 @@ export const youTag =
 
 // ---------- Uploaded files in the activity form ----------
 
-export const fileHint = 'mb-2 text-[12px] leading-[1.4] text-[#888]';
+export const fileHint = 'mb-2 text-[12px] leading-[1.4] text-faint';
 export const fileList = 'mb-2.5 list-none';
 
 export const fileItem =
-    'mb-1.5 flex items-center justify-between gap-2.5 rounded-md border border-[#e5e5e5] bg-[#f8f9fa] px-2.5 py-2 text-[13px] phone:flex-wrap';
+    'mb-1.5 flex items-center justify-between gap-2.5 rounded-md border border-edge bg-warm px-2.5 py-2 text-[13px] phone:flex-wrap';
 
 export const fileName = '[word-break:break-word]';
-export const fileSize = 'text-[#888]';
+export const fileSize = 'text-faint';
 export const fileActions = 'flex flex-wrap items-center gap-2';
 
 export const fileRemove =
-    'shrink-0 cursor-pointer rounded-[5px] border border-[#ddd] bg-white px-2.5 py-[5px] text-[12px] text-[#333] enabled:hover:bg-hover phone-lg:min-h-9';
+    'shrink-0 cursor-pointer rounded-[5px] border border-edge-strong btn-glass px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Activity form layout (Manage Activities) ----------
 
@@ -152,19 +152,19 @@ export const activityFormGrid =
 // Fixed height (set per field) with no manual resizing; long text scrolls
 // inside the box instead of growing the form.
 export const activityTextarea =
-    'min-h-14 max-h-32 w-full resize-none overflow-y-auto rounded-md border border-[#ccc] p-[11px] [font-family:inherit] text-[14px]';
+    'min-h-14 max-h-32 w-full resize-none overflow-y-auto rounded-xl border border-edge-strong p-[11px] [font-family:inherit] text-[14px]';
 
 // Category + Difficulty side by side; stacked on phones.
 export const activityPairRow = 'grid grid-cols-2 gap-3 phone:grid-cols-1';
 
 // The picture area. Pictures are not uploadable yet, so this is a placeholder.
 export const activityPicture =
-    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-[#ccc] bg-[#f8f9fa] px-4 text-center text-[13px] leading-[1.5] text-[#888]';
+    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-edge-strong bg-warm px-4 text-center text-[13px] leading-[1.5] text-faint';
 
 // Cancel then the primary action, right-aligned. On phones they stack, with
 // the primary action on top, full width.
 export const activityFormActions =
-    'mt-2 flex justify-end gap-2.5 phone:flex-col-reverse phone:[&>button]:w-full';
+    'sticky bottom-0 z-10 -mx-6 -mb-6 mt-4 flex justify-end gap-2.5 border-t border-edge bg-white px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full';
 
 // ---------- Contact form layout (Manage Contacts) ----------
 
@@ -174,8 +174,8 @@ export const contactFormGrid =
 
 // The large circular picture selector (a button, so it works with the keyboard).
 export const avatarCircle =
-    'flex h-44 w-44 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-[#ccc] bg-[#f8f9fa] p-0 text-[#888] enabled:hover:bg-hover phone:h-36 phone:w-36';
+    'flex h-44 w-44 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-edge-strong bg-warm p-0 text-faint enabled:hover:bg-hover phone:h-36 phone:w-36';
 
 // The clickable picture box in the activity form (shows the picture, or a prompt).
 export const activityPictureButton =
-    'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#ccc] bg-[#f8f9fa] p-0 text-center text-[13px] leading-[1.5] text-[#888] enabled:hover:bg-hover';
+    'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-edge-strong bg-warm p-0 text-center text-[13px] leading-[1.5] text-faint enabled:hover:bg-hover';

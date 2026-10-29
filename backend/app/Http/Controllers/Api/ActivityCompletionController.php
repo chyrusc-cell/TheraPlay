@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Concerns\ResolvesChild;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\ActivityProgress;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class ActivityCompletionController extends Controller
 {
+    use ResolvesChild;
+
     public function store(Request $request, int $id): JsonResponse
     {
         $activity = Activity::query()
@@ -19,7 +22,8 @@ class ActivityCompletionController extends Controller
             ->findOrFail($id);
 
         // The child always comes from the logged-in user, never from the request.
-        $child = $request->user()->child()->first();
+        // child_id (if sent) must be one of the parent's own children.
+        $child = $this->resolveChild($request);
 
         if (! $child) {
             return response()->json([
