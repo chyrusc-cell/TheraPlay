@@ -11,3 +11,7 @@ export const AuthContext = createContext({
 });
 
 export const useAuth = () => useContext(AuthContext);
+
+// Where a verified account belongs after logging in (the role is the server's).
+export const homeFor = (user) =>
+    user?.role === 'admin' ? '/professional-dashboard' : '/dashboard';

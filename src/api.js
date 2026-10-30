@@ -2,7 +2,11 @@
 // Authentication is the same as everywhere else: Login.jsx saves the Sanctum
 // token in localStorage or sessionStorage and it is sent as a Bearer token.
 
-export const API_URL = 'http://127.0.0.1:8000/api';
+// The API base URL. Set VITE_API_URL (see .env.example) to point the frontend at
+// another backend; without it the local Laravel dev server is used.
+export const API_URL = (
+    import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+).replace(/\/+$/, '');
 
 export const getToken = () =>
     localStorage.getItem('theraplay_token') ||

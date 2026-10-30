@@ -1,4 +1,6 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import GatedOutlet from './GatedOutlet.jsx';
+import SessionWatcher from './SessionWatcher.jsx';
 import Sidebar from './Sidebar.jsx';
 import AuthProvider from './AuthProvider.jsx';
 import ChildProvider from './ChildProvider.jsx';
@@ -10,12 +12,21 @@ function Layout() {
     return (
         <AuthProvider>
             <ChildProvider>
+            <SessionWatcher />
             {/*
               The app area sets its own background and font, because every old
               page stylesheet sets a global "body" background and the winner
               would otherwise depend on bundle order.
             */}
             <div className="min-h-screen w-full font-[Quicksand,sans-serif]">
+                {/* First tab stop: lets keyboard users jump past the navigation and search. */}
+                <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:btn-solid focus:px-4 focus:py-2 focus:text-[14px] focus:font-bold focus:no-underline"
+                >
+                    Skip to main content
+                </a>
+
                 <Sidebar />
 
                 {/*
@@ -23,6 +34,11 @@ function Layout() {
                   itself, see GlobalSearch.jsx). There is no header bar behind
                   it.
                 */}
+                {/*
+                  The three floating top controls share one header landmark.
+                  The header itself takes no space: everything inside is fixed.
+                */}
+                <header>
                 <GlobalSearch />
 
                 {/*
@@ -45,6 +61,7 @@ function Layout() {
                 >
                     <CurrentUserAvatar />
                 </Link>
+                </header>
 
                 {/* Everything to the right of the fixed sidebar. */}
                 <div className="ml-sidebar flex min-h-screen min-w-0 flex-col tablet:ml-sidebar-rail">
@@ -55,8 +72,8 @@ function Layout() {
                     */}
                     <div className="h-topbar shrink-0" aria-hidden="true" />
 
-                    <main className="min-w-0 flex-1">
-                        <Outlet />
+                    <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
+                        <GatedOutlet />
                     </main>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { apiRequest, clearSession, getToken } from './api.js';
+import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
 import ActivityDetails from './ActivityDetails.jsx';
@@ -10,19 +10,18 @@ import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
-// Which activities has the logged-in parent completed? This reads the same
-// saved progress as the Progress page. Guests, expired logins and failures
-// simply mean "nothing completed"; they never mark anything as completed.
+// Which activities has the selected child completed? This reads the same saved
+// progress as the Progress page. Only a parent with a selected child has any:
+// guests, admins, parents without a child, expired logins and failures simply
+// mean "nothing completed" and never mark anything as completed (and no request
+// is made when there is no child to ask about).
 const loadCompletedIds = async (signal, childId) => {
-    if (!getToken()) {
+    if (!childId || !getToken()) {
         return { completedIds: new Set(), failed: false };
     }
 
     try {
-        const result = await apiRequest(
-            childId ? `/progress?child_id=${childId}` : '/progress',
-            { signal }
-        );
+        const result = await apiRequest(`/progress?child_id=${childId}`, { signal });
 
         if (result.status === 401) {
             clearSession();
@@ -80,11 +79,14 @@ const filterSelectClass =
     'min-w-[180px] cursor-pointer rounded-full border border-edge-strong btn-glass px-3 py-2 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0 phone:flex-1';
 
 function Activities() {
-    // The globally selected child (Choose Child in the top bar) decides which
-    // activities are shown. Guests and admins have no child: the full list.
-    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
-    const [loadedChildId, setLoadedChildId] = useState(null);
-    const [requiresConditions, setRequiresConditions] = useState(false);
+    // Every parent sees ALL published activities (their child's conditions do
+    // not limit the list). The selected child only decides which activities are
+    // marked as completed.
+    const { selectedChildId, childStatus, waiting } = useChildGate();
+    // The child whose load has FINISHED, whether it worked or failed. (It says
+    // "a result, or an error, is on screen for this child"; whether the data
+    // arrived is the separate `error` state.)
+    const [settledChildId, setSettledChildId] = useState(undefined);
     const [activities, setActivities] = useState([]);
     const [completedIds, setCompletedIds] = useState(new Set());
     const [progressFailed, setProgressFailed] = useState(false);
@@ -95,14 +97,17 @@ function Activities() {
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // While the selection changed but its list has not arrived yet, show the
-    // skeleton, never the previous child's activities.
+    // While the selected child changed but its load has not finished yet, show
+    // the skeleton, never the previous child's completed state.
     const isLoading =
-        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+        isLoadingNow || (childStatus === 'ready' && settledChildId !== selectedChildId);
 
     useEffect(() => {
-        // Parents wait for their children; with no child there is nothing to load.
-        if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
+        // Wait until the login is verified and a parent's children are loaded: only
+        // then is it known whether (and for which child) completion can be asked.
+        // With no child, for admins and guests, or if the children could not be
+        // loaded, the activities are still shown, just without completed marks.
+        if (waiting) {
             return undefined;
         }
 
@@ -117,20 +122,12 @@ function Activities() {
                 // Both are loaded before anything is shown, so the cards do
                 // not appear in one order and then jump into another.
                 const [response, progress] = await Promise.all([
-                    fetch(
-                        selectedChildId
-                            ? `http://127.0.0.1:8000/api/activities?child_id=${selectedChildId}`
-                            : 'http://127.0.0.1:8000/api/activities',
-                        {
-                            headers: {
-                                Accept: 'application/json',
-                                ...(selectedChildId && getToken()
-                                    ? { Authorization: `Bearer ${getToken()}` }
-                                    : {}),
-                            },
-                            signal: controller.signal,
-                        }
-                    ),
+                    fetch(`${API_URL}/activities`, {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                        signal: controller.signal,
+                    }),
                     loadCompletedIds(controller.signal, selectedChildId),
                 ]);
 
@@ -140,13 +137,16 @@ function Activities() {
 
                 const result = await response.json();
 
+                // A newer load (another child) has taken over: drop this answer.
+                if (controller.signal.aborted) {
+                    return;
+                }
+
                 setActivities(
                     Array.isArray(result.data) ? result.data : []
                 );
                 setCompletedIds(progress.completedIds);
                 setProgressFailed(progress.failed);
-                setRequiresConditions(Boolean(result.meta?.requires_conditions));
-                setLoadedChildId(selectedChildId);
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -159,7 +159,9 @@ function Activities() {
             } finally {
                 await holdSkeleton(startedAt, controller.signal);
 
+                // The load is over (worked or failed): show the result or the error.
                 if (!controller.signal.aborted) {
+                    setSettledChildId(selectedChildId);
                     setIsLoading(false);
                 }
             }
@@ -210,7 +212,7 @@ function Activities() {
         <div className="flex min-h-page flex-col">
 
             {/* Main Content */}
-            <main className={pageMain}>
+            <div className={pageMain}>
                 <div className={pageHeader}>
                     <h1 className={pageTitle}>Activities</h1>
                     <p className={pageSubtitle}>
@@ -220,9 +222,7 @@ function Activities() {
                 </div>
 
                 {/* Activity Cards Grid */}
-                {blocked ? (
-                    blocked
-                ) : isLoading ? (
+                {isLoading ? (
                     <ActivityCardsSkeleton />
                 ) : error ? (
                     <p
@@ -231,24 +231,9 @@ function Activities() {
                     >
                         {error}
                     </p>
-                ) : requiresConditions ? (
-                    <div className={statusClass} role="status">
-                        <p className="mb-3 font-bold text-ink">
-                            Select {selectedChild?.name ? `${selectedChild.name}'s` : 'your child\'s'} conditions first
-                        </p>
-                        <p className="mb-4">
-                            Activities are chosen to suit the conditions you pick for each
-                            child, so none can be shown until at least one is selected.
-                        </p>
-                        <Link to="/profile" className="font-bold text-accent">
-                            Go to the Profile page
-                        </Link>
-                    </div>
                 ) : activities.length === 0 ? (
                     <p className={statusClass}>
-                        {selectedChild
-                            ? `No published activities match ${selectedChild.name}'s conditions yet.`
-                            : 'No activities are available right now.'}
+                        No activities are available right now.
                     </p>
                 ) : (
                     <>
@@ -412,7 +397,7 @@ function Activities() {
                     )}
                     </>
                 )}
-            </main>
+            </div>
 
             <Modal
                 open={openActivity !== null}

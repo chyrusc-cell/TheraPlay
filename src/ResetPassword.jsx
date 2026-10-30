@@ -100,7 +100,7 @@ function ResetPassword() {
     };
 
     return (
-        <div className={auth.pageBg}>
+        <main className={auth.pageBg}>
             <div className={auth.panel}>
 
                 <div className={auth.logoRow}>
@@ -194,7 +194,7 @@ function ResetPassword() {
                 )}
 
             </div>
-        </div>
+        </main>
     );
 }
 

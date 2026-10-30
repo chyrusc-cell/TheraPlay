@@ -114,4 +114,24 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email verification
+    |--------------------------------------------------------------------------
+    |
+    | expire: minutes a verification link stays valid.
+    |
+    | enforced_from: a date/time (for example 2026-12-01 00:00:00). Parent
+    | accounts CREATED AT OR AFTER it must verify their email address before they
+    | can use the app; accounts created earlier are never locked out (they can
+    | still verify to show the badge). Leave it empty to not enforce anything yet,
+    | for example until real email delivery (SMTP) is configured.
+    |
+    */
+
+    'verification' => [
+        'expire' => (int) env('EMAIL_VERIFICATION_EXPIRE', 60),
+        'enforced_from' => env('EMAIL_VERIFICATION_ENFORCED_FROM') ?: null,
+    ],
+
 ];

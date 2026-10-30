@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from './authContext.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_URL } from './api.js';
 
 // The token is saved by Login.jsx in either localStorage or sessionStorage.
 const getToken = () =>

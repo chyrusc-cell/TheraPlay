@@ -4,8 +4,7 @@ import { CardsSkeleton } from './Skeleton.jsx';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle } from './uiClasses.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_URL } from './api.js';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -107,17 +106,24 @@ const iconCircleClass =
 function Progress() {
     const navigate = useNavigate();
     // Everything here is for the globally selected child.
-    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
-    const [loadedChildId, setLoadedChildId] = useState(null);
+    const { selectedChildId, selectedChild, childStatus, authStatus, isParent, waiting, blocked } = useChildGate();
+    // The child whose load has FINISHED, whether it worked or failed. (It says
+    // "a result, or an error, is on screen for this child"; whether the data
+    // arrived is the separate `error` state.)
+    const [settledChildId, setSettledChildId] = useState(undefined);
 
     const [records, setRecords] = useState([]);
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // The selection changed but its records have not arrived: show the skeleton,
-    // not the previous child's progress.
+    // The selection changed but its load has not finished: show the skeleton, not
+    // the previous child's progress.
+    // Not a parent (an admin, or a login that could not be verified): there is no
+    // child's progress to load, so nothing is requested and nothing waits.
+    const noChildData = !waiting && !isParent;
     const isLoading =
-        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+        !noChildData &&
+        (isLoadingNow || (childStatus === 'ready' && settledChildId !== selectedChildId));
 
     useEffect(() => {
         if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
@@ -144,6 +150,13 @@ function Progress() {
             return;
         }
 
+        // Progress belongs to a parent's child. The login is verified by now
+        // (waiting is over), so anyone else (an admin, or a login the server could
+        // not verify) makes no request at all (see noChildData below).
+        if (!isParent) {
+            return;
+        }
+
         const controller = new AbortController();
 
         const startedAt = performance.now();
@@ -153,7 +166,7 @@ function Progress() {
                 setIsLoading(true);
                 setError('');
 
-                const response = await fetch(`${API_URL}/progress?child_id=${selectedChildId}`, {
+                const response = await fetch(`${API_URL}/progress${selectedChildId ? `?child_id=${selectedChildId}` : ""}`, {
                     headers: {
                         Accept: 'application/json',
                         Authorization: `Bearer ${token}`,
@@ -172,12 +185,16 @@ function Progress() {
 
                 const result = await response.json();
 
+                // A newer load (another child) has taken over: drop this answer.
+                if (controller.signal.aborted) {
+                    return;
+                }
+
                 setRecords(
                     Array.isArray(result.data?.records)
                         ? result.data.records
                         : []
                 );
-                setLoadedChildId(selectedChildId);
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -190,7 +207,9 @@ function Progress() {
             } finally {
                 await holdSkeleton(startedAt, controller.signal);
 
+                // The load is over (worked or failed): show the result or the error.
                 if (!controller.signal.aborted) {
+                    setSettledChildId(selectedChildId);
                     setIsLoading(false);
                 }
             }
@@ -199,12 +218,12 @@ function Progress() {
         loadProgress();
 
         return () => controller.abort();
-    }, [navigate, waiting, childStatus, selectedChildId]);
+    }, [navigate, waiting, childStatus, selectedChildId, isParent]);
 
     if (blocked) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>{blocked}</main>
+                <div className={pageMain}>{blocked}</div>
             </div>
         );
     }
@@ -212,21 +231,26 @@ function Progress() {
     if (isLoading) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>
+                <div className={pageMain}>
                     <CardsSkeleton label="Loading your progress..." cards={3} />
-                </main>
+                </div>
             </div>
         );
     }
 
-    if (error) {
+    const shownError =
+        noChildData && authStatus === 'error'
+            ? 'We could not verify your account. Please try again.'
+            : error;
+
+    if (shownError) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>
+                <div className={pageMain}>
                     <p className="text-[14px] font-medium text-[#d93025]" role="alert">
-                        {error}
+                        {shownError}
                     </p>
-                </main>
+                </div>
             </div>
         );
     }
@@ -272,7 +296,7 @@ function Progress() {
 
     return (
         <div className="flex min-h-page flex-col">
-            <main className={pageMain}>
+            <div className={pageMain}>
                 <div className={pageHeader}>
                     <h1 className={pageTitle}>My Progress</h1>
                     {selectedChild && (
@@ -311,18 +335,18 @@ function Progress() {
                         {/* Weekly Participation Card */}
                         <div className={cardClass}>
                             <div className={cardHeaderClass}>
-                                <h3 className={cardTitleClass}>Weekly Participation</h3>
+                                <h2 className={cardTitleClass}>Weekly Participation</h2>
                             </div>
 
                             <div className={cardBodyClass}>
                                 <div className="mb-4 flex items-end justify-between">
                                     <div>
-                                        <h2 className={bigNumberClass}>{completedThisWeek}</h2>
+                                        <p className={bigNumberClass}>{completedThisWeek}</p>
                                         <span className={bigLabelClass}>activities completed this week</span>
                                     </div>
 
                                     <div className="text-right">
-                                        <h2 className={bigNumberClass}>{completionRate}%</h2>
+                                        <p className={bigNumberClass}>{completionRate}%</p>
                                         <span className={bigLabelClass}>of started activities completed</span>
                                     </div>
                                 </div>
@@ -360,7 +384,7 @@ function Progress() {
                         {/* Skills Practiced Card */}
                         <div className={cardClass}>
                             <div className={cardHeaderRuleClass}>
-                                <h3 className={cardTitleClass}>Skills Practiced</h3>
+                                <h2 className={cardTitleClass}>Skills Practiced</h2>
                             </div>
 
                             <div className={cardBodyClass}>
@@ -405,7 +429,7 @@ function Progress() {
                         {/* Activity Trend Card */}
                         <div className={cardClass}>
                             <div className={cardHeaderRuleClass}>
-                                <h3 className={cardTitleClass}>Activity Trend</h3>
+                                <h2 className={cardTitleClass}>Activity Trend</h2>
                             </div>
 
                             <div className={cardBodyClass}>
@@ -443,20 +467,20 @@ function Progress() {
                         {/* Recent Activity Card */}
                         <div className={cardClass}>
                             <div className={cardHeaderRuleClass}>
-                                <h3 className={cardTitleClass}>Recent Activity</h3>
+                                <h2 className={cardTitleClass}>Recent Activity</h2>
                             </div>
 
                             <div className={cardBodyClass}>
                                 <div className="mb-4 flex items-start justify-between">
                                     <div>
-                                        <h2 className="text-[24px] leading-[1.2] font-bold text-ink">{completed.length}</h2>
+                                        <p className="text-[24px] leading-[1.2] font-bold text-ink">{completed.length}</p>
                                         <span className={bigLabelClass}>activities completed in total</span>
                                     </div>
                                 </div>
 
-                                <h4 className="mb-4 text-[13px] font-medium text-muted">
+                                <p className="mb-4 text-[13px] font-medium text-muted">
                                     Latest activity
-                                </h4>
+                                </p>
 
                                 <div className="flex flex-col gap-3">
                                     {recent.length === 0 ? (
@@ -495,10 +519,10 @@ function Progress() {
                                                     </div>
 
                                                     <div>
-                                                        <h5 className="mb-1 text-[13px] font-bold text-ink">
+                                                        <h3 className="mb-1 text-[13px] font-bold text-ink">
                                                             {record.activity_title ||
                                                                 'Activity'}
-                                                        </h5>
+                                                        </h3>
                                                         <p className="text-[12px] leading-[1.4] font-medium text-muted">
                                                             {isDone
                                                                 ? 'Completed'
@@ -518,7 +542,7 @@ function Progress() {
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

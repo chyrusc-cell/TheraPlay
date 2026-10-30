@@ -75,10 +75,9 @@
 
 /*
  * Warm glass system. Small shared utilities, used by adding the class name:
- *   btn-solid  the solid brown primary button: a soft warm shadow, a thin top
- *              highlight, lifts 2px on hover, presses back down when clicked.
- *   btn-glass  secondary / compact controls: a translucent cream surface with
- *              blur, a thin light edge, the same gentle lift.
+ *   btn-solid  the solid accent primary button (glass 3D look, see below).
+ *   btn-glass  secondary / compact controls: a translucent cream surface (the
+ *              same glass 3D look, subtler).
  *   glass-panel  floating surfaces (dropdowns, popovers): warm, 85% opaque,
  *              blurred, softly shadowed.
  *   card-soft  panels and cards: a faint top highlight and a soft warm shadow
@@ -87,69 +86,318 @@
  * backdrop-filter get an opaque cream instead, and reduced-motion users get no
  * movement (rules at the bottom of ui.css).
  */
+/*
+ * Glass 3D buttons (btn-solid and btn-glass), the look of the supplied "tp-button"
+ * design applied to the button element itself, with no wrapper or extra markup:
+ *   - a thin conic-gradient ring around the edge that turns on hover (::after),
+ *   - a soft diagonal sheen that glides across on hover and press (::before,
+ *     painted BEHIND the label, so text stays readable),
+ *   - an inner light and shadow (box-shadow insets) and a soft drop shadow,
+ *   - the button settles inward on hover and presses further on click.
+ * btn-solid keeps the accent color (set --btn-glow to tint its shadow: danger and
+ * success buttons do), btn-glass is the subtler translucent surface. Disabled
+ * buttons lose the effects, touch screens get no hover motion, and reduced-motion
+ * users get no movement (rules at the bottom of ui.css). Only elements that use
+ * these classes are affected; nothing here targets a bare "button".
+ */
+@property --tp-angle-1 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: -75deg;
+}
+
+@property --tp-angle-2 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: -45deg;
+}
+
+/* The pseudo-elements need a positioned parent. This is in the base layer so any
+   utility such as fixed or absolute on the element still wins. */
+@layer base {
+    .btn-solid,
+    .btn-glass,
+    .btn-tone {
+        position: relative;
+        isolation: isolate;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@layer components {
+    .btn-solid,
+    .btn-glass,
+    .btn-tone {
+        --tp-time: 400ms;
+        --tp-ease: cubic-bezier(0.25, 1, 0.5, 1);
+        --tp-border-width: clamp(1px, 0.0625em, 3px);
+    }
+
+    /* The sheen. */
+    .btn-solid::before,
+    .btn-glass::before,
+    .btn-tone::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        pointer-events: none;
+        background: linear-gradient(
+            var(--tp-angle-2),
+            transparent 0%,
+            var(--tp-sheen, rgba(255, 255, 255, 0.5)) 40% 50%,
+            transparent 55%
+        );
+        background-size: 200% 200%;
+        background-position: 0% 50%;
+        background-repeat: no-repeat;
+        transition:
+            background-position calc(var(--tp-time) * 1.25) var(--tp-ease),
+            --tp-angle-2 calc(var(--tp-time) * 1.25) var(--tp-ease);
+    }
+
+    /* The edge ring (a masked conic gradient). */
+    .btn-solid::after,
+    .btn-glass::after,
+    .btn-tone::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        z-index: 1;
+        border-radius: inherit;
+        padding: var(--tp-border-width);
+        pointer-events: none;
+        background: conic-gradient(
+            from var(--tp-angle-1),
+            var(--tp-ring),
+            transparent 5% 40%,
+            var(--tp-ring) 50%,
+            transparent 60% 95%,
+            var(--tp-ring)
+        );
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        transition:
+            --tp-angle-1 500ms ease,
+            opacity var(--tp-time) var(--tp-ease);
+    }
+
+    /* Hover and press move the sheen and the ring, like the reference. */
+    :is(.btn-solid, .btn-glass, .btn-tone):is(button, [role='button']):enabled:hover::before,
+    a:is(.btn-solid, .btn-glass, .btn-tone):hover::before {
+        background-position: 25% 50%;
+    }
+
+    :is(.btn-solid, .btn-glass, .btn-tone):is(button, [role='button']):enabled:hover::after,
+    a:is(.btn-solid, .btn-glass, .btn-tone):hover::after {
+        --tp-angle-1: -125deg;
+    }
+
+    :is(.btn-solid, .btn-glass, .btn-tone):is(button, [role='button']):enabled:active::before,
+    a:is(.btn-solid, .btn-glass, .btn-tone):active::before {
+        background-position: 50% 15%;
+        --tp-angle-2: -15deg;
+    }
+
+    :is(.btn-solid, .btn-glass, .btn-tone):is(button, [role='button']):enabled:active::after,
+    a:is(.btn-solid, .btn-glass, .btn-tone):active::after {
+        --tp-angle-1: -75deg;
+    }
+
+    /* Disabled: flat and clearly inactive. */
+    :is(.btn-solid, .btn-glass, .btn-tone):disabled::before,
+    :is(.btn-solid, .btn-glass, .btn-tone):disabled::after,
+    :is(.btn-solid, .btn-glass, .btn-tone)[aria-disabled='true']::before,
+    :is(.btn-solid, .btn-glass, .btn-tone)[aria-disabled='true']::after {
+        opacity: 0;
+    }
+}
+
 @utility btn-solid {
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%);
+    /* Buttons use the page font (browsers default to the system font otherwise). */
+    font-family: inherit;
+    --tp-ring: rgba(60, 30, 0, 0.45);
+    /* White text sits on this surface, so the highlights stay away from the label:
+       the gloss is a glow along the top edge that fades out before the text, and
+       the hover sheen is faint. Together they keep the label above 4.5:1. */
+    --tp-sheen: rgba(255, 255, 255, 0.08);
+    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 32%);
     box-shadow:
-        0 6px 16px -6px rgba(161, 98, 7, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+        0 6px 16px -6px rgba(var(--btn-glow, 147, 91, 7), 0.45),
+        inset 0 0.125em 0.125em rgba(255, 255, 255, 0.25),
+        inset 0 -0.125em 0.125em rgba(0, 0, 0, 0.12);
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
+        transform var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        box-shadow var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
         background-color 0.2s ease,
         opacity 0.2s ease;
 
-    &:enabled:hover {
-        transform: translateY(-2px);
+    &:is(button, [role='button']):enabled:hover,
+    a&:hover {
+        transform: scale(0.975);
         box-shadow:
-            0 12px 22px -8px rgba(161, 98, 7, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.32);
+            0 4px 12px -6px rgba(var(--btn-glow, 147, 91, 7), 0.5),
+            inset 0 0.125em 0.125em rgba(255, 255, 255, 0.3),
+            inset 0 -0.125em 0.125em rgba(0, 0, 0, 0.12);
     }
 
-    &:enabled:active {
-        transform: translateY(0);
+    &:is(button, [role='button']):enabled:active,
+    a&:active {
+        transform: scale(0.96);
         box-shadow:
-            0 2px 6px -2px rgba(161, 98, 7, 0.4),
-            inset 0 1px 3px rgba(0, 0, 0, 0.14);
+            0 2px 6px -3px rgba(var(--btn-glow, 147, 91, 7), 0.4),
+            inset 0 0.125em 0.2em rgba(0, 0, 0, 0.18);
     }
 
     &:disabled {
         box-shadow: none;
+        transform: none;
+        filter: grayscale(0.35);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        &:is(button, [role='button']):enabled:hover,
+        a&:hover {
+            transform: none;
+        }
+
+        &:is(button, [role='button']):enabled:active,
+        a&:active {
+            transform: scale(0.97);
+        }
     }
 }
 
 @utility btn-glass {
+    /* Buttons use the page font (browsers default to the system font otherwise). */
+    font-family: inherit;
+    --tp-ring: rgba(110, 70, 20, 0.34);
+    --tp-sheen: rgba(255, 255, 255, 0.55);
     background-color: rgba(255, 252, 247, 0.72);
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(250, 243, 233, 0.5));
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background-image: linear-gradient(
+        -75deg,
+        rgba(255, 255, 255, 0.55),
+        rgba(255, 255, 255, 0.9),
+        rgba(250, 243, 233, 0.5)
+    );
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     box-shadow:
-        0 2px 8px -3px rgba(120, 80, 30, 0.16),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 -1px 0 rgba(160, 120, 70, 0.16);
+        0 0.25em 0.125em -0.125em rgba(120, 80, 30, 0.2),
+        inset 0 0.125em 0.125em rgba(120, 80, 30, 0.06),
+        inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.85);
     transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease,
+        transform var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        box-shadow var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
         background-color 0.2s ease,
         border-color 0.2s ease,
         color 0.2s ease;
 
-    &:enabled:hover,
+    &:is(button, [role='button']):enabled:hover,
     a&:hover {
-        transform: translateY(-2px);
+        transform: scale(0.975);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
         box-shadow:
-            0 10px 20px -8px rgba(120, 80, 30, 0.24),
-            inset 0 1px 0 rgba(255, 255, 255, 1);
+            0 0.2em 0.1em -0.1em rgba(120, 80, 30, 0.22),
+            inset 0 0.125em 0.125em rgba(120, 80, 30, 0.06),
+            inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.9);
     }
 
-    &:enabled:active {
-        transform: translateY(0);
+    &:is(button, [role='button']):enabled:active,
+    a&:active {
+        transform: scale(0.96);
         box-shadow:
-            0 1px 3px rgba(120, 80, 30, 0.14),
-            inset 0 1px 2px rgba(120, 80, 30, 0.1);
+            0 0.1em 0.1em -0.1em rgba(120, 80, 30, 0.2),
+            inset 0 0.125em 0.2em rgba(120, 80, 30, 0.14);
+    }
+
+    &:disabled {
+        box-shadow: none;
+        transform: none;
+        filter: grayscale(0.35);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        &:is(button, [role='button']):enabled:hover,
+        a&:hover {
+            transform: none;
+        }
+
+        &:is(button, [role='button']):enabled:active,
+        a&:active {
+            transform: scale(0.97);
+        }
     }
 
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
         background-color: #fffcf7;
+    }
+}
+
+/*
+ * btn-tone: the same glass 3D effects for buttons whose color carries meaning
+ * (Delete red, Publish green, Unpublish amber, neutral row buttons). It leaves the
+ * button's own background color and text color alone and only adds the ring,
+ * sheen, inner light and the settle/press motion. Tint the ring with --tp-ring.
+ */
+@utility btn-tone {
+    /* Buttons use the page font (browsers default to the system font otherwise). */
+    font-family: inherit;
+    --tp-ring: rgba(110, 70, 20, 0.3);
+    --tp-sheen: rgba(255, 255, 255, 0.45);
+    background-image: linear-gradient(
+        -75deg,
+        rgba(255, 255, 255, 0.05),
+        rgba(255, 255, 255, 0.35),
+        rgba(255, 255, 255, 0.05)
+    );
+    box-shadow:
+        0 0.25em 0.125em -0.125em rgba(60, 40, 10, 0.18),
+        inset 0 0.125em 0.125em rgba(0, 0, 0, 0.04),
+        inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.55);
+    transition:
+        transform var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        box-shadow var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        background-color 0.2s ease,
+        color 0.2s ease;
+
+    &:is(button, [role='button']):enabled:hover,
+    a&:hover {
+        transform: scale(0.975);
+    }
+
+    &:is(button, [role='button']):enabled:active,
+    a&:active {
+        transform: scale(0.96);
+        box-shadow:
+            0 0.1em 0.1em -0.1em rgba(60, 40, 10, 0.2),
+            inset 0 0.125em 0.2em rgba(0, 0, 0, 0.1);
+    }
+
+    &:disabled {
+        box-shadow: none;
+        transform: none;
+        filter: grayscale(0.35);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        &:is(button, [role='button']):enabled:hover,
+        a&:hover {
+            transform: none;
+        }
+
+        &:is(button, [role='button']):enabled:active,
+        a&:active {
+            transform: scale(0.97);
+        }
     }
 }
 

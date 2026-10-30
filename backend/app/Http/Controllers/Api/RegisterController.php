@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Api\ChildController;
 use App\Models\Child;
 use App\Models\User;
+use App\Support\MailDelivery;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -61,8 +64,28 @@ class RegisterController extends Controller
         return $user;
         });
 
+        // Ask the new account to verify its address. A mail problem must never
+        // fail the sign-up: the person can resend from the app.
+        $verificationSent = false;
+
+        try {
+            $user->sendEmailVerificationNotification();
+            $verificationSent = true;
+        } catch (Throwable $e) {
+            Log::warning('Verification email could not be sent after registration.', [
+                'user_id' => $user->id,
+                'error' => class_basename($e),
+            ]);
+        }
+
         return response()->json([
             'message' => 'Registration successful.',
+            // Honest about delivery: with the log/array mail drivers nothing is
+            // delivered, so the app must not say an email is on its way.
+            'email_verification' => [
+                'sent' => $verificationSent,
+                'delivery_available' => MailDelivery::isConfigured(),
+            ],
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

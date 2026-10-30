@@ -21,17 +21,20 @@ import Contact from './Contact.jsx';
 import ManageContacts from './ManageContacts.jsx';
 import ManageAccounts from './ManageAccounts.jsx';
 import ResetPassword from './ResetPassword.jsx';
+import NotFound from './NotFound.jsx';
+import VerifyEmail from './VerifyEmail.jsx';
+import GuestOnly from './GuestOnly.jsx';
 
 // Shared look and responsive rules. Keep these LAST so they win over the
 // older page stylesheets imported above.
 import './css/ui.css';
 import './css/responsive.css';
 
-function TheraPlay() {
+// The route table on its own (no router), so tests can render it inside a
+// MemoryRouter. TheraPlay below is what the app mounts.
+export function AppRoutes() {
 
     return (
-        <BrowserRouter>
-
             <Routes>
 
                 {/* Pages without sidebar */}
@@ -41,19 +44,30 @@ function TheraPlay() {
                     element={<Navigate to="/login" replace />}
                 />
 
-                <Route
-                    path="/login"
-                    element={<Login />}
-                />
+                {/* Only for logged-out visitors: a logged-in person is sent to their dashboard */}
+                <Route element={<GuestOnly />}>
 
-                <Route
-                    path="/register"
-                    element={<Register />}
-                />
+                    <Route
+                        path="/login"
+                        element={<Login />}
+                    />
 
+                    <Route
+                        path="/register"
+                        element={<Register />}
+                    />
+
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
+
+                </Route>
+
+                {/* Opened from the link in the email verification email */}
                 <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
+                    path="/verify-email"
+                    element={<VerifyEmail />}
                 />
 
                 {/* Opened from the link in the password reset email */}
@@ -123,10 +137,23 @@ function TheraPlay() {
 
                     </Route>
 
+                    {/* Any other address */}
+                    <Route
+                        path="*"
+                        element={<NotFound />}
+                    />
+
                 </Route>
 
             </Routes>
+    );
+}
 
+function TheraPlay() {
+
+    return (
+        <BrowserRouter>
+            <AppRoutes />
         </BrowserRouter>
     );
 }

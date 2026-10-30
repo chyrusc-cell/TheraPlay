@@ -94,14 +94,6 @@ export const switchLinkRegister =
     'mb-[30px] text-center text-[13px] font-medium text-muted';
 export const switchLinkAnchor = 'font-bold text-ink no-underline';
 
-export const divider =
-    `relative mb-6 text-center before:absolute before:top-1/2 before:right-0 before:left-0 before:z-[1] before:h-px before:bg-sunken before:content-['']`;
-export const dividerText = 'relative z-[2] bg-white px-4 text-[12px] font-medium text-faint';
-
-export const socialRow = 'flex gap-4';
-export const socialButton =
-    'flex flex-1 cursor-pointer items-center justify-center rounded-full border border-edge-strong btn-glass p-3 hover:bg-warm';
-
 // ---------- Register: terms checkbox ----------
 
 export const termsGroup = 'mb-6';

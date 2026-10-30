@@ -146,6 +146,15 @@ class PasswordResetController extends Controller
                 // a password change.
                 $user->tokens()->delete();
 
+                // Opening the emailed link proves control of this address, and a
+                // pending email change requested before the reset (possibly by
+                // someone who had the old password) is cancelled.
+                if (! $user->hasVerifiedEmail()) {
+                    $user->markEmailAsVerified();
+                }
+
+                $user->clearPendingEmail();
+
                 event(new PasswordReset($user));
             }
         );

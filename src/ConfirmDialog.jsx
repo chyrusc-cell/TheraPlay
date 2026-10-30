@@ -1,14 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-
-// Shared button looks for the dialog. Active/disabled colors come from the
-// design tokens (css/tailwind.css); the focus ring is the global one (ui.css).
-const buttonBase =
-    'cursor-pointer rounded-3xl px-[22px] py-2.5 [font-family:inherit] text-sm font-bold';
-
-const cancelClass = `${buttonBase} border border-accent bg-white text-ink enabled:hover:bg-hover`;
-
-const confirmClass = `${buttonBase} border-0 bg-primary text-white enabled:hover:bg-primary-hover btn-solid`;
+import Button from './Button.jsx';
 
 /*
  * A small reusable "are you sure?" dialog.
@@ -127,24 +119,22 @@ function ConfirmDialog({
 
                 <div className="flex justify-end gap-3">
 
-                    <button
-                        type="button"
-                        className={cancelClass}
+                    <Button
+                        variant="secondary"
                         onClick={onCancel}
                         disabled={busy}
                         ref={cancelRef}
                     >
                         {cancelLabel}
-                    </button>
+                    </Button>
 
-                    <button
-                        type="button"
-                        className={confirmClass}
+                    <Button
+                        variant="primary"
                         onClick={onConfirm}
-                        disabled={busy}
+                        loading={busy}
                     >
                         {busy ? busyLabel : confirmLabel}
-                    </button>
+                    </Button>
 
                 </div>
             </div>

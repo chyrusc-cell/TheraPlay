@@ -10,6 +10,7 @@ import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
 import Modal from './Modal.jsx';
+import DeveloperTeamEditor from './DeveloperTeamEditor.jsx';
 
 const emptyForm = {
     name: '',
@@ -52,6 +53,14 @@ function ManageContacts() {
 
     const [confirmingId, setConfirmingId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+
+    // The Development Team card (separate from the professional contacts below):
+    // its details are fetched fresh each time the editor is opened, so the form
+    // always starts from what is saved. Saving is done by DeveloperTeamEditor.
+    const [team, setTeam] = useState(null);
+    const [teamOpen, setTeamOpen] = useState(false);
+    const [teamOpening, setTeamOpening] = useState(false);
+    const [teamSaving, setTeamSaving] = useState(false);
 
 
     // Expired or invalid token: clear it and go to the login page.
@@ -416,10 +425,49 @@ function ManageContacts() {
     };
 
 
+    const openTeamEditor = async () => {
+        if (teamOpening) {
+            return;
+        }
+
+        setTeamOpening(true);
+        setNotice(null);
+
+        try {
+            const result = await apiRequest('/admin/developer-team');
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!result.ok || !result.data.data) {
+                throw new Error(
+                    result.status === 403
+                        ? 'You do not have permission to edit the Development Team.'
+                        : 'Unable to load the Development Team details.'
+                );
+            }
+
+            setTeam(result.data.data);
+            setTeamOpen(true);
+        } catch (error) {
+            setNotice({
+                type: 'error',
+                text:
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setTeamOpening(false);
+        }
+    };
+
+
     return (
         <div className={ui.page}>
 
-            <main className={ui.content}>
+            <div className={ui.content}>
 
                 <div className={ui.header}>
 
@@ -446,6 +494,15 @@ function ManageContacts() {
                             disabled={isLoading}
                         >
                             Refresh
+                        </button>
+
+                        <button
+                            type="button"
+                            className={ui.cancelButton}
+                            onClick={openTeamEditor}
+                            disabled={teamOpening}
+                        >
+                            Edit Development Team
                         </button>
 
                         <button
@@ -506,7 +563,7 @@ function ManageContacts() {
                                         className={ui.avatarCircle}
                                         onClick={() => photoInputRef.current?.click()}
                                         disabled={isSaving}
-                                        aria-labelledby="contact-photo-label"
+                                        aria-labelledby="contact-photo-label contact-photo-prompt"
                                     >
                                         {photoPreview || (!removePhoto && savedPhotoUrl) ? (
                                             <img
@@ -515,7 +572,7 @@ function ManageContacts() {
                                                 className="h-full w-full object-cover"
                                             />
                                         ) : (
-                                            <span className="flex flex-col items-center gap-1 px-4 text-center text-[13px]">
+                                            <span id="contact-photo-prompt" className="flex flex-col items-center gap-1 px-4 text-center text-[13px]">
                                                 <Camera size={28} aria-hidden="true" />
                                                 Choose a picture
                                             </span>
@@ -941,7 +998,33 @@ function ManageContacts() {
                 )}
 
 
-            </main>
+                {/* The existing Development Team editor (also used on the Contact Us page). */}
+                {team && (
+                    <Modal
+                        open={teamOpen}
+                        onClose={() => setTeamOpen(false)}
+                        busy={teamSaving}
+                        size="md"
+                        title="Edit Development Team"
+                    >
+                        <DeveloperTeamEditor
+                            team={team}
+                            onBusyChange={setTeamSaving}
+                            onCancel={() => setTeamOpen(false)}
+                            onSaved={(saved) => {
+                                setTeam(saved);
+                                setTeamOpen(false);
+                                setNotice({
+                                    type: 'success',
+                                    text: 'Development Team details saved.',
+                                });
+                            }}
+                            onUnauthorized={handleUnauthorized}
+                        />
+                    </Modal>
+                )}
+
+            </div>
 
         </div>
     );

@@ -1,14 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { apiRequest } from './api.js';
+import { API_URL, apiRequest } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { useChildren } from './childContext.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { detailsCardClass, pageMain } from './uiClasses.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
 
 // The token is saved by Login.jsx in either localStorage or sessionStorage.
 const getToken = () =>
@@ -363,13 +361,18 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
     };
 
 
+    // On its own page the activity name is the h1; inside the details dialog (whose
+    // title is already an h2) it sits one level lower, and so do its sections.
+    const Title = embedded ? 'h3' : 'h1';
+    const Section = embedded ? 'h4' : 'h2';
+
     if (isLoading) {
 
         return (
             <div className={embedded ? '' : 'min-h-page'}>
-                <main className={embedded ? '' : pageMain}>
+                <div className={embedded ? '' : pageMain}>
                     <ActivityDetailsSkeleton />
-                </main>
+                </div>
             </div>
         );
 
@@ -381,9 +384,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
         return (
             <div className={`flex flex-col items-center justify-center gap-[15px] ${embedded ? 'py-10' : 'min-h-page'}`}>
 
-                <h1>
+                <Title>
                     Something Went Wrong
-                </h1>
+                </Title>
 
                 <p role="alert">
                     {error}
@@ -406,9 +409,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
         return (
             <div className={`flex flex-col items-center justify-center gap-[15px] ${embedded ? 'py-10' : 'min-h-page'}`}>
 
-                <h1>
+                <Title>
                     Activity Not Found
-                </h1>
+                </Title>
 
                 <p>
                     The activity you are looking for does not exist.
@@ -431,7 +434,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
             {/* Main Content */}
 
-            <main className={embedded ? '' : pageMain}>
+            <div className={embedded ? '' : pageMain}>
 
                 {!embedded && (
                     <Link
@@ -463,9 +466,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                     <div>
 
-                        <h1 className="mb-3 text-[28px] font-bold">
+                        <Title className="mb-3 text-[28px] font-bold">
                             {activity.title}
-                        </h1>
+                        </Title>
 
                         <div className="mb-[30px] flex gap-2.5">
 
@@ -486,9 +489,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                         <section className="mb-[25px]">
 
-                            <h2 className="mb-2.5 text-[18px] font-bold">
+                            <Section className="mb-2.5 text-[18px] font-bold">
                                 Objective
-                            </h2>
+                            </Section>
 
                             <p className="leading-[1.5] text-muted">
                                 {activity.objective}
@@ -501,9 +504,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                         <section className="mb-[25px]">
 
-                            <h2 className="mb-2.5 text-[18px] font-bold">
+                            <Section className="mb-2.5 text-[18px] font-bold">
                                 Instructions
-                            </h2>
+                            </Section>
 
                             <ol className="list-decimal pl-5 leading-[1.8] text-body">
 
@@ -526,9 +529,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                         <section className="mb-[25px]">
 
-                            <h2 className="mb-2.5 text-[18px] font-bold">
+                            <Section className="mb-2.5 text-[18px] font-bold">
                                 Materials
-                            </h2>
+                            </Section>
 
                             <ul className="list-disc pl-5 leading-[1.8] text-body">
 
@@ -591,9 +594,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                 className="mb-4 flex flex-col gap-2 rounded-md border border-edge-strong p-4"
                                 onSubmit={handleChildSubmit}
                             >
-                                <h2 className="text-[16px] font-bold">
+                                <Section className="text-[16px] font-bold">
                                     Add Your Child
-                                </h2>
+                                </Section>
 
                                 <p className="text-[13px] text-muted">
                                     Your child's name is needed to record
@@ -676,7 +679,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                 </div>
 
-            </main>
+            </div>
 
         </div>
     );

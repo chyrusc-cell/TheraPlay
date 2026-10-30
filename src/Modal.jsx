@@ -38,50 +38,62 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
     const titleId = useId();
     const dialogRef = useRef(null);
 
-    // mounted = in the DOM (until the closing fade is done); entered = faded in.
-    // snapshot = what was last shown while open, so the closing fade still
-    // shows it after the page has already reset its form. These are updated
-    // while rendering (React's "derived state" pattern), not in effects.
-    const [mounted, setMounted] = useState(open);
+    // rendered = in the DOM (it stays until the closing fade is done);
+    // entered = faded in. Every state change below happens in a timer or
+    // animation-frame callback (never while rendering), one step per frame:
+    //   opening:  rendered -> next frame -> entered
+    //   closing:  visible goes false at once (fade out) -> after CLOSE_MS rendered goes false
+    const [rendered, setRendered] = useState(open);
     const [entered, setEntered] = useState(false);
-    const [prevOpen, setPrevOpen] = useState(open);
-    const [snapshot, setSnapshot] = useState({ children, title });
 
-    if (open !== prevOpen) {
-        setPrevOpen(open);
+    // What was last shown while open, so the closing fade still shows it after the
+    // page has already reset its form (otherwise the fields would blank out).
+    const [snapshot, setSnapshot] = useState(null);
 
-        if (open) {
-            setMounted(true);
-        }
-    }
-
-    if (open && (snapshot.children !== children || snapshot.title !== title)) {
-        setSnapshot({ children, title });
-    }
-
-    // Fade in one frame after mounting (so the transition has a start state);
-    // after the closing fade, remove it from the DOM.
     useEffect(() => {
         if (open) {
-            const frame = requestAnimationFrame(() => setEntered(true));
+            const frame = requestAnimationFrame(() => {
+                if (!rendered) {
+                    setRendered(true);
+                } else if (!entered) {
+                    setEntered(true);
+                }
+            });
 
             return () => cancelAnimationFrame(frame);
         }
 
-        const timer = setTimeout(() => {
-            setEntered(false);
-            setMounted(false);
-        }, CLOSE_MS);
+        if (rendered) {
+            const timer = setTimeout(() => {
+                setEntered(false);
+                setRendered(false);
+            }, CLOSE_MS);
 
-        return () => clearTimeout(timer);
-    }, [open]);
+            return () => clearTimeout(timer);
+        }
+
+        return undefined;
+    }, [open, rendered, entered]);
+
+    useEffect(() => {
+        if (!open) {
+            return undefined;
+        }
+
+        const frame = requestAnimationFrame(() => setSnapshot({ children, title }));
+
+        return () => cancelAnimationFrame(frame);
+    }, [open, children, title]);
+
+    // While open the live content is shown; while closing, the last one shown.
+    const shown = open || snapshot === null ? { children, title } : snapshot;
 
     const visible = open && entered;
 
     // Lock the page scroll while the modal is in the DOM (the scrollbar space is
     // always reserved, so nothing shifts).
     useEffect(() => {
-        if (!mounted) {
+        if (!rendered) {
             return undefined;
         }
 
@@ -92,11 +104,11 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
         return () => {
             document.body.style.overflow = previous;
         };
-    }, [mounted]);
+    }, [rendered]);
 
-    // Focus in on open, and back on the opener on close.
+    // Focus in once the dialog is in the DOM, and back on the opener on close.
     useEffect(() => {
-        if (!open) {
+        if (!open || !rendered) {
             return undefined;
         }
 
@@ -124,7 +136,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                 opener.focus?.();
             }
         };
-    }, [open]);
+    }, [open, rendered]);
 
     // Escape closes (unless busy); Tab stays inside the dialog.
     useEffect(() => {
@@ -179,7 +191,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
         return () => document.removeEventListener('keydown', handleKeyDown);
     }, [open, busy, onClose]);
 
-    if (!mounted) {
+    if (!rendered) {
         return null;
     }
 
@@ -209,7 +221,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                 <div className="flex shrink-0 items-center justify-between gap-4 border-b border-edge px-6 py-4 phone:px-4">
 
                     <h2 id={titleId} className="min-w-0 text-[20px] font-bold text-ink [overflow-wrap:anywhere]">
-                        {snapshot.title}
+                        {shown.title}
                     </h2>
 
                     <button
@@ -225,7 +237,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                 </div>
 
                 <div data-modal-body className="min-h-0 flex-1 overflow-y-auto p-6 phone:p-4">
-                    {snapshot.children}
+                    {shown.children}
                 </div>
 
             </div>

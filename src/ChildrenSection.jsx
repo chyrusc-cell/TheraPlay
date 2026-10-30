@@ -213,7 +213,7 @@ function ChildrenSection() {
         <section className={cardClass} aria-labelledby="my-children-title">
 
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <h3 id="my-children-title" className="text-[18px] font-bold text-ink">My Children</h3>
+                <h2 id="my-children-title" className="text-[18px] font-bold text-ink">My Children</h2>
 
                 <button
                     type="button"
@@ -275,14 +275,14 @@ function ChildrenSection() {
                                 <div className="flex flex-wrap items-start justify-between gap-3">
 
                                     <div className="min-w-0">
-                                        <h4 className="text-[16px] font-bold text-ink [overflow-wrap:anywhere]">
+                                        <h3 className="text-[16px] font-bold text-ink [overflow-wrap:anywhere]">
                                             {child.name}
                                             {isSelected && (
                                                 <span className="ml-2 rounded-xl bg-accent px-2 py-0.5 align-middle text-[11px] font-bold text-white">
                                                     Selected
                                                 </span>
                                             )}
-                                        </h4>
+                                        </h3>
                                         {age && <p className="mt-0.5 text-[13px] text-muted">{age}</p>}
                                     </div>
 

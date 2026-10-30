@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { apiRequest, clearSession } from './api.js';
+import { API_URL, apiRequest, clearSession } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
@@ -14,8 +14,6 @@ const FEEDBACK_LIMIT = 5;
 const cardClass = 'rounded-[10px] border border-edge bg-white p-[25px]';
 const noteClass = 'text-[13px] text-faint';
 const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
-
-const API_URL = 'http://127.0.0.1:8000/api';
 
 // The token is saved by Login.jsx in either localStorage or sessionStorage.
 const getToken = () =>
@@ -248,7 +246,7 @@ function ProfessionalDashboard() {
 
             {/* Main Content */}
 
-            <main className={pageMain}>
+            <div className={pageMain}>
 
                 <div className={pageHeader}>
 
@@ -522,7 +520,7 @@ function ProfessionalDashboard() {
 
                 </div>
 
-            </main>
+            </div>
 
         </div>
     );

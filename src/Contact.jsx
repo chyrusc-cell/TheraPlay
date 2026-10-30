@@ -500,7 +500,7 @@ function Contact() {
     return (
         <div className="min-h-page">
 
-            <main className={pageMain}>
+            <div className={pageMain}>
 
                 <div className={pageHeader}>
 
@@ -695,7 +695,7 @@ function Contact() {
                     </Modal>
                 )}
 
-            </main>
+            </div>
 
         </div>
     );

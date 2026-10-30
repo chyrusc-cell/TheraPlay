@@ -289,86 +289,91 @@ class ChildrenAndConditionsTest extends TestCase
         $this->assertSame(0, $activity->conditions()->count());
     }
 
-    public function test_activities_are_filtered_for_the_selected_child_with_or_matching(): void
+    // ---------------- Browsing activities (conditions do NOT filter) ----------------
+
+    public function test_parents_see_every_published_activity_whatever_their_childs_conditions(): void
     {
         $parent = $this->parent();
         $a = $this->condition('A');
         $b = $this->condition('B');
         $c = $this->condition('C');
         $child = Child::create(['user_id' => $parent->id, 'name' => 'Sam']);
-        $child->conditions()->sync([$a->id, $b->id]);
-
-        $onlyA = $this->activity('Only A', [], [$a]);
-        $onlyB = $this->activity('Only B', [], [$b]);
-        $both = $this->activity('A and C', [], [$a, $c]);
-        $notMine = $this->activity('Only C', [], [$c]);
-        $unassigned = $this->activity('Unassigned');
-        $forAll = $this->activity('For everyone', ['is_for_all_conditions' => true]);
-        $draft = $this->activity('Draft A', ['is_published' => false], [$a]);
-
-        $this->actAs($parent);
-        $titles = collect($this->getJson("/api/activities?child_id={$child->id}")->assertOk()->json('data'))->pluck('title')->all();
-
-        $this->assertEqualsCanonicalizing(['Only A', 'Only B', 'A and C', 'For everyone'], $titles);
-        $this->assertNotContains('Draft A', $titles);
-        $this->assertNotContains('Unassigned', $titles);
-
-        // Without a child the public list is unchanged (everything published).
-        $this->app['auth']->forgetGuards();
-        $this->assertCount(6, $this->getJson('/api/activities')->json('data'));
-    }
-
-    public function test_the_list_keeps_category_and_difficulty_for_the_page_filters(): void
-    {
-        $parent = $this->parent();
-        $a = $this->condition('A');
-        $category = Category::create(['name' => 'Memory']);
-        $child = Child::create(['user_id' => $parent->id, 'name' => 'Sam']);
         $child->conditions()->sync([$a->id]);
-        $this->activity('Easy memory', ['difficulty' => 'Easy', 'category_id' => $category->id], [$a]);
-        $this->activity('Hard other', ['difficulty' => 'Hard'], [$a]);
+
+        $this->activity('Matches A', [], [$a]);
+        $this->activity('Only B', [], [$b]);
+        $this->activity('A and C', [], [$a, $c]);
+        $this->activity('Unassigned');
+        $this->activity('For everyone', ['is_for_all_conditions' => true]);
+        $this->activity('Draft A', ['is_published' => false], [$a]);
+        $this->activity('Draft unassigned', ['is_published' => false]);
         $this->actAs($parent);
 
-        $rows = collect($this->getJson("/api/activities?child_id={$child->id}")->json('data'));
+        $titles = collect($this->getJson('/api/activities')->assertOk()->json('data'))->pluck('title')->all();
 
-        $this->assertSame(['Easy memory'], $rows->where('category', 'Memory')->where('difficulty', 'Easy')->pluck('title')->all());
+        $this->assertEqualsCanonicalizing(['Matches A', 'Only B', 'A and C', 'Unassigned', 'For everyone'], $titles);
+        $this->assertNotContains('Draft A', $titles);
+        $this->assertNotContains('Draft unassigned', $titles);
     }
 
-    public function test_a_child_without_active_conditions_gets_an_empty_list_with_a_hint(): void
+    public function test_a_child_with_no_conditions_or_a_parent_with_no_child_still_sees_the_activities(): void
     {
         $parent = $this->parent();
-        $a = $this->condition('A');
-        $child = Child::create(['user_id' => $parent->id, 'name' => 'Sam']);
-        $this->activity('Something', [], [$a]);
-        $this->activity('For everyone', ['is_for_all_conditions' => true]);
+        Child::create(['user_id' => $parent->id, 'name' => 'No conditions yet']);
+        $this->activity('Open to all');
         $this->actAs($parent);
 
-        $this->getJson("/api/activities?child_id={$child->id}")
-            ->assertOk()
-            ->assertJsonPath('data', [])
-            ->assertJsonPath('meta.requires_conditions', true);
+        $this->getJson('/api/activities')->assertOk()->assertJsonCount(1, 'data');
 
-        // Only an INACTIVE condition counts as none.
-        $off = $this->condition('Off', false);
-        $child->conditions()->sync([$off->id]);
-        $this->getJson("/api/activities?child_id={$child->id}")->assertJsonPath('meta.requires_conditions', true);
+        $this->actAs($this->parent('childless@example.com'));
+        $this->getJson('/api/activities')->assertOk()->assertJsonCount(1, 'data');
     }
 
-    public function test_the_activity_filter_only_accepts_the_callers_own_child(): void
+    public function test_the_list_is_the_same_for_guests_parents_and_admins_and_ignores_a_child_id(): void
     {
-        $me = $this->parent('me@example.com');
         $other = $this->parent('other@example.com');
         $theirs = Child::create(['user_id' => $other->id, 'name' => 'Theirs']);
+        $a = $this->condition('A');
+        $this->activity('One', [], [$a]);
+        $this->activity('Two');
+        $this->activity('Hidden', ['is_published' => false]);
 
-        $this->getJson("/api/activities?child_id={$theirs->id}")->assertNotFound();
+        $this->getJson('/api/activities')->assertOk()->assertJsonCount(2, 'data');
 
-        $this->actAs($me);
-        $this->getJson("/api/activities?child_id={$theirs->id}")->assertNotFound();
-        $this->getJson('/api/activities?child_id=abc')->assertNotFound();
-        $this->getJson('/api/activities?child_id=99999')->assertNotFound();
+        $this->actAs($this->parent());
+        // A leftover child_id (even someone else's) neither filters nor leaks anything.
+        $this->getJson("/api/activities?child_id={$theirs->id}")->assertOk()->assertJsonCount(2, 'data');
 
         $this->actAs($this->user('admin', 'admin@example.com'));
-        $this->getJson("/api/activities?child_id={$theirs->id}")->assertNotFound();
+        $this->getJson('/api/activities')->assertOk()->assertJsonCount(2, 'data');
+    }
+
+    public function test_the_list_carries_category_and_difficulty_for_the_page_filters(): void
+    {
+        $memory = Category::create(['name' => 'Memory']);
+        $motor = Category::create(['name' => 'Motor']);
+        $this->activity('Easy memory', ['difficulty' => 'Easy', 'category_id' => $memory->id]);
+        $this->activity('Hard memory', ['difficulty' => 'Hard', 'category_id' => $memory->id]);
+        $this->activity('Easy motor', ['difficulty' => 'Easy', 'category_id' => $motor->id]);
+        $this->activity('No category', ['difficulty' => 'Medium']);
+
+        $rows = collect($this->getJson('/api/activities')->assertOk()->json('data'));
+
+        $this->assertEqualsCanonicalizing(['Easy memory', 'Hard memory'], $rows->where('category', 'Memory')->pluck('title')->all());
+        $this->assertEqualsCanonicalizing(['Easy memory', 'Easy motor'], $rows->where('difficulty', 'Easy')->pluck('title')->all());
+        $this->assertSame(['Easy memory'], $rows->where('category', 'Memory')->where('difficulty', 'Easy')->pluck('title')->all());
+        $this->assertSame([], $rows->where('category', 'Motor')->where('difficulty', 'Hard')->pluck('title')->all());
+        $this->assertSame([null], $rows->where('title', 'No category')->pluck('category')->all());
+    }
+
+    public function test_conditions_and_their_assignments_still_work_even_though_they_do_not_filter(): void
+    {
+        $a = $this->condition('A');
+        $activity = $this->activity('Assigned', [], [$a]);
+
+        $this->actAs($this->user('admin', 'admin@example.com'));
+        $this->getJson("/api/admin/activities/{$activity->id}")->assertOk()->assertJsonPath('data.condition_ids', [$a->id]);
+        $this->getJson('/api/admin/conditions')->assertOk()->assertJsonPath('data.0.activities_count', 1);
     }
 
     // ---------------- Progress per child ----------------

@@ -409,7 +409,7 @@ function ManageAccounts() {
     return (
         <div className={ui.page}>
 
-            <main className={ui.content}>
+            <div className={ui.content}>
 
                 <div className={ui.header}>
 
@@ -781,7 +781,7 @@ function ManageAccounts() {
 
                 )}
 
-            </main>
+            </div>
 
         </div>
     );

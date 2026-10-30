@@ -50,7 +50,10 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Minutes an API token stays valid, counted from when it was created (login).
+    // Default 7 days. Set SANCTUM_TOKEN_EXPIRATION=0 for tokens that never expire
+    // (not recommended). The user simply logs in again after it runs out.
+    'expiration' => ((int) env('SANCTUM_TOKEN_EXPIRATION', 10080)) ?: null,
 
     /*
     |--------------------------------------------------------------------------

@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { apiRequest } from './api.js';
+import { API_URL, apiRequest } from './api.js';
 import { useAuth } from './authContext.js';
 import { ProfileAvatar } from './ProfileAvatar.jsx';
 import ChildrenSection from './ChildrenSection.jsx';
+import EmailVerificationStatus from './EmailVerificationStatus.jsx';
+import DeleteAccountCard from './DeleteAccountCard.jsx';
 import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { CardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMainNarrow, pageHeader, pageTitle } from './uiClasses.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
 
 // The token is saved by Login.jsx in either localStorage or sessionStorage.
 const getToken = () =>
@@ -75,6 +75,8 @@ function Profile() {
     const [isSaving, setIsSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
+    // "Saved, but ..." (for example the verification email was not delivered).
+    const [isWarning, setIsWarning] = useState(false);
 
     // Password reset request (separate from saving the profile).
     const [isSendingReset, setIsSendingReset] = useState(false);
@@ -95,6 +97,12 @@ function Profile() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
+    // Needed (only) when the email address is being changed.
+    const [currentPassword, setCurrentPassword] = useState('');
+
+    const emailIsChanging =
+        Boolean(savedUser) &&
+        email.trim().toLowerCase() !== (savedUser.email || '').toLowerCase();
 
     const fillForm = (user) => {
         const values = toFormValues(user);
@@ -104,9 +112,10 @@ function Profile() {
         setPhone(values.phone);
     };
 
-    const showMessage = (text, error) => {
+    const showMessage = (text, error, warning = false) => {
         setMessage(text);
         setIsError(error);
+        setIsWarning(warning);
     };
 
     // Token missing or rejected: clear it and send the user to the login page.
@@ -202,6 +211,11 @@ function Profile() {
             return;
         }
 
+        if (emailIsChanging && !currentPassword) {
+            showMessage('Enter your current password to change your email address.', true);
+            return;
+        }
+
         setIsSaving(true);
         showMessage('', false);
 
@@ -217,6 +231,8 @@ function Profile() {
                     name,
                     email: email.trim(),
                     contact_number: phone.trim() || null,
+                    // Sent only for an email change; the server checks it.
+                    ...(emailIsChanging ? { current_password: currentPassword } : {}),
                 }),
             });
 
@@ -250,7 +266,14 @@ function Profile() {
                 }
             });
 
-            showMessage(data.message || 'Profile updated successfully.', false);
+            // The server keeps the old address until the new one is verified.
+            // "email_delivered: false" means the verification email did not go out.
+            showMessage(
+                data.message || 'Profile updated successfully.',
+                false,
+                data.email_delivered === false
+            );
+            setCurrentPassword('');
             setIsEditing(false);
         } catch (error) {
             showMessage(
@@ -269,6 +292,7 @@ function Profile() {
         }
 
         showMessage('', false);
+        setCurrentPassword('');
         setIsEditing(false);
     };
 
@@ -442,16 +466,16 @@ function Profile() {
     if (isLoading) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMainNarrow}>
+                <div className={pageMainNarrow}>
                     <CardsSkeleton label="Loading your profile..." cards={2} />
-                </main>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="flex min-h-page flex-col">
-            <main className={pageMainNarrow}>
+            <div className={pageMainNarrow}>
                 <div className={`${pageHeader} flex items-center justify-between`}>
                     <h1 className={pageTitle}>My Profile</h1>
 
@@ -554,7 +578,7 @@ function Profile() {
                     <p
                         role="alert"
                         className={`mb-4 text-[14px] font-medium ${
-                            isError ? 'text-[#d93025]' : 'text-[#188038]'
+                            isError ? 'text-[#d93025]' : isWarning ? 'text-[#b26a00]' : 'text-[#188038]'
                         }`}
                     >
                         {message}
@@ -564,7 +588,7 @@ function Profile() {
                 {/* Personal Information Card */}
                 <form onSubmit={handleSave}>
                     <div className={cardClass}>
-                        <h3 className={cardTitleClass}>Personal Information</h3>
+                        <h2 className={cardTitleClass}>Personal Information</h2>
 
                         {!isEditing ? (
                             <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
@@ -624,6 +648,25 @@ function Profile() {
                                     />
                                 </div>
 
+                                {emailIsChanging && (
+                                    <div className={`${fieldClass} col-span-2 phone:col-span-1`}>
+                                        <label className={fieldLabelClass} htmlFor="current-password">Current password</label>
+                                        <input className={fieldInputClass}
+                                            id="current-password"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            aria-describedby="email-change-hint"
+                                            value={currentPassword}
+                                            onChange={(e) => setCurrentPassword(e.target.value)}
+                                            required
+                                        />
+                                        <p id="email-change-hint" className="text-[12px] leading-[1.5] text-faint">
+                                            Needed to change your email address. We will send a link to the new
+                                            address, and your email only changes after you open it.
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className={fieldClass}>
                                     <label className={fieldLabelClass} htmlFor="phone">Phone Number</label>
                                     <input className={fieldInputClass}
@@ -635,6 +678,8 @@ function Profile() {
                                 </div>
                             </div>
                         )}
+
+                        {!isEditing && <EmailVerificationStatus user={savedUser} />}
                     </div>
 
                     {/* Edit Action Buttons */}
@@ -667,7 +712,7 @@ function Profile() {
 
                 {/* Password reset request */}
                 <div className={cardClass}>
-                    <h3 className="mb-3 text-[18px] font-bold text-ink">Password</h3>
+                    <h2 className="mb-3 text-[18px] font-bold text-ink">Password</h2>
 
                     <p className="mb-4 text-[14px] leading-[1.5] text-muted">
                         We can send a password reset link to your registered
@@ -694,7 +739,10 @@ function Profile() {
                         </p>
                     )}
                 </div>
-            </main>
+
+                {/* Self-service deletion (parents; administrator accounts are not deleted here) */}
+                {savedUser && savedUser.role !== 'admin' && <DeleteAccountCard cardClass={cardClass} />}
+            </div>
         </div>
     );
 }

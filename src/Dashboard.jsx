@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CardsSkeleton } from './Skeleton.jsx';
+import { useAuth } from './authContext.js';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
+import { API_URL } from './api.js';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -101,18 +101,21 @@ function Dashboard() {
     const navigate = useNavigate();
     // Everything here is for the globally selected child.
     const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
-    const [loadedChildId, setLoadedChildId] = useState(null);
+    // The child whose load has FINISHED, whether it worked or failed.
+    const [settledChildId, setSettledChildId] = useState(undefined);
 
-    const [user, setUser] = useState(null);
+    // The verified account comes from the session check (AuthProvider), so the
+    // dashboard does not ask the server for it a second time.
+    const { user } = useAuth();
     const [records, setRecords] = useState([]);
     const [activities, setActivities] = useState([]);
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // The selection changed but its data has not arrived: show the skeleton, not
+    // The selection changed but its load has not finished: show the skeleton, not
     // the previous child's numbers.
     const isLoading =
-        isLoadingNow || (childStatus === 'ready' && loadedChildId !== selectedChildId);
+        isLoadingNow || (childStatus === 'ready' && settledChildId !== selectedChildId);
 
     useEffect(() => {
         if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
@@ -153,13 +156,9 @@ function Dashboard() {
                 setIsLoading(true);
                 setError('');
 
-                const [userResponse, progressResponse, activitiesResponse] =
+                const [progressResponse, activitiesResponse] =
                     await Promise.all([
-                        fetch(`${API_URL}/user`, {
-                            headers: authHeaders,
-                            signal: controller.signal,
-                        }),
-                        fetch(`${API_URL}/progress?child_id=${selectedChildId}`, {
+                        fetch(`${API_URL}/progress${selectedChildId ? `?child_id=${selectedChildId}` : ""}`, {
                             headers: authHeaders,
                             signal: controller.signal,
                         }),
@@ -169,28 +168,23 @@ function Dashboard() {
                         }),
                     ]);
 
-                if (
-                    userResponse.status === 401 ||
-                    progressResponse.status === 401
-                ) {
+                if (progressResponse.status === 401) {
                     redirectToLogin();
                     return;
                 }
 
-                if (
-                    !userResponse.ok ||
-                    !progressResponse.ok ||
-                    !activitiesResponse.ok
-                ) {
+                if (!progressResponse.ok || !activitiesResponse.ok) {
                     throw new Error('Unable to load your dashboard.');
                 }
 
-                const userData = await userResponse.json();
                 const progressData = await progressResponse.json();
                 const activitiesData = await activitiesResponse.json();
 
-                setUser(userData);
-                setLoadedChildId(selectedChildId);
+                // A newer load (another child) has taken over: drop this answer.
+                if (controller.signal.aborted) {
+                    return;
+                }
+
                 setRecords(
                     Array.isArray(progressData.data?.records)
                         ? progressData.data.records
@@ -213,7 +207,9 @@ function Dashboard() {
             } finally {
                 await holdSkeleton(startedAt, controller.signal);
 
+                // The load is over (worked or failed): show the result or the error.
                 if (!controller.signal.aborted) {
+                    setSettledChildId(selectedChildId);
                     setIsLoading(false);
                 }
             }
@@ -227,7 +223,7 @@ function Dashboard() {
     if (blocked) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>{blocked}</main>
+                <div className={pageMain}>{blocked}</div>
             </div>
         );
     }
@@ -235,9 +231,9 @@ function Dashboard() {
     if (isLoading) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>
+                <div className={pageMain}>
                     <CardsSkeleton label="Loading your dashboard..." cards={3} />
-                </main>
+                </div>
             </div>
         );
     }
@@ -245,11 +241,11 @@ function Dashboard() {
     if (error) {
         return (
             <div className="flex min-h-page flex-col">
-                <main className={pageMain}>
+                <div className={pageMain}>
                     <p className="text-[14px] font-medium text-[#d93025]" role="alert">
                         {error}
                     </p>
-                </main>
+                </div>
             </div>
         );
     }
@@ -297,7 +293,7 @@ function Dashboard() {
     return (
         <div className="flex min-h-page flex-col">
 
-            <main className={pageMain}>
+            <div className={pageMain}>
 
                 <header className={pageHeader}>
                     <h1 className={pageTitle}>Hello, {user?.name}!</h1>
@@ -308,13 +304,13 @@ function Dashboard() {
                 <div className="mb-6 grid grid-cols-2 gap-6 tablet-sm:grid-cols-1">
                     <div className={cardClass}>
                         <div className={cardHeaderClass}>
-                            <h3 className={cardTitleClass}>Continue / Recommended Activity</h3>
+                            <h2 className={cardTitleClass}>Continue / Recommended Activity</h2>
                         </div>
                         <div className={cardBodyClass}>
                             {featured ? (
                                 <>
                                     <div className="mb-3 flex items-center justify-between">
-                                        <h2 className="text-[20px] font-bold text-ink">{featured.title}</h2>
+                                        <h3 className="text-[20px] font-bold text-ink">{featured.title}</h3>
                                     </div>
                                     <p className="mb-5 text-[14px] leading-[1.5] text-muted">
                                         {featured.description ||
@@ -342,12 +338,12 @@ function Dashboard() {
 
                     <div className={cardClass}>
                         <div className={cardHeaderClass}>
-                            <h3 className={cardTitleClass}>Streak</h3>
+                            <h2 className={cardTitleClass}>Streak</h2>
                         </div>
                         <div className={cardBodyClass}>
                             <div className="mb-4 flex items-start justify-between">
                                 <div>
-                                    <h2 className="text-[28px] leading-none font-bold text-ink">{streak}</h2>
+                                    <p className="text-[28px] leading-none font-bold text-ink">{streak}</p>
                                     <span className="text-[13px] font-medium text-muted">Day practice streak</span>
                                 </div>
                             </div>
@@ -373,18 +369,18 @@ function Dashboard() {
 
                 <div className={cardClass}>
                     <div className={cardHeaderClass}>
-                        <h3 className={cardTitleClass}>Summary of Progress</h3>
+                        <h2 className={cardTitleClass}>Summary of Progress</h2>
                     </div>
                     <div className={cardBodyClass}>
                         <div className="mb-5 flex gap-4 tablet-sm:flex-col">
                             <div className="flex-1 rounded-lg bg-warm p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
-                                <h2 className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</h2>
+                                <p className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</p>
                                 <span className="text-[12px] text-faint">completed this week</span>
                             </div>
                             <div className="flex-1 rounded-lg bg-warm p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
-                                <h2 className="mb-1 text-[24px] font-bold text-ink">{skills.length}</h2>
+                                <p className="mb-1 text-[24px] font-bold text-ink">{skills.length}</p>
                                 <span className="text-[12px] text-faint">
                                     {skills.length > 0
                                         ? skills.join(', ')
@@ -406,7 +402,7 @@ function Dashboard() {
 
                 <div className={cardClass}>
                     <div className={cardHeaderFlexClass}>
-                        <h3 className={cardTitleClass}>Recent Activities</h3>
+                        <h2 className={cardTitleClass}>Recent Activities</h2>
                         <Link to="/activities" className="text-[13px] font-bold text-muted no-underline">View all</Link>
                     </div>
                     <div className="p-5">
@@ -435,7 +431,7 @@ function Dashboard() {
                                                 </div>
                                             )}
                                             <div>
-                                                <h4 className="mb-1 text-[14px] font-bold text-ink">{record.activity_title || 'Activity'}</h4>
+                                                <h3 className="mb-1 text-[14px] font-bold text-ink">{record.activity_title || 'Activity'}</h3>
                                                 {when && <span className="text-[12px] text-faint">{formatDate(when)}</span>}
                                             </div>
                                         </div>
@@ -460,7 +456,7 @@ function Dashboard() {
                     </div>
                 </div>
 
-            </main>
+            </div>
         </div>
     );
 }

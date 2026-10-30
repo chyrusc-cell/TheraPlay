@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     API_URL,
@@ -13,6 +13,7 @@ import { difficultyBadgeTw } from './uiHelpers.js';
 import * as ui from './adminClasses.js';
 import Modal from './Modal.jsx';
 import ConditionsAdmin from './ConditionsAdmin.jsx';
+import CategoriesAdmin from './CategoriesAdmin.jsx';
 
 // Uploads: the server checks everything again; these only give quick feedback.
 const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'txt'];
@@ -176,19 +177,57 @@ function ManageActivities() {
     };
 
 
-    // The API only accepts an existing category id, and there is no category
-    // endpoint yet, so the choices are the categories already in use.
-    const categories = useMemo(() => {
-        const found = new Map();
+    // The categories an activity can be given (admin-managed, with usage counts).
+    // The counts go stale as activities change, so the list is fetched again
+    // each time the Manage Categories window opens.
+    const [categories, setCategories] = useState([]);
+    const [categoriesOpen, setCategoriesOpen] = useState(false);
+    const [categoriesKey, setCategoriesKey] = useState(0);
 
-        activities.forEach((activity) => {
-            if (activity.category_id && activity.category) {
-                found.set(activity.category_id, activity.category);
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const loadCategories = async () => {
+            try {
+                const result = await apiRequest('/admin/categories', { signal: controller.signal });
+
+                if (result.ok && Array.isArray(result.data.data)) {
+                    setCategories(result.data.data);
+                }
+            } catch {
+                // The field just shows no categories; the page keeps working.
             }
-        });
+        };
 
-        return [...found.entries()].map(([id, name]) => ({ id, name }));
-    }, [activities]);
+        loadCategories();
+
+        return () => controller.abort();
+    }, [categoriesKey]);
+
+    const openCategories = () => {
+        setCategoriesKey((key) => key + 1);
+        setCategoriesOpen(true);
+    };
+
+    // Merge one saved category (added or renamed in the modal) into the list, and
+    // rename it on the activities already loaded so the table stays in step.
+    const mergeCategory = (saved) => {
+        setCategories((current) =>
+            (current.some((item) => item.id === saved.id)
+                ? current.map((item) => (item.id === saved.id ? saved : item))
+                : [...current, saved]
+            ).sort((a, b) => a.name.localeCompare(b.name))
+        );
+        setActivities((current) =>
+            current.map((activity) =>
+                activity.category_id === saved.id ? { ...activity, category: saved.name } : activity
+            )
+        );
+    };
+
+    const removeCategory = (id) => {
+        setCategories((current) => current.filter((item) => item.id !== id));
+    };
 
 
     useEffect(() => {
@@ -764,7 +803,7 @@ function ManageActivities() {
 
             {/* Main Content */}
 
-            <main className={ui.content}>
+            <div className={ui.content}>
 
                 <div className={ui.header}>
 
@@ -799,6 +838,14 @@ function ManageActivities() {
                             onClick={() => setConditionsOpen(true)}
                         >
                             Manage Conditions
+                        </button>
+
+                        <button
+                            type="button"
+                            className={ui.cancelButton}
+                            onClick={openCategories}
+                        >
+                            Manage Categories
                         </button>
 
                         <button
@@ -1005,7 +1052,7 @@ function ManageActivities() {
                                             className={ui.activityPictureButton}
                                             onClick={() => pictureInputRef.current?.click()}
                                             disabled={isSaving}
-                                            aria-labelledby="activity-picture-label"
+                                            aria-labelledby="activity-picture-label activity-picture-prompt"
                                         >
                                             {picturePreview || (!removePicture && savedPictureSrc) ? (
                                                 <img
@@ -1014,7 +1061,7 @@ function ManageActivities() {
                                                     className="h-full w-full object-cover"
                                                 />
                                             ) : (
-                                                <span className="px-4">
+                                                <span id="activity-picture-prompt" className="px-4">
                                                     {hasSavedPicture && !removePicture
                                                         ? 'Current picture (preview loading or unavailable)'
                                                         : 'Choose a picture'}
@@ -1572,7 +1619,20 @@ function ManageActivities() {
                     <ConditionsAdmin conditions={conditions} onSaved={mergeCondition} />
                 </Modal>
 
-            </main>
+                <Modal
+                    open={categoriesOpen}
+                    onClose={() => setCategoriesOpen(false)}
+                    size="md"
+                    title="Manage Categories"
+                >
+                    <CategoriesAdmin
+                        categories={categories}
+                        onSaved={mergeCategory}
+                        onDeleted={removeCategory}
+                    />
+                </Modal>
+
+            </div>
 
         </div>
     );

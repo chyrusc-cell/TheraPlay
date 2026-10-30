@@ -101,17 +101,18 @@ class UserManagementTest extends TestCase
 
         foreach ($response->json('data') as $row) {
             $this->assertEqualsCanonicalizing(
-                ['id', 'name', 'email', 'role', 'created_at', 'has_child_profile'],
+                ['id', 'name', 'email', 'role', 'created_at', 'email_verified', 'email_verified_at', 'children_count', 'has_child_profile'],
                 array_keys($row)
             );
         }
 
         $byEmail = collect($response->json('data'))->keyBy('email');
         $this->assertTrue($byEmail['parent@example.com']['has_child_profile']);
+        $this->assertSame(1, $byEmail['parent@example.com']['children_count']);
         $this->assertFalse($byEmail['admin@example.com']['has_child_profile']);
 
         $body = $response->getContent();
-        foreach (['password', 'remember_token', 'token', '$2y$', 'contact_number'] as $secret) {
+        foreach (['password', 'remember_token', 'token', '$2y$', 'contact_number', 'photo_path'] as $secret) {
             $this->assertStringNotContainsString($secret, $body);
         }
     }
@@ -160,10 +161,11 @@ class UserManagementTest extends TestCase
     {
         $this->actingAsAdmin();
 
-        $response = $this->postJson('/api/admin/users', $this->validPayload())
+        // A client-sent role of "parent" is ignored: this endpoint creates admins.
+        $response = $this->postJson('/api/admin/users', $this->validPayload(['role' => 'parent']))
             ->assertCreated()
             ->assertJsonPath('data.email', 'new@example.com')
-            ->assertJsonPath('data.role', 'parent')
+            ->assertJsonPath('data.role', 'admin')
             ->assertJsonMissingPath('data.password');
 
         $stored = User::find($response->json('data.id'));
@@ -187,13 +189,12 @@ class UserManagementTest extends TestCase
         $this->makeUser('taken@example.com');
 
         $cases = [
-            'nothing' => [[], ['name', 'email', 'password', 'role']],
+            'nothing' => [[], ['name', 'email', 'password']],
             'duplicate email' => [$this->validPayload(['email' => 'taken@example.com']), ['email']],
             'bad email' => [$this->validPayload(['email' => 'nope']), ['email']],
             'short password' => [$this->validPayload(['password' => 'short', 'password_confirmation' => 'short']), ['password']],
             'password mismatch' => [$this->validPayload(['password_confirmation' => 'different1']), ['password']],
-            'unsupported role' => [$this->validPayload(['role' => 'superadmin']), ['role']],
-            'professional role' => [$this->validPayload(['role' => 'professional']), ['role']],
+            'blank name' => [$this->validPayload(['name' => '   ']), ['name']],
             'name too long' => [$this->validPayload(['name' => str_repeat('a', 256)]), ['name']],
         ];
 
@@ -228,7 +229,7 @@ class UserManagementTest extends TestCase
         $this->actingAsAdmin();
         $parent = $this->makeUser('parent@example.com');
 
-        $this->patchJson("/api/admin/users/{$parent->id}", ['role' => 'admin'])
+        $this->postJson("/api/admin/users/{$parent->id}/promote")
             ->assertOk()
             ->assertJsonPath('data.role', 'admin');
 
@@ -240,6 +241,7 @@ class UserManagementTest extends TestCase
         $parent = $this->makeUser('parent@example.com');
         Sanctum::actingAs($parent);
 
+        $this->postJson("/api/admin/users/{$parent->id}/promote")->assertForbidden();
         $this->patchJson("/api/admin/users/{$parent->id}", ['role' => 'admin'])->assertForbidden();
         $this->putJson('/api/profile', [
             'name' => 'Parent',
@@ -277,9 +279,6 @@ class UserManagementTest extends TestCase
         $this->makeUser('taken@example.com');
         $parent = $this->makeUser('parent@example.com');
 
-        $this->patchJson("/api/admin/users/{$parent->id}", ['role' => 'superadmin'])
-            ->assertStatus(422)->assertJsonValidationErrors('role');
-
         $this->patchJson("/api/admin/users/{$parent->id}", ['email' => 'taken@example.com'])
             ->assertStatus(422)->assertJsonValidationErrors('email');
 
@@ -290,6 +289,9 @@ class UserManagementTest extends TestCase
         $this->patchJson("/api/admin/users/{$parent->id}", ['email' => 'parent@example.com'])
             ->assertOk();
 
+        // A role sent to the update endpoint is ignored, not applied.
+        $this->patchJson("/api/admin/users/{$parent->id}", ['name' => 'Same', 'role' => 'admin'])->assertOk();
+
         $this->assertSame('parent', $parent->fresh()->role);
     }
 
@@ -297,9 +299,10 @@ class UserManagementTest extends TestCase
     {
         $admin = $this->actingAsAdmin();
 
-        $this->patchJson("/api/admin/users/{$admin->id}", ['role' => 'parent'])
+        // Removing your own admin role is never allowed (this is also the last admin).
+        $this->postJson("/api/admin/users/{$admin->id}/demote")
             ->assertStatus(409)
-            ->assertJsonPath('code', 'last_admin');
+            ->assertJsonPath('code', 'cannot_demote_self');
 
         $this->assertSame('admin', $admin->fresh()->role);
     }
@@ -310,7 +313,7 @@ class UserManagementTest extends TestCase
         $other = $this->makeUser('other@example.com', 'admin');
         $other->createToken('device');
 
-        $this->patchJson("/api/admin/users/{$other->id}", ['role' => 'parent'])
+        $this->postJson("/api/admin/users/{$other->id}/demote")
             ->assertOk()
             ->assertJsonPath('data.role', 'parent');
 

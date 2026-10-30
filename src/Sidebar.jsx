@@ -14,12 +14,10 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from './authContext.js';
-import { clearSession } from './api.js';
+import { API_URL, clearSession } from './api.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 import { logo } from './brand.js';
-
-const API_URL = 'http://127.0.0.1:8000/api';
 
 // Below 900px the sidebar becomes an icon-only rail: labels stay for screen
 // readers (sr-only) and the icon is centered. Active and inactive links are
@@ -210,12 +208,12 @@ function Sidebar() {
                 <button
                     type="button"
                     className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-[15px] py-3 text-left transition-colors tablet:rounded-2xl [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-body enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
-                    title="Logout"
+                    title="Log Out"
                     onClick={() => setShowLogoutConfirm(true)}
                     disabled={isLoggingOut}
                 >
                     <LogOut size={20} aria-hidden="true" className="shrink-0" />
-                    <span className={labelClass}>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+                    <span className={labelClass}>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
                 </button>
             </div>
 

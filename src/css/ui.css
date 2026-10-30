@@ -24,22 +24,22 @@
     --ui-sunken: #f0ece6;          /* muted / disabled surface, tracks, avatar fill */
     --ui-edge: #e7ded3;            /* borders and dividers */
     --ui-edge-strong: #d6c9ba;     /* input and button borders */
-    --ui-accent: #a16207;          /* primary accent (buttons, active links) */
+    --ui-accent: #935b07;        /* primary accent (buttons, active links) */
     --ui-accent-hover: #854d0e;
     --ui-accent-2: #d97706;        /* secondary accent (highlights, chart series) */
     --ui-accent-soft: #fef3e7;     /* soft accent background */
 
     --ui-text: #292524;            /* primary text */
     --ui-body: #57534e;            /* body copy */
-    --ui-muted: #78716c;           /* secondary text */
-    --ui-faint: #857c74;           /* hints and placeholders */
+    --ui-muted: #655d57;           /* secondary text (5.4:1+ on the page and card surfaces) */
+    --ui-faint: #706760;           /* hints and placeholders (4.7:1+ on the page and card surfaces) */
 
     --ui-primary: var(--ui-accent);
     --ui-primary-hover: var(--ui-accent-hover);
     --ui-border: var(--ui-edge-strong);
     --ui-surface-hover: #f3eee7;
 
-    --ui-success: #188038;
+    --ui-success: #15732f;
     --ui-success-bg: #e6f4ea;
     --ui-success-bg-hover: #d3ecd9;
     --ui-success-text: #0d5c26;
@@ -230,7 +230,7 @@ html[data-child-selector] {
 
 @media (max-width: 560px) {
     html[data-child-selector] {
-        --search-reserve: 135px;
+        --search-reserve: 152px;
     }
 }
 

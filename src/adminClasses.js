@@ -47,18 +47,18 @@ export const editButton =
 
 // Delete is red. The label always says "Delete" as well.
 export const deleteButton =
-    'cursor-pointer rounded-[5px] border border-danger bg-white px-[11px] py-[7px] text-[12px] text-danger-text enabled:hover:bg-danger-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-danger bg-white btn-tone [--tp-ring:rgba(197,34,31,0.38)] px-[11px] py-[7px] text-[12px] text-danger-text enabled:hover:bg-danger-bg-hover phone-lg:min-h-9';
 
 // Publish is green, Unpublish is amber: distinct from each other and from Delete.
 export const publishButton =
-    'cursor-pointer rounded-[5px] border border-success bg-success-bg px-[11px] py-[7px] text-[12px] text-success-text enabled:hover:bg-success-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-success bg-success-bg btn-tone [--tp-ring:rgba(21,115,47,0.38)] px-[11px] py-[7px] text-[12px] text-success-text enabled:hover:bg-success-bg-hover phone-lg:min-h-9';
 
 export const unpublishButton =
-    'cursor-pointer rounded-[5px] border border-warning-border bg-warning-bg px-[11px] py-[7px] text-[12px] text-warning-text enabled:hover:bg-warning-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-warning-border bg-warning-bg btn-tone [--tp-ring:rgba(180,120,0,0.42)] px-[11px] py-[7px] text-[12px] text-warning-text enabled:hover:bg-warning-bg-hover phone-lg:min-h-9';
 
 // A neutral row button (for example "Make Admin" / "Make Parent").
 export const neutralRowButton =
-    'cursor-pointer rounded-[5px] border border-edge-strong bg-warm px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-[5px] border border-edge-strong bg-warm btn-tone px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Form ----------
 
