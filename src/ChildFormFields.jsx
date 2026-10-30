@@ -92,7 +92,7 @@ function ChildFormFields({ values, onChange, errors = {}, disabled = false, idPr
                         {conditions.map((condition) => (
                             <li key={condition.id}>
                                 <label
-                                    className="flex cursor-pointer items-start gap-2 rounded-lg border border-edge bg-warm px-3 py-2 text-[14px] text-ink"
+                                    className="flex cursor-pointer items-start gap-2 rounded-lg border border-edge card-soft px-3 py-2 text-[14px] text-ink"
                                     title={condition.description || undefined}
                                 >
                                     <input

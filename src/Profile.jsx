@@ -40,7 +40,7 @@ const toFormValues = (user) => ({
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
 const cardTitleClass = 'mb-[30px] text-[18px] font-bold text-ink';
 
 // Form fields: a floating label on the top border of each input.
@@ -51,10 +51,10 @@ const fieldInputClass =
     'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 const pillButtonClass =
-    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 
 const smallPillClass =
-    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 // Picture rules (the server checks again, from the file's real content).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -492,7 +492,7 @@ function Profile() {
 
                 {/* Profile Avatar Card */}
                 <div className={`${cardClass} flex items-center gap-6 phone:flex-col phone:items-start`}>
-                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-edge-strong bg-sunken text-faint">
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-edge-strong bg-white text-faint">
                         <ProfileAvatar
                             photoUrl={authUser?.photo_url}
                             previewSrc={photoPreview}
@@ -687,7 +687,7 @@ function Profile() {
                         <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="cursor-pointer rounded-full border border-accent/45 btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
+                                className="cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
                                 onClick={handleCancel}
                                 disabled={isSaving}
                             >

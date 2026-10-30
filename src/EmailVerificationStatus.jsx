@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
 
 const smallPillClass =
-    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const noticeColors = {
     success: 'text-[#188038]',
@@ -80,7 +80,7 @@ function EmailVerificationStatus({ user }) {
     };
 
     return (
-        <div className="mt-6 rounded-lg border border-edge bg-warm p-4" data-testid="email-status">
+        <div className="mt-6 rounded-lg border border-edge card-soft p-4" data-testid="email-status">
 
             {pending ? (
                 <p className="mb-3 text-[14px] leading-[1.5] text-ink">

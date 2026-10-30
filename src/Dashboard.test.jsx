@@ -43,6 +43,26 @@ describe('Dashboard: loading ends after a failure, and requests wait for verifie
     expect(api.callsTo('GET', '/progress')[0].query).toEqual({ child_id: '1' })
   })
 
+  it('puts Summary of Progress (left) and Recent Activities (right) side by side, stacking at laptop width and below', async () => {
+    await setup()
+    const summary = await screen.findByRole('heading', { level: 2, name: 'Summary of Progress' })
+    const recent = screen.getByRole('heading', { level: 2, name: 'Recent Activities' })
+
+    const row = screen.getByTestId('dashboard-lower-cards')
+    expect(row).toContainElement(summary)
+    expect(row).toContainElement(recent)
+    expect(row).toHaveClass('grid', 'grid-cols-2', 'gap-6', 'laptop:grid-cols-1')
+    // Summary comes first in the DOM, so it is the left column.
+    expect(summary.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('keeps the "This week" date range on the Streak card', async () => {
+    await setup()
+    await screen.findByRole('heading', { level: 2, name: 'Streak' })
+
+    expect(screen.getByText(/^This week • /)).toBeInTheDocument()
+  })
+
   it('shows the error, not an endless skeleton, when the load fails for the selected child', async () => {
     await setup({ 'GET /progress?child_id=1': { status: 500, body: {} } })
 

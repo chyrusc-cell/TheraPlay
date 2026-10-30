@@ -6,7 +6,7 @@ import Button from './Button.jsx';
 import Modal from './Modal.jsx';
 
 const dangerPillClass =
-    'cursor-pointer rounded-[20px] border border-[#d93025]/60 btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-danger-text enabled:hover:bg-danger-bg';
+    'cursor-pointer rounded-full border border-[#d93025]/60 btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-danger-text enabled:hover:bg-danger-bg';
 
 /*
  * Self-service account deletion (parents). It always deletes the logged-in

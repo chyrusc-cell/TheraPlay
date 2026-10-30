@@ -85,7 +85,7 @@ function Sidebar() {
     };
 
     return (
-        <aside className="fixed inset-y-0 left-0 z-[100] flex w-sidebar flex-col backdrop-blur-[10px] overflow-y-auto border-r border-edge bg-white/80 px-5 py-[30px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
+        <aside className="fixed top-sidebar-gap bottom-sidebar-gap left-sidebar-gap z-[100] flex w-sidebar flex-col overflow-y-auto rounded-[24px] border card-soft px-5 py-[30px] tablet:rounded-[20px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
             <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0">
                 <img
                     src={logo}

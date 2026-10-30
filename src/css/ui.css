@@ -61,10 +61,97 @@
 
     --ui-transition: 0.15s ease;
 
+    /*
+     * Glass button colors, changed here for every button. The solid (colored)
+     * buttons paint rgb(--btn-rgb) at --btn-alpha so the glass shows through; the
+     * RGB triplets are a little deeper than the brand accent so white labels stay
+     * at 4.5:1 or better on the page and card surfaces at 75%. A button can set
+     * --btn-rgb / --btn-rgb-hover itself (the danger and success Button variants do).
+     */
+    --btn-alpha: 0.75;
+    --btn-blur: 6px;
+    --btn-primary-rgb: 104 62 0;
+    --btn-primary-hover-rgb: 90 53 0;
+
+    /*
+     * Frosted glass, the one container design of the whole site (the supplied
+     * "glass-card"): every card, panel, table, form, dialog, the sidebar and the
+     * dropdowns get it through the card-soft and glass-panel classes. Only the
+     * SURFACE is 50% white; text, icons and controls inside stay fully opaque.
+     * Width, height and padding are never part of it: each container keeps its own.
+     */
+    --glass-bg: rgba(255, 255, 255, 0.5);
+    --glass-blur: 35px;
+    --glass-border: 2px solid rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 0 80px rgba(0, 0, 0, 0.25);
+    --glass-radius: 20px;
+
     /* Layout widths (used by Tailwind utilities such as ml-sidebar). */
     --sidebar-width: 240px;
     --sidebar-width-collapsed: 72px;
     --topbar-height: 56px;
+
+    /* The sidebar floats this far from the viewport edges; the page and the
+       search pill start after the sidebar plus the gap on both sides. */
+    --sidebar-gap: 12px;
+    --sidebar-offset: calc(var(--sidebar-width) + var(--sidebar-gap) * 2);
+    --sidebar-offset-collapsed: calc(var(--sidebar-width-collapsed) + var(--sidebar-gap) * 2);
+}
+
+@media (max-width: 560px) {
+    :root {
+        --sidebar-gap: 8px;
+    }
+}
+
+
+/* --- Colored glass buttons ---
+   Unlayered, so the translucent color wins over a bg-* utility left on the element. */
+
+.btn-solid,
+.btn-glass,
+.btn-tone {
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.btn-tone {
+    -webkit-backdrop-filter: blur(var(--btn-blur));
+    backdrop-filter: blur(var(--btn-blur));
+}
+
+.btn-solid {
+    background-color: rgb(var(--btn-rgb, var(--btn-primary-rgb)) / var(--btn-alpha));
+    -webkit-backdrop-filter: blur(var(--btn-blur));
+    backdrop-filter: blur(var(--btn-blur));
+}
+
+.btn-solid:is(button, [role='button']):enabled:hover,
+a.btn-solid:hover {
+    background-color: rgb(var(--btn-rgb-hover, var(--btn-primary-hover-rgb)) / var(--btn-alpha));
+}
+
+
+/* --- White frosted-glass containers ---
+   The fill, blur, border and radius are unlayered so they win over the bg-white,
+   border-edge and rounded-* left on the elements; the shadow is in the card-soft / glass-panel
+   utilities (tailwind.css) so a hover shadow on a card can still replace it. */
+
+.card-soft,
+.glass-panel {
+    background-color: var(--glass-bg);
+    border: var(--glass-border);
+    border-radius: var(--glass-radius);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card-soft,
+    .glass-panel {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
 }
 
 
@@ -192,10 +279,13 @@ textarea {
     /* No lifting or pressing movement. */
     .btn-solid,
     .btn-glass,
+    .btn-tone,
     .btn-solid:hover,
     .btn-glass:hover,
+    .btn-tone:hover,
     .btn-solid:active,
-    .btn-glass:active {
+    .btn-glass:active,
+    .btn-tone:active {
         transform: none !important;
     }
 
@@ -235,15 +325,39 @@ html[data-child-selector] {
 }
 
 /*
- * Site background: a soft, blurred-looking three-color gradient (blush pink,
- * buttery yellow, pale aqua, pastel versions of #ff0055 / #ffff69 / #00ffff)
- * over the warm ivory page color. It is pure CSS (no image) and lives on a fixed
- * layer BEHIND the page, so it covers the whole window however long the page is,
- * never scrolls or repaints with the content, and nothing on the page is blurred.
+ * Site background: a soft, blurred-looking three-color gradient over the warm
+ * ivory page color. It is pure CSS (no image) and lives on a fixed layer BEHIND
+ * the page, so it covers the whole window however long the page is, never scrolls
+ * or repaints with the content, and nothing on the page is blurred.
  * Pages must not paint their own opaque background over it (the layout, the admin
  * pages and the auth pages are transparent for that reason).
- * To change the mood, edit the three rgba() colors and their sizes here.
+ *
+ * Two wallpapers are kept so they can be compared. To switch, change the two
+ * "--site-wallpaper*" lines in the :root block just below (or in devtools):
+ *   EXPERIMENT (active): the original hues #FF0055 / #FFFF69 / #00FFFF at about
+ *     half their saturation: dusty pink #BF406A (60%: two large washes), muted
+ *     yellow #D9D98F (30%) and soft cyan #40BFBF (10%, a small corner accent).
+ *     The shares come from each color's area and strength.
+ *   PREVIOUS: the earlier pastel pink / yellow / aqua / peach, saturated x1.5625.
  */
+:root {
+    --site-wallpaper: var(--wallpaper-experiment);
+    --site-wallpaper-filter: none;
+
+    --wallpaper-experiment:
+        radial-gradient(ellipse 95% 85% at 0% 0%, rgba(191, 64, 106, 0.55) 0%, rgba(191, 64, 106, 0.32) 45%, rgba(191, 64, 106, 0) 100%),
+        radial-gradient(ellipse 80% 70% at 6% 104%, rgba(191, 64, 106, 0.4) 0%, rgba(191, 64, 106, 0.2) 45%, rgba(191, 64, 106, 0) 100%),
+        radial-gradient(ellipse 80% 70% at 100% 4%, rgba(217, 217, 143, 0.85) 0%, rgba(217, 217, 143, 0.5) 45%, rgba(217, 217, 143, 0) 100%),
+        radial-gradient(ellipse 55% 50% at 96% 104%, rgba(64, 191, 191, 0.6) 0%, rgba(64, 191, 191, 0.32) 45%, rgba(64, 191, 191, 0) 100%);
+
+    --wallpaper-previous:
+        radial-gradient(ellipse 70% 60% at 6% 8%, rgba(255, 150, 185, 0.24) 0%, rgba(255, 150, 185, 0) 100%),
+        radial-gradient(ellipse 65% 55% at 94% 10%, rgba(255, 248, 150, 0.34) 0%, rgba(255, 248, 150, 0) 100%),
+        radial-gradient(ellipse 75% 65% at 72% 98%, rgba(150, 235, 240, 0.28) 0%, rgba(150, 235, 240, 0) 100%),
+        radial-gradient(ellipse 60% 50% at 8% 92%, rgba(255, 215, 170, 0.16) 0%, rgba(255, 215, 170, 0) 100%);
+    --wallpaper-previous-filter: saturate(1.5625);
+}
+
 body::before {
     content: '';
     position: fixed;
@@ -251,9 +365,6 @@ body::before {
     z-index: -1;
     pointer-events: none;
     background-color: var(--ui-page);
-    background-image:
-        radial-gradient(ellipse 70% 60% at 6% 8%, rgba(255, 150, 185, 0.24) 0%, rgba(255, 150, 185, 0) 100%),
-        radial-gradient(ellipse 65% 55% at 94% 10%, rgba(255, 248, 150, 0.34) 0%, rgba(255, 248, 150, 0) 100%),
-        radial-gradient(ellipse 75% 65% at 72% 98%, rgba(150, 235, 240, 0.28) 0%, rgba(150, 235, 240, 0) 100%),
-        radial-gradient(ellipse 60% 50% at 8% 92%, rgba(255, 215, 170, 0.16) 0%, rgba(255, 215, 170, 0) 100%);
+    background-image: var(--site-wallpaper);
+    filter: var(--site-wallpaper-filter);
 }

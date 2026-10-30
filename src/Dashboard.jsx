@@ -87,7 +87,7 @@ const getCurrentStreak = (completedDayKeys) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
 const cardHeaderClass = 'border-b border-edge px-6 py-4';
 const cardHeaderFlexClass =
     'flex items-center justify-between border-b border-edge px-6 py-4';
@@ -355,7 +355,7 @@ function Dashboard() {
                                         className={`flex-1 rounded-md py-2 text-center text-[13px] font-bold ${
                                             completedDayKeys.has(weekKeys[index])
                                                 ? 'bg-accent text-white'
-                                                : 'bg-sunken text-faint'
+                                                : 'bg-white text-faint'
                                         }`}
                                         key={weekKeys[index]}
                                     >
@@ -367,18 +367,20 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className={cardClass}>
+                {/* Side by side on desktop; stacked once the width gets tight (laptop = 1100px and below). */}
+                <div className="grid grid-cols-2 gap-6 laptop:grid-cols-1" data-testid="dashboard-lower-cards">
+                <div className={`${cardClass} min-w-0`}>
                     <div className={cardHeaderClass}>
                         <h2 className={cardTitleClass}>Summary of Progress</h2>
                     </div>
                     <div className={cardBodyClass}>
                         <div className="mb-5 flex gap-4 tablet-sm:flex-col">
-                            <div className="flex-1 rounded-lg bg-warm p-5">
+                            <div className="flex-1 rounded-lg border card-soft p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
                                 <p className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</p>
                                 <span className="text-[12px] text-faint">completed this week</span>
                             </div>
-                            <div className="flex-1 rounded-lg bg-warm p-5">
+                            <div className="flex-1 rounded-lg border card-soft p-5">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
                                 <p className="mb-1 text-[24px] font-bold text-ink">{skills.length}</p>
                                 <span className="text-[12px] text-faint">
@@ -400,7 +402,7 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className={cardClass}>
+                <div className={`${cardClass} min-w-0`}>
                     <div className={cardHeaderFlexClass}>
                         <h2 className={cardTitleClass}>Recent Activities</h2>
                         <Link to="/activities" className="text-[13px] font-bold text-muted no-underline">View all</Link>
@@ -419,7 +421,7 @@ function Dashboard() {
                                     : record.started_at;
 
                                 return (
-                                    <div className="mb-3 flex items-center justify-between rounded-lg bg-warm p-4 last:mb-0" key={record.id}>
+                                    <div className="mb-3 flex items-center justify-between rounded-lg border card-soft p-4 last:mb-0" key={record.id}>
                                         <div className="flex items-center gap-4">
                                             {isDone ? (
                                                 <div className={iconCircleClass}>
@@ -438,8 +440,8 @@ function Dashboard() {
                                         <span
                                             className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
                                                 isDone
-                                                    ? 'bg-sunken text-ink'
-                                                    : 'border border-edge-strong bg-warm text-muted'
+                                                    ? 'bg-white text-ink'
+                                                    : 'border border-edge-strong bg-white text-muted'
                                             }`}
                                         >
                                             {isDone
@@ -454,6 +456,7 @@ function Dashboard() {
                         )}
 
                     </div>
+                </div>
                 </div>
 
             </div>

@@ -15,6 +15,7 @@ function ConfirmDialog({
     title,
     message,
     confirmLabel = 'Confirm',
+    confirmVariant = 'primary',
     busyLabel = 'Please wait...',
     cancelLabel = 'Cancel',
     busy = false,
@@ -88,7 +89,7 @@ function ConfirmDialog({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.2s_ease-out] items-center justify-center bg-[rgba(41,37,36,0.4)] p-4"
+            className="fixed inset-0 z-[1000] box-border flex animate-[ui-fade-in_0.2s_ease-out] items-center justify-center bg-[rgba(255,255,255,0.4)] p-4 backdrop-blur-[5px] supports-[not(backdrop-filter:blur(1px))]:bg-[rgba(41,37,36,0.6)]"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !busy) {
                     onCancel();
@@ -96,7 +97,7 @@ function ConfirmDialog({
             }}
         >
             <div
-                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-[22px] border border-white/70 bg-[rgba(255,254,252,0.94)] p-7 font-[Quicksand,sans-serif] shadow-[0_24px_60px_-18px_rgba(60,40,10,0.45),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-[14px]"
+                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-[22px] border card-soft p-7 font-[Quicksand,sans-serif]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-dialog-title"
@@ -129,7 +130,7 @@ function ConfirmDialog({
                     </Button>
 
                     <Button
-                        variant="primary"
+                        variant={confirmVariant}
                         onClick={onConfirm}
                         loading={busy}
                     >

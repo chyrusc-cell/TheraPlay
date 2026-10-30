@@ -70,6 +70,9 @@
     /* Layout widths shared with the sidebar and the page offset. */
     --spacing-sidebar: var(--sidebar-width);
     --spacing-sidebar-rail: var(--sidebar-width-collapsed);
+    --spacing-sidebar-offset: var(--sidebar-offset);
+    --spacing-sidebar-offset-rail: var(--sidebar-offset-collapsed);
+    --spacing-sidebar-gap: var(--sidebar-gap);
     --spacing-topbar: var(--topbar-height);
 }
 
@@ -402,23 +405,13 @@
 }
 
 @utility glass-panel {
-    background-color: rgba(255, 252, 248, 0.86);
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(231, 222, 211, 0.9);
-    box-shadow:
-        0 14px 34px -12px rgba(90, 60, 20, 0.28),
-        inset 0 1px 0 rgba(255, 255, 255, 0.85);
-
-    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-        background-color: #fffcf8;
-    }
+    /* Floating surfaces (dropdowns, popovers): the same glass as card-soft. */
+    box-shadow: var(--glass-shadow);
 }
 
 @utility card-soft {
-    box-shadow:
-        0 6px 20px -10px rgba(120, 80, 30, 0.18),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    /* The shared frosted-glass container. Fill, blur, border and radius: ui.css. */
+    box-shadow: var(--glass-shadow);
 }
 
 /*

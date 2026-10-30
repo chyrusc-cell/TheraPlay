@@ -16,7 +16,7 @@ export const contactPanelClass =
     'rounded-2xl border border-edge bg-white p-6 card-soft phone:p-4';
 
 export const contactItemClass =
-    'rounded-lg border border-edge bg-warm p-4';
+    'rounded-lg border border-edge card-soft p-4';
 
 // Activity details: image column + text column.
 export const detailsCardClass =

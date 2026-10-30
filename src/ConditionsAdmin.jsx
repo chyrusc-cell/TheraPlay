@@ -164,7 +164,7 @@ function ConditionsAdmin({ conditions, onSaved }) {
                 </p>
             )}
 
-            <form onSubmit={handleAdd} className="mb-6 rounded-lg border border-edge bg-warm p-4" noValidate>
+            <form onSubmit={handleAdd} className="mb-6 rounded-lg border border-edge card-soft p-4" noValidate>
 
                 <h3 className="mb-3 text-[15px] font-bold text-ink">Add a condition</h3>
 
@@ -212,7 +212,7 @@ function ConditionsAdmin({ conditions, onSaved }) {
                     {conditions.map((condition) => (
                         <li
                             key={condition.id}
-                            className={`rounded-lg border border-edge p-3 ${condition.is_active ? 'bg-white' : 'bg-sunken'}`}
+                            className={`rounded-lg border border-edge card-soft p-3 ${condition.is_active ? '' : 'opacity-70'}`}
                         >
                             {editingId === condition.id ? (
 

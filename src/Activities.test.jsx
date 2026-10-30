@@ -112,6 +112,22 @@ describe('Activities: Category and Difficulty filters', () => {
     expect(levels).toEqual(['All Difficulties', 'Easy', 'Medium', 'Hard'])
   })
 
+  it('leaves room after the arrow of each filter, and the dropdowns still work', async () => {
+    await setup()
+    await waitForCards()
+
+    for (const label of ['Category', 'Difficulty']) {
+      const select = screen.getByLabelText(label)
+      // The native arrow is replaced by a chevron inset from the right edge.
+      expect(select).toHaveClass('appearance-none', 'pr-10')
+      expect(select.parentElement.querySelector('svg')).toHaveClass('right-4', 'pointer-events-none')
+    }
+
+    await pick('Category', 'Memory')
+    expect(screen.getByLabelText('Category')).toHaveValue('Memory')
+    expect(titles()).toEqual(['Memory Match', 'Memory Master'])
+  })
+
   it('filters by Category alone', async () => {
     await setup()
     await waitForCards()

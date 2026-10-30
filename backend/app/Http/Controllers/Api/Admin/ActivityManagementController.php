@@ -4,17 +4,20 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\ActivityResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
  * Admin-only activity management. Every route that reaches this controller is
  * protected by ['auth:sanctum', 'role:admin'] in routes/api.php.
  *
- * There is intentionally no destroy(): progress and resource rows are set to
- * cascade on delete, so removing an activity would silently erase children's
- * progress. Unpublish an activity instead.
+ * destroy() deletes an activity PERMANENTLY, together with the children's
+ * progress records that belong to it. Unpublish hides an activity without
+ * losing anything.
  */
 class ActivityManagementController extends Controller
 {
@@ -74,6 +77,41 @@ class ActivityManagementController extends Controller
             'message' => 'Activity updated.',
             'data' => $this->format($activity->refresh()),
         ]);
+    }
+
+    /**
+     * Permanently deletes one activity and everything that belongs to it: the
+     * children's progress records for THIS activity, its resources (rows and
+     * uploaded files), its picture and its condition links. The database rows go
+     * in one transaction (any failure rolls all of it back); the files are removed
+     * only after it commits, so a rollback never loses a file. Other activities,
+     * children and their other progress are not touched.
+     */
+    public function destroy(Activity $activity): JsonResponse
+    {
+        $disk = Storage::disk(config('filesystems.activity_materials.disk'));
+        $imagePath = $activity->image_path;
+        $filePaths = $activity->resources()->pluck('file_path')->unique()->all();
+
+        DB::transaction(function () use ($activity) {
+            $activity->progressRecords()->delete();
+            $activity->resources()->delete();
+            $activity->conditions()->detach();
+            $activity->delete();
+        });
+
+        if ($imagePath !== null && str_starts_with($imagePath, Activity::IMAGE_DIRECTORY.'/')) {
+            $disk->delete($imagePath);
+        }
+
+        foreach ($filePaths as $path) {
+            // A file is only removed when no other resource still points at it.
+            if (! ActivityResource::where('file_path', $path)->exists()) {
+                $disk->delete($path);
+            }
+        }
+
+        return response()->json(['message' => 'Activity deleted.']);
     }
 
     public function publish(Activity $activity): JsonResponse

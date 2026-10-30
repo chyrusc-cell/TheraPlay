@@ -158,7 +158,7 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
                 </p>
             )}
 
-            <form onSubmit={handleAdd} className="mb-6 rounded-lg border border-edge bg-warm p-4" noValidate>
+            <form onSubmit={handleAdd} className="mb-6 rounded-lg border border-edge card-soft p-4" noValidate>
 
                 <h3 className="mb-3 text-[15px] font-bold text-ink">Add a category</h3>
 
@@ -204,7 +204,7 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
 
                 <ul className="flex list-none flex-col gap-2">
                     {categories.map((category) => (
-                        <li key={category.id} className="rounded-lg border border-edge bg-white p-3">
+                        <li key={category.id} className="rounded-lg border border-edge bg-white card-soft p-3">
                             {editingId === category.id ? (
 
                                 <div>

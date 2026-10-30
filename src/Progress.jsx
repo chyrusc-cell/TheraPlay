@@ -32,25 +32,6 @@ const getWeekStart = () => {
     return start;
 };
 
-const formatWeekLabel = (weekStart) => {
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
-
-    const startText = weekStart.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-    });
-    const endText =
-        weekStart.getMonth() === weekEnd.getMonth()
-            ? String(weekEnd.getDate())
-            : weekEnd.toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-              });
-
-    return `Week of ${startText}-${endText}, ${weekEnd.getFullYear()}`;
-};
-
 const formatDate = (value) =>
     new Date(value).toLocaleDateString('en-US', {
         month: 'short',
@@ -90,7 +71,7 @@ const getLongestStreak = (completed) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] shadow-[0_2px_10px_rgba(0,0,0,0.02)]';
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
 const cardHeaderClass = 'px-6 pt-5 pb-2.5';
 const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5';
 const cardTitleClass = 'text-[16px] font-bold text-ink';
@@ -98,7 +79,7 @@ const cardBodyClass = 'px-6 pt-5 pb-6';
 const statusClass = 'text-[14px] font-medium text-muted';
 const bigNumberClass = 'text-[28px] leading-[1.2] font-bold text-ink';
 const bigLabelClass = 'text-[13px] font-medium text-muted';
-const barTrackClass = 'h-2 w-full overflow-hidden rounded-lg bg-sunken';
+const barTrackClass = 'h-2 w-full overflow-hidden rounded-lg bg-white';
 const barFillClass = 'h-full rounded-lg bg-accent';
 const iconCircleClass =
     'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-edge-strong bg-white text-ink';
@@ -306,27 +287,11 @@ function Progress() {
                     )}
                 </div>
 
-                <div className="mb-[30px] flex items-center justify-between">
-                    <button className="flex cursor-pointer items-center gap-2 rounded-[20px] border border-edge-strong btn-glass px-4 py-2 [font-family:inherit] text-[13px] font-medium text-ink" type="button">
-                        {formatWeekLabel(weekStart)}
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="16"
-                            height="16"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            fill="none"
-                        >
-                            <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                    </button>
-
-                    {records.length === 0 && (
-                        <span className="text-[13px] font-medium text-faint">
-                            No activity has been recorded yet.
-                        </span>
-                    )}
-                </div>
+                {records.length === 0 && (
+                    <p className="mb-[30px] text-[13px] font-medium text-faint">
+                        No activity has been recorded yet.
+                    </p>
+                )}
 
                 {/* 2-Column Grid Layout */}
                 <div className="grid grid-cols-2 gap-6 tablet:grid-cols-1">
@@ -351,7 +316,7 @@ function Progress() {
                                     </div>
                                 </div>
 
-                                <div className="mb-6 h-3 w-full overflow-hidden rounded-lg bg-sunken">
+                                <div className="mb-6 h-3 w-full overflow-hidden rounded-lg bg-white">
                                     <div
                                         className={barFillClass}
                                         style={{ width: `${completionRate}%` }}
@@ -359,7 +324,7 @@ function Progress() {
                                 </div>
 
                                 <div className="flex gap-4">
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-warm p-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4">
                                         <span className="text-[12px] font-medium text-muted">
                                             Active days this week
                                         </span>
@@ -368,7 +333,7 @@ function Progress() {
                                         </span>
                                     </div>
 
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg bg-warm p-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4">
                                         <span className="text-[12px] font-medium text-muted">
                                             Longest streak
                                         </span>
@@ -435,7 +400,7 @@ function Progress() {
                             <div className={cardBodyClass}>
                                 <div className="mb-[30px] flex items-center justify-between text-[13px] font-medium text-muted">
                                     <span>Activities completed per day</span>
-                                    <span className="rounded-xl bg-sunken px-2.5 py-1 text-[11px] font-bold text-ink">
+                                    <span className="rounded-xl bg-white px-2.5 py-1 text-[11px] font-bold text-ink">
                                         {completedThisWeek} total
                                     </span>
                                 </div>
@@ -498,7 +463,7 @@ function Progress() {
 
                                             return (
                                                 <div
-                                                    className="flex items-start gap-3 rounded-lg bg-warm p-4"
+                                                    className="flex items-start gap-3 rounded-lg border card-soft p-4"
                                                     key={record.id}
                                                 >
                                                     <div

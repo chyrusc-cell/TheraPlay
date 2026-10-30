@@ -58,6 +58,16 @@ describe('Progress: per-child progress', () => {
     expect(screen.queryByText('Bead Threading')).not.toBeInTheDocument()
   })
 
+  it('no longer shows a week filter, while the weekly summary stays', async () => {
+    await setup()
+    await screen.findByText('Progress for Mia')
+
+    expect(screen.queryByText(/Week of/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Week of/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Weekly Participation' })).toBeInTheDocument()
+    expect(screen.getByText('Memory Match')).toBeInTheDocument()
+  })
+
   it('switches to the other child\'s progress without mixing the two', async () => {
     const user = userEvent.setup()
     const api = await setup()

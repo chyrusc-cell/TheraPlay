@@ -455,7 +455,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                         alt={`Picture of ${activity.title}`}
                         className="h-[220px] w-full rounded-lg object-cover tablet-sm:h-[180px]"
                         fallback={
-                            <div className="flex h-[220px] items-center justify-center rounded-lg bg-sunken text-faint tablet-sm:h-[180px]">
+                            <div className="flex h-[220px] items-center justify-center rounded-lg bg-white text-faint tablet-sm:h-[180px]">
                                 Image
                             </div>
                         }
@@ -473,7 +473,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                         <div className="mb-[30px] flex gap-2.5">
 
                             {activity.category && (
-                                <span className="rounded-[5px] bg-hover px-2.5 py-[5px] text-[13px]">
+                                <span className="rounded-[5px] bg-white px-2.5 py-[5px] text-[13px]">
                                     {activity.category}
                                 </span>
                             )}
@@ -630,7 +630,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                 <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border border-accent/45 btn-glass px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border border-edge-strong btn-glass px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >

@@ -96,6 +96,24 @@ describe('routing: parents', () => {
     expect(within(nav).queryByRole('link', { name: /Manage Accounts/ })).not.toBeInTheDocument()
   })
 
+  it('renders the sidebar as a floating, rounded panel and keeps navigation working', async () => {
+    const user = userEvent.setup()
+    setup({ user: makeUser('parent') })
+    renderApp('/dashboard')
+    await screen.findByRole('heading', { level: 1, name: 'Hello, Pat Parent!' })
+
+    const nav = screen.getByRole('navigation', { name: 'Main navigation' })
+    const panel = nav.closest('aside')
+    expect(panel).toHaveClass('fixed', 'top-sidebar-gap', 'bottom-sidebar-gap', 'left-sidebar-gap', 'rounded-[24px]', 'border')
+    expect(panel).not.toHaveClass('inset-y-0', 'left-0', 'border-r')
+    // The page starts after the panel plus its gaps, and the landmarks are intact.
+    expect(screen.getByRole('main').parentElement).toHaveClass('ml-sidebar-offset', 'tablet:ml-sidebar-offset-rail')
+    expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute('href', '#main-content')
+
+    await user.click(within(nav).getByRole('link', { name: 'My Progress' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'My Progress' })).toBeInTheDocument()
+  })
+
   it('takes the role from the server, not from what is saved in the browser', async () => {
     // Someone edits their saved user to say "admin"; the server still says parent.
     localStorage.setItem('theraplay_user', JSON.stringify(makeUser('admin')))

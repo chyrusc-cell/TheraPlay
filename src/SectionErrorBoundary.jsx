@@ -27,14 +27,14 @@ class SectionErrorBoundary extends Component {
         return (
             <div
                 role="alert"
-                className="mb-6 rounded-2xl border border-edge bg-white p-[30px] text-[14px] text-[#d93025]"
+                className="mb-6 rounded-2xl border border-edge bg-white card-soft p-[30px] text-[14px] text-[#d93025]"
             >
                 <p className="mb-3">
                     {this.props.label || 'This section'} could not be displayed. Please try again.
                 </p>
                 <button
                     type="button"
-                    className="cursor-pointer rounded-full border border-accent/45 bg-white px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink"
+                    className="cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink"
                     onClick={() => this.setState({ failed: false })}
                 >
                     Try again

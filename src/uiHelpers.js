@@ -13,6 +13,6 @@ export const difficultyBadgeTw = (difficulty) => {
         case 'hard':
             return `${badgeBase} bg-hard-bg text-hard-text`;
         default:
-            return `${badgeBase} bg-hover text-muted`;
+            return `${badgeBase} bg-white text-muted`;
     }
 };

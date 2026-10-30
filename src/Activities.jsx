@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
@@ -75,8 +76,18 @@ const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
 const filterLabelClass = 'text-[13px] font-bold text-muted';
+// The native arrow sits flush against the edge, so it is replaced by a chevron
+// (filterArrow) with room on its right; the select keeps its own behavior.
 const filterSelectClass =
-    'min-w-[180px] cursor-pointer rounded-full border border-edge-strong btn-glass px-3 py-2 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0 phone:flex-1';
+    'w-full min-w-[180px] cursor-pointer appearance-none rounded-full border border-edge-strong btn-glass py-2 pr-10 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
+const filterFieldClass = 'flex flex-col gap-1.5 phone:min-w-0 phone:flex-1';
+const filterArrow = (
+    <ChevronDown
+        size={16}
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-muted"
+    />
+);
 
 function Activities() {
     // Every parent sees ALL published activities (their child's conditions do
@@ -239,10 +250,11 @@ function Activities() {
                     <>
                     <div className="mb-8 flex flex-wrap items-end gap-4">
 
-                        <div className="flex flex-col gap-1.5">
+                        <div className={filterFieldClass}>
                             <label className={filterLabelClass} htmlFor="activity-filter-category">
                                 Category
                             </label>
+                            <div className="relative">
                             <select
                                 id="activity-filter-category"
                                 className={filterSelectClass}
@@ -256,12 +268,15 @@ function Activities() {
                                     </option>
                                 ))}
                             </select>
+                            {filterArrow}
+                            </div>
                         </div>
 
-                        <div className="flex flex-col gap-1.5">
+                        <div className={filterFieldClass}>
                             <label className={filterLabelClass} htmlFor="activity-filter-difficulty">
                                 Difficulty
                             </label>
+                            <div className="relative">
                             <select
                                 id="activity-filter-difficulty"
                                 className={filterSelectClass}
@@ -275,6 +290,8 @@ function Activities() {
                                     </option>
                                 ))}
                             </select>
+                            {filterArrow}
+                            </div>
                         </div>
 
                     </div>

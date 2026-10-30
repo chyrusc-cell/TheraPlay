@@ -26,7 +26,7 @@ const errorClass = 'text-[14px] font-medium text-[#d93025]';
 const detailLinkClass =
     'text-[14px] font-medium text-ink underline [overflow-wrap:anywhere]';
 const editTeamButtonClass =
-    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover';
 const toggleClass =
     'mt-2 cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-medium text-ink underline underline-offset-4';
 const fieldClass = 'mb-[18px] flex flex-col gap-2';
@@ -35,7 +35,7 @@ const fieldErrorClass = 'text-[13px] text-[#d93025]';
 const messageBase =
     'mb-4 animate-[ui-fade-in_0.2s_ease-out] text-[14px] font-medium';
 const retryClass =
-    'mt-3 cursor-pointer rounded-full border border-accent/45 btn-glass px-5 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
+    'mt-3 cursor-pointer rounded-full border border-edge-strong btn-glass px-5 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 const submitClass =
     'cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid phone:w-full';
 
@@ -67,7 +67,7 @@ function ContactCard({ name, title, emails = [], phones = [], description, photo
     return (
         <article className={`${contactItemClass} flex items-start gap-4 phone:gap-3`}>
 
-            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-edge bg-sunken text-faint phone:h-20 phone:w-20">
+            <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-edge bg-white text-faint phone:h-20 phone:w-20">
                 {hasPhoto ? (
                     <img
                         src={photoUrl}
@@ -562,7 +562,10 @@ function Contact() {
                             <ul
                                 ref={listRef}
                                 style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
-                                className="flex list-none flex-col gap-3 overflow-y-auto pr-1"
+                                // The list scrolls, so it clips whatever sticks out of it: the cards'
+                                // big soft glass shadow would be cut to a dark rectangle exactly the size
+                                // of this box. The cards inside it therefore have no outer shadow.
+                                className="flex list-none flex-col gap-3 overflow-y-auto pr-1 [&_article]:shadow-none"
                                 aria-label="Professional contacts"
                                 tabIndex={0}
                             >

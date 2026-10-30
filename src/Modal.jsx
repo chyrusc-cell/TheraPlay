@@ -197,7 +197,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
 
     return createPortal(
         <div
-            className={`fixed inset-0 z-[900] box-border flex items-center justify-center bg-[rgba(41,37,36,0.38)] p-4 backdrop-blur-[5px] transition-opacity duration-200 ease-out supports-[not(backdrop-filter:blur(1px))]:bg-[rgba(41,37,36,0.6)] ${
+            className={`fixed inset-0 z-[900] box-border flex items-center justify-center bg-[rgba(255,255,255,0.4)] p-4 backdrop-blur-[5px] transition-opacity duration-200 ease-out supports-[not(backdrop-filter:blur(1px))]:bg-[rgba(41,37,36,0.6)] ${
                 visible ? 'opacity-100' : 'pointer-events-none opacity-0'
             }`}
             onMouseDown={(event) => {
@@ -213,7 +213,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                 aria-labelledby={titleId}
                 aria-busy={busy || undefined}
                 tabIndex={-1}
-                className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[22px] border border-white/70 bg-[rgba(255,254,252,0.92)] font-[Quicksand,sans-serif] shadow-[0_24px_60px_-18px_rgba(60,40,10,0.45),inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-[14px] transition-[opacity,transform] duration-200 ease-out ${sizes[size] || sizes.lg} ${
+                className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[22px] border card-soft font-[Quicksand,sans-serif] transition-[opacity,transform] duration-200 ease-out ${sizes[size] || sizes.lg} ${
                     visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-[0.98] opacity-0'
                 }`}
             >
@@ -229,7 +229,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                         onClick={onClose}
                         disabled={busy}
                         aria-label="Close"
-                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-edge-strong btn-glass text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <X size={20} aria-hidden="true" />
                     </button>

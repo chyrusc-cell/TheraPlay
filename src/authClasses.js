@@ -14,17 +14,27 @@
 
 // ---------- Page frames ----------
 
-// Login and Forgot/Reset Password: a white side panel over the gradient.
-export const pageBg = 'flex min-h-screen';
+// Login, Forgot/Reset Password and Verify Email: a frosted-glass card on the left.
+// The panel is a frosted-glass card floating on the left; the right stays open
+// (on Login it shows the photo, see loginBackground in brand.js).
+export const pageBg =
+    'flex min-h-screen items-center bg-cover bg-center bg-no-repeat px-[6vw] py-8 phone:px-4 phone:py-6';
+
+// Login: the same card, 20% larger and closer to the left edge.
+export const loginPageBg =
+    'flex min-h-screen items-center bg-cover bg-center bg-no-repeat px-[3vw] py-8 phone:px-4 phone:py-6';
+
+export const loginPanel =
+    'flex w-full max-w-[552px] flex-col justify-center border card-soft px-12 py-12 phone:max-w-none phone:px-5 phone:py-6';
 
 export const panel =
-    'flex w-full max-w-[500px] flex-col justify-center rounded-r-[40px] bg-white px-20 py-[60px] shadow-[4px_0_20px_rgba(0,0,0,0.05)] phone:max-w-none phone:rounded-none phone:px-6 phone:py-10';
+    'flex w-full max-w-[460px] flex-col justify-center border card-soft px-10 py-10 phone:max-w-none phone:px-5 phone:py-6';
 
 // Register: a centered white column.
 export const registerPage =
     'flex min-h-screen items-center justify-center px-5 py-10 phone:px-4 phone:py-6';
 export const registerContainer =
-    'flex w-full max-w-[600px] flex-col rounded-[28px] border border-white/70 bg-white/85 px-10 py-10 card-soft backdrop-blur-[12px] phone:rounded-3xl phone:px-5 phone:py-6';
+    'flex w-full max-w-[600px] flex-col rounded-[28px] border card-soft px-10 py-10 phone:rounded-3xl phone:px-5 phone:py-6';
 
 // ---------- Headings ----------
 
@@ -38,11 +48,11 @@ export const headerText = 'mb-10';
 export const headerTextLogin = 'mb-[30px]';
 export const headerTitle = 'mb-3 text-[32px] font-bold text-ink';
 export const headerTitleLogin = 'mb-2 text-[32px] font-bold text-ink';
-export const subtitle = 'text-[14px] font-normal text-faint';
-export const subtitleLogin = 'text-[14px] font-normal text-muted';
+export const subtitle = 'text-[14px] font-normal text-ink';
+export const subtitleLogin = 'text-[14px] font-normal text-ink';
 
 export const backLink =
-    'mb-5 flex items-center gap-1.5 text-[13px] font-medium text-muted no-underline transition-colors hover:text-ink';
+    'mb-5 flex items-center gap-1.5 text-[13px] font-medium text-ink no-underline transition-colors hover:text-accent';
 
 // ---------- Form fields (floating label on the input's top border) ----------
 
@@ -69,7 +79,7 @@ export const submitButton =
     'mb-10 w-full cursor-pointer rounded-full border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
 
 export const registerButton =
-    'mb-5 w-full cursor-pointer rounded border-0 bg-primary p-4 [font-family:inherit] text-[15px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
+    'mb-5 w-full cursor-pointer rounded-full border-0 bg-primary p-4 [font-family:inherit] text-[15px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
 
 // ---------- Messages ----------
 
@@ -86,7 +96,7 @@ export const registerMessageSuccess = 'my-3 text-[14px] text-[#188038]';
 export const loginOptions =
     'mb-6 flex items-center justify-between text-[13px] font-medium';
 export const rememberMe = 'flex cursor-pointer items-center gap-2 text-ink';
-export const forgotLink = 'text-muted no-underline';
+export const forgotLink = 'text-ink no-underline';
 
 export const switchLinkLogin =
     'mb-[30px] text-center text-[13px] font-medium text-ink';

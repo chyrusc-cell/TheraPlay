@@ -12,6 +12,7 @@ import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import * as ui from './adminClasses.js';
 import Modal from './Modal.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import ConditionsAdmin from './ConditionsAdmin.jsx';
 import CategoriesAdmin from './CategoriesAdmin.jsx';
 
@@ -71,6 +72,10 @@ function ManageActivities() {
 
     const [loadingEditId, setLoadingEditId] = useState(null);
     const [busyId, setBusyId] = useState(null);
+    // The activity waiting for "delete permanently" confirmation, and the one
+    // being deleted right now.
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
 
     // File materials: files chosen but not saved yet, files already saved on
     // the server, and the state of the remove-file confirmation.
@@ -794,6 +799,55 @@ function ManageActivities() {
             });
         } finally {
             setBusyId(null);
+        }
+    };
+
+
+    // Permanent: the server also deletes the children's progress for this activity.
+    const handleDelete = async () => {
+        const activity = deleteTarget;
+
+        if (!activity || deletingId !== null) {
+            return;
+        }
+
+        setNotice(null);
+        setDeletingId(activity.id);
+
+        try {
+            const result = await apiRequest(
+                `/admin/activities/${activity.id}`,
+                { method: 'DELETE' }
+            );
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            // 404 means it was already removed; either way the list is stale.
+            if (!result.ok && result.status !== 404) {
+                throw new Error(
+                    result.data.message ||
+                    'Unable to delete this activity. Please try again.'
+                );
+            }
+
+            setNotice({
+                type: 'success',
+                text: `"${activity.title}" was permanently deleted, along with its progress records.`,
+            });
+            reload(false);
+        } catch (error) {
+            setNotice({
+                type: 'error',
+                text:
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setDeletingId(null);
+            setDeleteTarget(null);
         }
     };
 
@@ -1593,6 +1647,21 @@ function ManageActivities() {
                                                             : 'Publish'}
                                                 </button>
 
+                                                <button
+                                                    type="button"
+                                                    className={ui.deleteButton}
+                                                    aria-label={`Delete ${activity.title}`}
+                                                    onClick={() =>
+                                                        setDeleteTarget(activity)
+                                                    }
+                                                    disabled={
+                                                        busyId !== null ||
+                                                        deletingId !== null
+                                                    }
+                                                >
+                                                    Delete
+                                                </button>
+
                                             </div>
 
                                         </td>
@@ -1631,6 +1700,22 @@ function ManageActivities() {
                         onDeleted={removeCategory}
                     />
                 </Modal>
+
+                <ConfirmDialog
+                    open={deleteTarget !== null}
+                    title="Delete this activity permanently?"
+                    message={
+                        deleteTarget
+                            ? `"${deleteTarget.title}" will be deleted permanently. This also deletes every child's progress records for this activity. This cannot be undone.`
+                            : ''
+                    }
+                    confirmLabel="Delete permanently"
+                    confirmVariant="danger"
+                    busyLabel="Deleting..."
+                    busy={deletingId !== null}
+                    onConfirm={handleDelete}
+                    onCancel={() => setDeleteTarget(null)}
+                />
 
             </div>
 

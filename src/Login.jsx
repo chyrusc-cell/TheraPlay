@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import * as auth from './authClasses.js';
-import { logo } from './brand.js';
+import { logo, loginBackground } from './brand.js';
 import { API_URL } from './api.js';
 
 function Login() {
@@ -83,9 +83,9 @@ function Login() {
     };
 
     return (
-        <main className={auth.pageBg}>
-            <div className={auth.panel}>
-                <div className={auth.logoRowLeft}>
+        <main className={auth.loginPageBg} style={{ backgroundImage: `url(${loginBackground})` }}>
+            <div className={auth.loginPanel}>
+                <div className={auth.logoRow}>
                     <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 

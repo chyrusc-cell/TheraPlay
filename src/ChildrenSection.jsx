@@ -10,11 +10,11 @@ import Modal from './Modal.jsx';
 const cardClass =
     'mb-6 overflow-hidden rounded-2xl border border-edge bg-white p-[30px] card-soft phone:p-5';
 const pillClass =
-    'cursor-pointer rounded-[20px] border border-accent/45 btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-accent enabled:hover:text-white disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 const primaryClass =
     'cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid disabled:cursor-not-allowed disabled:opacity-60';
 const cancelClass =
-    'cursor-pointer rounded-full border border-accent/45 btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const emptyForm = { name: '', dateOfBirth: '', conditionIds: [] };
 
@@ -270,7 +270,7 @@ function ChildrenSection() {
                         return (
                             <li
                                 key={child.id}
-                                className={`rounded-lg border p-4 ${isSelected ? 'border-accent bg-accent-soft' : 'border-edge bg-warm'}`}
+                                className={`rounded-lg border card-soft p-4 ${isSelected ? 'outline outline-2 outline-accent' : ''}`}
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-3">
 
@@ -349,7 +349,7 @@ function ChildrenSection() {
                         inactiveConditions={editing ? (editing.conditions || []).filter((c) => !c.is_active) : []}
                     />
 
-                    <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 flex justify-end gap-2.5 border-t border-[#eee] bg-white px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full">
+                    <div className="sticky bottom-0 z-10 -mx-6 -mb-6 mt-6 flex justify-end gap-2.5 border-t border-white/30 bg-white/50 backdrop-blur-[35px] px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full">
                         <button type="button" className={cancelClass} onClick={closeForm} disabled={isSaving}>
                             Cancel
                         </button>

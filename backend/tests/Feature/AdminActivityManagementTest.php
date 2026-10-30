@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\Activity;
 use App\Models\ActivityProgress;
+use App\Models\ActivityResource;
 use App\Models\Category;
 use App\Models\Child;
+use App\Models\Condition;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -304,25 +307,138 @@ class AdminActivityManagementTest extends TestCase
         $this->getJson("/api/activities/{$draft->id}")->assertNotFound();
     }
 
-    // --- Deletion is intentionally unavailable ---
+    // --- Permanent deletion (progress is deleted with the activity) ---
 
-    public function test_there_is_no_delete_endpoint_so_progress_cannot_be_destroyed(): void
+    private function makeProgress(Child $child, Activity $activity): ActivityProgress
     {
-        $admin = $this->makeAdmin();
-        $parent = $this->makeUser('parent@example.com');
-        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
-        $activity = $this->makeActivity();
-        ActivityProgress::create([
+        return ActivityProgress::create([
             'child_id' => $child->id,
             'activity_id' => $activity->id,
             'status' => 'completed',
             'completed_at' => now(),
         ]);
+    }
+
+    private function makeResource(Activity $activity, string $path): ActivityResource
+    {
+        Storage::disk('local')->put($path, 'x');
+
+        return ActivityResource::create([
+            'activity_id' => $activity->id,
+            'title' => 'Sheet',
+            'file_name' => 'sheet.txt',
+            'file_path' => $path,
+            'file_type' => 'txt',
+        ]);
+    }
+
+    public function test_an_admin_can_delete_an_activity_that_has_no_progress(): void
+    {
+        $admin = $this->makeAdmin();
+        $activity = $this->makeActivity();
         Sanctum::actingAs($admin);
 
-        $this->deleteJson("/api/admin/activities/{$activity->id}")->assertStatus(405);
+        $this->deleteJson("/api/admin/activities/{$activity->id}")
+            ->assertOk()
+            ->assertJsonPath('message', 'Activity deleted.');
+
+        $this->assertDatabaseMissing('activities', ['id' => $activity->id]);
+    }
+
+    public function test_an_admin_can_delete_an_activity_with_progress_and_the_progress_goes_too(): void
+    {
+        Storage::fake('local');
+        $admin = $this->makeAdmin();
+        $parent = $this->makeUser('parent@example.com');
+        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
+        $sibling = Child::create(['user_id' => $parent->id, 'name' => 'Sibling']);
+        $activity = $this->makeActivity();
+        $this->makeProgress($child, $activity);
+        $this->makeProgress($sibling, $activity);
+        $condition = Condition::create(['name' => 'Autism']);
+        $activity->conditions()->attach($condition->id);
+        $resource = $this->makeResource($activity, 'activity-materials/sheet.txt');
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/admin/activities/{$activity->id}")->assertOk();
+
+        $this->assertDatabaseMissing('activities', ['id' => $activity->id]);
+        $this->assertSame(0, ActivityProgress::where('activity_id', $activity->id)->count());
+        $this->assertSame(0, ActivityProgress::count());
+        $this->assertDatabaseMissing('activity_resources', ['id' => $resource->id]);
+        $this->assertDatabaseMissing('activity_condition', ['activity_id' => $activity->id]);
+        Storage::disk('local')->assertMissing('activity-materials/sheet.txt');
+        // The children, their parent and the shared condition are still there.
+        $this->assertNotNull($child->fresh());
+        $this->assertNotNull($sibling->fresh());
+        $this->assertNotNull($parent->fresh());
+        $this->assertNotNull($condition->fresh());
+    }
+
+    public function test_deleting_one_activity_leaves_other_activities_and_their_progress(): void
+    {
+        Storage::fake('local');
+        $admin = $this->makeAdmin();
+        $parent = $this->makeUser('parent@example.com');
+        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
+        $doomed = $this->makeActivity('Doomed');
+        $kept = $this->makeActivity('Kept');
+        $this->makeProgress($child, $doomed);
+        $keptProgress = $this->makeProgress($child, $kept);
+        $this->makeResource($kept, 'activity-materials/kept.txt');
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/admin/activities/{$doomed->id}")->assertOk();
+
+        $this->assertNotNull($kept->fresh());
+        $this->assertNotNull($keptProgress->fresh());
+        $this->assertSame(1, ActivityProgress::count());
+        $this->assertSame(1, ActivityResource::count());
+        Storage::disk('local')->assertExists('activity-materials/kept.txt');
+    }
+
+    public function test_deleting_a_missing_activity_returns_404(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+
+        $this->deleteJson('/api/admin/activities/99999')->assertNotFound();
+    }
+
+    public function test_guests_and_parents_cannot_delete_an_activity(): void
+    {
+        $parent = $this->makeUser('parent@example.com');
+        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
+        $activity = $this->makeActivity();
+        $this->makeProgress($child, $activity);
+
+        $this->deleteJson("/api/admin/activities/{$activity->id}")->assertUnauthorized();
+
+        Sanctum::actingAs($parent);
+        $this->deleteJson("/api/admin/activities/{$activity->id}")->assertForbidden();
 
         $this->assertNotNull($activity->fresh());
         $this->assertSame(1, ActivityProgress::count());
+    }
+
+    public function test_a_failed_deletion_rolls_everything_back(): void
+    {
+        Storage::fake('local');
+        $admin = $this->makeAdmin();
+        $parent = $this->makeUser('parent@example.com');
+        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
+        $activity = $this->makeActivity();
+        $this->makeProgress($child, $activity);
+        $this->makeResource($activity, 'activity-materials/sheet.txt');
+        // The last step fails, after the progress and resource rows were deleted.
+        Activity::deleting(fn () => throw new \RuntimeException('boom'));
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson("/api/admin/activities/{$activity->id}")->assertStatus(500);
+
+        $this->assertNotNull($activity->fresh());
+        $this->assertSame(1, ActivityProgress::count());
+        $this->assertSame(1, ActivityResource::count());
+        // The uploaded file is kept, because the database was rolled back.
+        Storage::disk('local')->assertExists('activity-materials/sheet.txt');
     }
 }

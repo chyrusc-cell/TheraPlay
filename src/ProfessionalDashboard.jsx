@@ -11,7 +11,7 @@ const FEEDBACK_LIMIT = 5;
 
 // Class strings used more than once on this page. Colors and breakpoints come
 // from css/tailwind.css; the focus ring is the global one in css/ui.css.
-const cardClass = 'rounded-[10px] border border-edge bg-white p-[25px]';
+const cardClass = 'rounded-[10px] border border-edge bg-white card-soft p-[25px]';
 const noteClass = 'text-[13px] text-faint';
 const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
 
@@ -387,7 +387,7 @@ function ProfessionalDashboard() {
                                         key={item.id}
                                     >
 
-                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-sunken text-[10px] text-faint">
+                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-white text-[10px] text-faint">
                                             Image
                                         </div>
 

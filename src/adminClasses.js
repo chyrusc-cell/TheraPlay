@@ -43,27 +43,27 @@ export const cancelButton =
 
 // Small buttons inside table rows and file lists.
 export const editButton =
-    'cursor-pointer rounded-[5px] border border-edge-strong btn-glass px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border border-edge-strong btn-glass px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // Delete is red. The label always says "Delete" as well.
 export const deleteButton =
-    'cursor-pointer rounded-[5px] border border-danger bg-white btn-tone [--tp-ring:rgba(197,34,31,0.38)] px-[11px] py-[7px] text-[12px] text-danger-text enabled:hover:bg-danger-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border border-danger bg-white/70 btn-tone [--tp-ring:rgba(197,34,31,0.38)] px-[11px] py-[7px] text-[12px] text-danger-text enabled:hover:bg-danger-bg-hover phone-lg:min-h-9';
 
 // Publish is green, Unpublish is amber: distinct from each other and from Delete.
 export const publishButton =
-    'cursor-pointer rounded-[5px] border border-success bg-success-bg btn-tone [--tp-ring:rgba(21,115,47,0.38)] px-[11px] py-[7px] text-[12px] text-success-text enabled:hover:bg-success-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border border-success bg-success-bg/70 btn-tone [--tp-ring:rgba(21,115,47,0.38)] px-[11px] py-[7px] text-[12px] text-success-text enabled:hover:bg-success-bg-hover phone-lg:min-h-9';
 
 export const unpublishButton =
-    'cursor-pointer rounded-[5px] border border-warning-border bg-warning-bg btn-tone [--tp-ring:rgba(180,120,0,0.42)] px-[11px] py-[7px] text-[12px] text-warning-text enabled:hover:bg-warning-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border border-warning-border bg-warning-bg/70 btn-tone [--tp-ring:rgba(180,120,0,0.42)] px-[11px] py-[7px] text-[12px] text-warning-text enabled:hover:bg-warning-bg-hover phone-lg:min-h-9';
 
 // A neutral row button (for example "Make Admin" / "Make Parent").
 export const neutralRowButton =
-    'cursor-pointer rounded-[5px] border border-edge-strong bg-warm btn-tone px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border border-edge-strong bg-warm/70 btn-tone px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Form ----------
 
 export const formCard =
-    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-edge bg-white p-[25px] phone:p-4';
+    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-edge bg-white card-soft p-[25px] phone:p-4';
 
 export const formTitle = 'mb-5 text-[20px] font-bold';
 export const formGroup = 'mb-[18px] flex flex-col';
@@ -89,14 +89,14 @@ export const formActions =
 // header stays available to screen readers (sr-only).
 
 export const tableContainer =
-    'overflow-hidden rounded-[10px] border border-edge bg-white';
+    'overflow-hidden rounded-[10px] border border-edge bg-white card-soft';
 
 export const table = 'w-full border-collapse phone-lg:block';
 export const thead = 'phone-lg:sr-only';
 export const tbody = 'phone-lg:block';
 
 export const th =
-    'border-b border-edge bg-hover p-4 text-left text-[13px] font-bold';
+    'border-b border-edge bg-white p-4 text-left text-[13px] font-bold';
 
 // A data row. The last row has no bottom line on desktop (its cells) and none
 // on phones (the row itself).
@@ -121,12 +121,12 @@ export const confirmText = 'self-center text-[12px] text-[#d93025]';
 const badge = 'inline-block rounded-md px-2.5 py-1 text-xs font-bold leading-[1.3]';
 
 export const badgePublished = `${badge} bg-success-bg text-success`;
-export const badgeDraft = `${badge} bg-hover text-muted`;
+export const badgeDraft = `${badge} bg-white text-muted`;
 export const badgeAdmin = `${badge} bg-accent-soft text-accent-hover`;
-export const badgeParent = `${badge} bg-hover text-muted`;
+export const badgeParent = `${badge} bg-white text-muted`;
 
 export const youTag =
-    'ml-2 rounded-[10px] bg-hover px-[7px] py-0.5 text-[11px] font-bold text-muted';
+    'ml-2 rounded-[10px] bg-white px-[7px] py-0.5 text-[11px] font-bold text-muted';
 
 // ---------- Uploaded files in the activity form ----------
 
@@ -134,14 +134,14 @@ export const fileHint = 'mb-2 text-[12px] leading-[1.4] text-faint';
 export const fileList = 'mb-2.5 list-none';
 
 export const fileItem =
-    'mb-1.5 flex items-center justify-between gap-2.5 rounded-md border border-edge bg-warm px-2.5 py-2 text-[13px] phone:flex-wrap';
+    'mb-1.5 flex items-center justify-between gap-2.5 rounded-md border border-edge card-soft px-2.5 py-2 text-[13px] phone:flex-wrap';
 
 export const fileName = '[word-break:break-word]';
 export const fileSize = 'text-faint';
 export const fileActions = 'flex flex-wrap items-center gap-2';
 
 export const fileRemove =
-    'shrink-0 cursor-pointer rounded-[5px] border border-edge-strong btn-glass px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'shrink-0 cursor-pointer rounded-full border border-edge-strong btn-glass px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Activity form layout (Manage Activities) ----------
 
@@ -159,12 +159,12 @@ export const activityPairRow = 'grid grid-cols-2 gap-3 phone:grid-cols-1';
 
 // The picture area. Pictures are not uploadable yet, so this is a placeholder.
 export const activityPicture =
-    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-edge-strong bg-warm px-4 text-center text-[13px] leading-[1.5] text-faint';
+    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-edge-strong bg-white px-4 text-center text-[13px] leading-[1.5] text-faint';
 
 // Cancel then the primary action, right-aligned. On phones they stack, with
 // the primary action on top, full width.
 export const activityFormActions =
-    'sticky bottom-0 z-10 -mx-6 -mb-6 mt-4 flex justify-end gap-2.5 border-t border-edge bg-white px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full';
+    'sticky bottom-0 z-10 -mx-6 -mb-6 mt-4 flex justify-end gap-2.5 border-t border-white/30 bg-white/50 backdrop-blur-[35px] px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full';
 
 // ---------- Contact form layout (Manage Contacts) ----------
 
@@ -174,8 +174,8 @@ export const contactFormGrid =
 
 // The large circular picture selector (a button, so it works with the keyboard).
 export const avatarCircle =
-    'flex h-44 w-44 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-edge-strong bg-warm p-0 text-faint enabled:hover:bg-hover phone:h-36 phone:w-36';
+    'flex h-44 w-44 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-edge-strong bg-white p-0 text-faint enabled:hover:bg-hover phone:h-36 phone:w-36';
 
 // The clickable picture box in the activity form (shows the picture, or a prompt).
 export const activityPictureButton =
-    'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-edge-strong bg-warm p-0 text-center text-[13px] leading-[1.5] text-faint enabled:hover:bg-hover';
+    'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-edge-strong bg-white p-0 text-center text-[13px] leading-[1.5] text-faint enabled:hover:bg-hover';

@@ -132,10 +132,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        // No destroy route on purpose: deleting an activity would cascade-delete
-        // children's progress. Use unpublish instead.
-        Route::apiResource('activities', ActivityManagementController::class)
-            ->except(['destroy']);
+        // DELETE /activities/{activity} permanently deletes the activity AND the
+        // children's progress records, resources, files and condition links that
+        // belong to it (see ActivityManagementController::destroy).
+        Route::apiResource('activities', ActivityManagementController::class);
 
         Route::post('activities/{activity}/publish', [ActivityManagementController::class, 'publish'])
             ->name('activities.publish');

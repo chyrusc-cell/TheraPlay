@@ -25,9 +25,9 @@ const variants = {
     secondary:
         'border border-edge-strong text-ink enabled:hover:bg-hover btn-glass',
     danger:
-        'border-0 bg-[#a50e0e] text-white enabled:hover:bg-[#8b0b0b] [--btn-glow:139,11,11] btn-solid',
+        'border-0 bg-[#a50e0e] text-white enabled:hover:bg-[#8b0b0b] [--btn-glow:139,11,11] [--btn-rgb:150_12_12] [--btn-rgb-hover:128_10_10] btn-solid',
     success:
-        'border-0 bg-success text-white enabled:hover:bg-[#0f5c25] [--btn-glow:21,115,47] btn-solid',
+        'border-0 bg-success text-white enabled:hover:bg-[#0f5c25] [--btn-glow:21,115,47] [--btn-rgb:12_84_35] [--btn-rgb-hover:10_70_29] btn-solid',
     ghost:
         'border border-transparent bg-transparent text-ink enabled:hover:bg-hover',
 };

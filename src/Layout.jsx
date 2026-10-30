@@ -64,7 +64,7 @@ function Layout() {
                 </header>
 
                 {/* Everything to the right of the fixed sidebar. */}
-                <div className="ml-sidebar flex min-h-screen min-w-0 flex-col tablet:ml-sidebar-rail">
+                <div className="ml-sidebar-offset flex min-h-screen min-w-0 flex-col tablet:ml-sidebar-offset-rail">
                     {/*
                       An empty row that only keeps the space at the top where the
                       floating search and profile shortcut sit, so page content
