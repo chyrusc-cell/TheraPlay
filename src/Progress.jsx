@@ -4,14 +4,9 @@ import { CardsSkeleton } from './Skeleton.jsx';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle } from './uiClasses.js';
-import { API_URL } from './api.js';
+import { API_URL, getToken } from './api.js';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
 
 // "2026-10-21" in the viewer's local time, used to group records by day.
 const dayKey = (date) => {

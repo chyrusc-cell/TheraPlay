@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { API_URL, apiRequest } from './api.js';
+import { API_URL, apiRequest, getToken } from './api.js';
 import { useAuth } from './authContext.js';
 import { ProfileAvatar } from './ProfileAvatar.jsx';
 import ChildrenSection from './ChildrenSection.jsx';
@@ -10,11 +10,6 @@ import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { CardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMainNarrow, pageHeader, pageTitle } from './uiClasses.js';
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
 
 // The database stores one "name", while this page shows first and last name.
 const splitName = (fullName = '') => {
@@ -51,10 +46,10 @@ const fieldInputClass =
     'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 const pillButtonClass =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 
 const smallPillClass =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 // Picture rules (the server checks again, from the file's real content).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -481,7 +476,7 @@ function Profile() {
 
                     {!isEditing && savedUser && (
                         <button
-                            className={pillButtonClass}
+                            className={`${pillButtonClass} btn-yellow`}
                             type="button"
                             onClick={() => setIsEditing(true)}
                         >
@@ -509,7 +504,7 @@ function Profile() {
                                 <>
                                     <button
                                         type="button"
-                                        className={smallPillClass}
+                                        className={`${smallPillClass} btn-green`}
                                         onClick={handleSavePhoto}
                                         disabled={photoBusy}
                                     >
@@ -517,7 +512,7 @@ function Profile() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={smallPillClass}
+                                        className={`${smallPillClass} btn-gray`}
                                         onClick={discardPhoto}
                                         disabled={photoBusy}
                                     >
@@ -528,7 +523,7 @@ function Profile() {
                                 <>
                                     <button
                                         type="button"
-                                        className={smallPillClass}
+                                        className={`${smallPillClass} btn-yellow`}
                                         onClick={() => photoInputRef.current?.click()}
                                         disabled={photoBusy}
                                     >
@@ -537,7 +532,7 @@ function Profile() {
                                     {authUser?.photo_url && (
                                         <button
                                             type="button"
-                                            className={smallPillClass}
+                                            className={`${smallPillClass} btn-red`}
                                             onClick={handleRemovePhoto}
                                             disabled={photoBusy}
                                         >
@@ -687,7 +682,7 @@ function Profile() {
                         <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
+                                className="cursor-pointer rounded-full border btn-glass btn-gray px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
                                 onClick={handleCancel}
                                 disabled={isSaving}
                             >
@@ -696,7 +691,7 @@ function Profile() {
 
                             <button
                                 type="submit"
-                                className="cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid"
+                                className="cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green"
                                 disabled={isSaving}
                             >
                                 {isSaving ? 'Saving...' : 'Save Changes'}
@@ -722,7 +717,7 @@ function Profile() {
                     </p>
 
                     <button
-                        className={pillButtonClass}
+                        className={`${pillButtonClass} btn-red`}
                         type="button"
                         onClick={handleRequestReset}
                         disabled={isSendingReset || !savedUser}

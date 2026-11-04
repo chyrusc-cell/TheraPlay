@@ -8,7 +8,7 @@ import { useChildren } from './childContext.js';
 const RESERVE_ATTRIBUTE = 'data-child-selector';
 
 const buttonClass =
-    'flex h-11 max-w-[190px] cursor-pointer items-center gap-2 rounded-full border border-white/70 btn-glass px-3.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-white/90 tablet:max-w-[150px] tablet:px-3 phone:px-2.5';
+    'flex h-11 max-w-[190px] cursor-pointer items-center gap-2 rounded-full border btn-glass py-0 pl-3.5 pr-5 [font-family:inherit] text-[14px] font-bold text-ink tablet:max-w-[150px] tablet:pl-3 tablet:pr-4 phone:pl-2.5 phone:pr-3.5';
 
 /*
  * "Choose Child": the global child switcher in the top bar (parents only). It
@@ -107,7 +107,7 @@ function ChildSelector() {
             >
                 <Baby size={18} aria-hidden="true" className="shrink-0 text-accent" />
                 <span className="truncate phone:sr-only">{label}</span>
-                <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-muted" />
+                <ChevronDown size={16} aria-hidden="true" className="ml-1 shrink-0 text-muted" />
             </button>
 
             {open && (

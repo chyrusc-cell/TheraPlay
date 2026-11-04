@@ -15,7 +15,8 @@ class AuthHardeningTest extends TestCase
     {
         User::create(['name' => 'P', 'email' => 'p@example.com', 'password' => 'password123']);
 
-        for ($i = 0; $i < 10; $i++) {
+        // 5 tries per minute per account from one address (see the 'login' limiter).
+        for ($i = 0; $i < 5; $i++) {
             $this->postJson('/api/login', ['email' => 'p@example.com', 'password' => 'wrong'])
                 ->assertStatus(401);
         }

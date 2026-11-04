@@ -18,6 +18,7 @@ class ActivityController extends Controller
     {
         $activities = Activity::query()
             ->where('is_published', true)
+            ->whereNull('archived_at')
             ->select([
                 'id',
                 'category_id',
@@ -27,7 +28,7 @@ class ActivityController extends Controller
                 'difficulty',
                 'image_path',
             ])
-            ->with('category:id,name')
+            ->with('category:id,name', 'resources:id,activity_id,file_type')
             ->orderBy('id')
             ->get()
             ->map(fn (Activity $activity) => [
@@ -39,6 +40,7 @@ class ActivityController extends Controller
                 'objective' => $activity->objective,
                 'difficulty' => $activity->difficulty,
                 'image_url' => $activity->imageUrl(),
+                'attachment_image_url' => $activity->attachmentImageUrl(),
             ]);
 
         return response()->json(['data' => $activities]);
@@ -48,6 +50,7 @@ class ActivityController extends Controller
     {
         $activity = Activity::query()
             ->where('is_published', true)
+            ->whereNull('archived_at')
             ->with('category:id,name', 'resources')
             ->findOrFail($id);
 
@@ -68,6 +71,7 @@ class ActivityController extends Controller
                     'file_type' => $resource->file_type,
                 ])->values(),
                 'image_url' => $activity->imageUrl(),
+                'attachment_image_url' => $activity->attachmentImageUrl(),
             ],
         ]);
     }
@@ -80,6 +84,7 @@ class ActivityController extends Controller
 
         abort_unless(
             $activity->is_published
+                && $activity->archived_at === null
                 && $activity->hasPicture()
                 && $disk->exists($activity->image_path),
             404

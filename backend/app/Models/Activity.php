@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class Activity extends Model
 {
@@ -32,6 +34,8 @@ class Activity extends Model
             'instructions' => 'array',
             'materials' => 'array',
             'is_published' => 'boolean',
+            'archived_at' => 'datetime',
+            'archived_was_published' => 'boolean',
             'is_for_all_conditions' => 'boolean',
         ];
     }
@@ -50,6 +54,24 @@ class Activity extends Model
     {
         return $this->hasPicture()
             ? url("/api/activities/{$this->id}/image").'?v='.substr(md5($this->image_path), 0, 8)
+            : null;
+    }
+
+    /**
+     * The card picture to use when there is no dedicated one: the first attached
+     * file (lowest id) that is a supported image type. PDFs and other documents
+     * never count. Needs the resources relation (load it to avoid extra queries).
+     * The URL is the public download route, which only serves published,
+     * non-archived activities.
+     */
+    public function attachmentImageUrl(): ?string
+    {
+        $resource = $this->resources
+            ->sortBy('id')
+            ->first(fn (ActivityResource $r) => in_array($r->file_type, ActivityResource::IMAGE_TYPES, true));
+
+        return $resource
+            ? url("/api/activities/{$this->id}/resources/{$resource->id}/download")
             : null;
     }
 
@@ -78,5 +100,40 @@ class Activity extends Model
     public function progressRecords(): HasMany
     {
         return $this->hasMany(ActivityProgress::class);
+    }
+
+    /**
+     * Permanently deletes this activity and everything that belongs to it: the
+     * children's progress records for THIS activity, its resources (rows and
+     * uploaded files), its picture and its condition links. The database rows go
+     * in one transaction (any failure rolls all of it back); the files are removed
+     * only after it commits, so a rollback never loses a file. Other activities,
+     * children and their other progress are not touched.
+     */
+    public function purge(): void
+    {
+        $disk = Storage::disk(config('filesystems.activity_materials.disk'));
+        $imagePath = $this->image_path;
+        $filePaths = $this->resources()->pluck('file_path')->unique()->all();
+
+        DB::transaction(function () {
+            $this->progressRecords()->delete();
+            $this->resources()->delete();
+            $this->conditions()->detach();
+            $this->delete();
+        });
+
+        if ($imagePath !== null
+            && str_starts_with($imagePath, self::IMAGE_DIRECTORY.'/')
+            && ! self::where('image_path', $imagePath)->exists()) {
+            $disk->delete($imagePath);
+        }
+
+        foreach ($filePaths as $path) {
+            // A file is only removed when no other resource still points at it.
+            if (! ActivityResource::where('file_path', $path)->exists()) {
+                $disk->delete($path);
+            }
+        }
     }
 }

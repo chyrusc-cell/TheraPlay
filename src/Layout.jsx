@@ -22,7 +22,7 @@ function Layout() {
                 {/* First tab stop: lets keyboard users jump past the navigation and search. */}
                 <a
                     href="#main-content"
-                    className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:btn-solid focus:px-4 focus:py-2 focus:text-[14px] focus:font-bold focus:no-underline"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:rounded-full focus:btn-glass focus:px-4 focus:py-2 focus:text-[14px] focus:font-bold focus:no-underline"
                 >
                     Skip to main content
                 </a>
@@ -55,7 +55,7 @@ function Layout() {
 
                 <Link
                     to="/profile"
-                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center overflow-hidden justify-center rounded-full border border-white/70 btn-glass text-muted no-underline tablet:right-4"
+                    className="fixed top-[11px] right-7 z-40 flex h-[38px] w-[38px] items-center overflow-hidden justify-center rounded-full border btn-glass text-muted no-underline tablet:right-4"
                     aria-label="Open profile"
                     title="Profile"
                 >

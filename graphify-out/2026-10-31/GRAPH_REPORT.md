@@ -1,7 +1,7 @@
 # Graph Report - TheraPlay  (2026-10-31)
 
 ## Corpus Check
-- 214 files · ~102,209 words
+- 214 files · ~102,252 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: (none) 18, .css 4, .example 2)
 

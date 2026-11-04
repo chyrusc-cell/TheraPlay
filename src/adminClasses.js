@@ -33,32 +33,41 @@ export const listError =
 // ---------- Buttons ----------
 
 export const addButton =
-    'cursor-pointer rounded-full border-0 bg-primary px-[18px] py-[11px] text-[14px] text-white enabled:hover:bg-primary-hover btn-solid';
+    'cursor-pointer rounded-full px-[18px] py-[11px] text-[14px] btn-glass btn-green';
 
 export const saveButton =
-    'cursor-pointer rounded-full border-0 bg-primary px-[18px] py-2.5 text-[14px] text-white enabled:hover:bg-primary-hover btn-solid';
+    'cursor-pointer rounded-full px-[18px] py-2.5 text-[14px] btn-glass btn-green';
 
 export const cancelButton =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass btn-gray px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+
+// Management / navigation actions (Manage Conditions, Manage Categories, Edit Development Team).
+export const manageButton =
+    'cursor-pointer rounded-full border btn-glass btn-blue px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
 // Small buttons inside table rows and file lists.
 export const editButton =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border btn-glass btn-yellow px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
-// Delete is red. The label always says "Delete" as well.
+// Cancel inside a table row: the row-sized button in neutral gray.
+export const rowCancelButton =
+    'cursor-pointer rounded-full border btn-glass btn-gray px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+
+// Delete is red; the label says "Delete".
 export const deleteButton =
-    'cursor-pointer rounded-full border border-danger bg-white/70 btn-tone [--tp-ring:rgba(197,34,31,0.38)] px-[11px] py-[7px] text-[12px] text-danger-text enabled:hover:bg-danger-bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border btn-glass btn-red px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
-// Publish is green, Unpublish is amber: distinct from each other and from Delete.
+// Publish (green) and Unpublish (yellow) have the SAME fixed size, so
+// switching the label never changes the width or shifts the row.
 export const publishButton =
-    'cursor-pointer rounded-full border border-success bg-success-bg/70 btn-tone [--tp-ring:rgba(21,115,47,0.38)] px-[11px] py-[7px] text-[12px] text-success-text enabled:hover:bg-success-bg-hover phone-lg:min-h-9';
+    'inline-flex w-[100px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-green px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
 export const unpublishButton =
-    'cursor-pointer rounded-full border border-warning-border bg-warning-bg/70 btn-tone [--tp-ring:rgba(180,120,0,0.42)] px-[11px] py-[7px] text-[12px] text-warning-text enabled:hover:bg-warning-bg-hover phone-lg:min-h-9';
+    'inline-flex w-[100px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-yellow px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
-// A neutral row button (for example "Make Admin" / "Make Parent").
+// "Make Admin" / "Make Parent": one fixed size for both labels.
 export const neutralRowButton =
-    'cursor-pointer rounded-full border border-edge-strong bg-warm/70 btn-tone px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'inline-flex w-[116px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-yellow px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
 // ---------- Form ----------
 
@@ -71,6 +80,10 @@ export const label = 'mb-[7px] text-[14px] font-bold';
 
 export const input =
     'rounded-xl border border-edge-strong p-[11px] text-[14px]';
+
+// Dropdowns: the native arrow sits flush against the edge, so ui-select (ui.css)
+// swaps it for a chevron with room on its right.
+export const select = `${input} ui-select`;
 
 export const textarea =
     'resize-y rounded-xl border border-edge-strong p-[11px] [font-family:inherit] text-[14px]';
@@ -141,7 +154,7 @@ export const fileSize = 'text-faint';
 export const fileActions = 'flex flex-wrap items-center gap-2';
 
 export const fileRemove =
-    'shrink-0 cursor-pointer rounded-full border border-edge-strong btn-glass px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'shrink-0 cursor-pointer rounded-full border btn-glass btn-red px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // ---------- Activity form layout (Manage Activities) ----------
 

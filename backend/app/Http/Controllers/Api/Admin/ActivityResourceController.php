@@ -36,14 +36,18 @@ class ActivityResourceController extends Controller
         'pdf' => ['application/pdf'],
         'png' => ['image/png'],
         'jpg' => ['image/jpeg'],
+        'webp' => ['image/webp'],
+        'gif' => ['image/gif'],
         'txt' => ['text/plain'],
         'docx' => ['application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+        'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
         'pptx' => ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
     ];
 
-    // A file inside every real .docx / .pptx package.
+    // A file inside every real .docx / .xlsx / .pptx package.
     private const OOXML_MARKER = [
         'docx' => 'word/document.xml',
+        'xlsx' => 'xl/workbook.xml',
         'pptx' => 'ppt/presentation.xml',
     ];
 
@@ -60,7 +64,7 @@ class ActivityResourceController extends Controller
                 "max:{$maxKb}",
                 function (string $attribute, mixed $file, Closure $fail) {
                     if ($file instanceof UploadedFile && $this->detectExtension($file) === null) {
-                        $fail('"'.$file->getClientOriginalName().'" is not a supported file. Use PDF, DOCX, PPTX, PNG, JPG or TXT.');
+                        $fail('"'.$file->getClientOriginalName().'" is not a supported file. Use PDF, DOCX, XLSX, PPTX, PNG, JPG, WebP, GIF or TXT.');
                     }
                 },
             ],

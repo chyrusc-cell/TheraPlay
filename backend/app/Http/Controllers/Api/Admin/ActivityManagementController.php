@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
-use App\Models\ActivityResource;
+use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /**
@@ -21,10 +19,14 @@ use Illuminate\Validation\Rule;
  */
 class ActivityManagementController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         // Unlike the public list, this includes unpublished (draft) activities.
+        // Archived activities are left out unless ?archived=1 asks for ONLY those.
+        $archived = $request->boolean('archived');
+
         $activities = Activity::query()
+            ->when($archived, fn ($query) => $query->whereNotNull('archived_at'), fn ($query) => $query->whereNull('archived_at'))
             ->with('category:id,name', 'resources', 'conditions:id')
             ->orderByDesc('id')
             ->get()
@@ -60,6 +62,10 @@ class ActivityManagementController extends Controller
 
     public function update(Request $request, Activity $activity): JsonResponse
     {
+        if ($activity->archived_at !== null) {
+            return $this->archivedResponse();
+        }
+
         $validated = $request->validate($this->rules(creating: false));
 
         // created_by and is_published are not in the validated data, so
@@ -80,36 +86,20 @@ class ActivityManagementController extends Controller
     }
 
     /**
-     * Permanently deletes one activity and everything that belongs to it: the
-     * children's progress records for THIS activity, its resources (rows and
-     * uploaded files), its picture and its condition links. The database rows go
-     * in one transaction (any failure rolls all of it back); the files are removed
-     * only after it commits, so a rollback never loses a file. Other activities,
-     * children and their other progress are not touched.
+     * Permanently deletes one activity and the children's progress records that
+     * belong to it (see Activity::purge()).
      */
     public function destroy(Activity $activity): JsonResponse
     {
-        $disk = Storage::disk(config('filesystems.activity_materials.disk'));
-        $imagePath = $activity->image_path;
-        $filePaths = $activity->resources()->pluck('file_path')->unique()->all();
-
-        DB::transaction(function () use ($activity) {
-            $activity->progressRecords()->delete();
-            $activity->resources()->delete();
-            $activity->conditions()->detach();
-            $activity->delete();
-        });
-
-        if ($imagePath !== null && str_starts_with($imagePath, Activity::IMAGE_DIRECTORY.'/')) {
-            $disk->delete($imagePath);
+        // Only an ARCHIVED activity can be erased, so a live one is never lost.
+        if ($activity->archived_at === null) {
+            return response()->json([
+                'message' => 'Archive this activity before deleting it permanently.',
+                'code' => 'activity_not_archived',
+            ], 409);
         }
 
-        foreach ($filePaths as $path) {
-            // A file is only removed when no other resource still points at it.
-            if (! ActivityResource::where('file_path', $path)->exists()) {
-                $disk->delete($path);
-            }
-        }
+        $activity->purge();
 
         return response()->json(['message' => 'Activity deleted.']);
     }
@@ -124,8 +114,64 @@ class ActivityManagementController extends Controller
         return $this->setPublished($activity, false, 'Activity unpublished.');
     }
 
+    /**
+     * Hides the activity everywhere without losing anything. Its publication
+     * state is remembered so restore() can put it back; while archived it is
+     * unpublished, so no public route can serve it.
+     */
+    public function archive(Activity $activity): JsonResponse
+    {
+        if ($activity->archived_at !== null) {
+            return $this->archivedResponse();
+        }
+
+        $activity->forceFill([
+            'archived_was_published' => $activity->is_published,
+            'is_published' => false,
+            'archived_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'message' => 'Activity archived.',
+            'data' => $this->format($activity->refresh()),
+        ]);
+    }
+
+    public function restore(Activity $activity): JsonResponse
+    {
+        if ($activity->archived_at === null) {
+            return response()->json([
+                'message' => 'This activity is not archived.',
+                'code' => 'activity_not_archived',
+            ], 409);
+        }
+
+        $activity->forceFill([
+            'is_published' => (bool) $activity->archived_was_published,
+            'archived_was_published' => null,
+            'archived_at' => null,
+        ])->save();
+
+        return response()->json([
+            'message' => 'Activity restored.',
+            'data' => $this->format($activity->refresh()),
+        ]);
+    }
+
+    private function archivedResponse(): JsonResponse
+    {
+        return response()->json([
+            'message' => 'This activity is archived. Restore it first.',
+            'code' => 'activity_archived',
+        ], 409);
+    }
+
     private function setPublished(Activity $activity, bool $published, string $message): JsonResponse
     {
+        if ($activity->archived_at !== null) {
+            return $this->archivedResponse();
+        }
+
         $activity->update(['is_published' => $published]);
 
         return response()->json([
@@ -144,7 +190,12 @@ class ActivityManagementController extends Controller
 
         return [
             'title' => [...$required, 'string', 'max:255'],
-            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            // Every activity needs one of the six required categories.
+            'category_id' => [
+                ...$required,
+                'integer',
+                Rule::exists('categories', 'id')->whereIn('name', Category::REQUIRED_NAMES),
+            ],
             'description' => ['nullable', 'string', 'max:5000'],
             'objective' => ['nullable', 'string', 'max:2000'],
             'instructions' => [...$required, 'array', 'min:1'],
@@ -183,6 +234,8 @@ class ActivityManagementController extends Controller
             'is_for_all_conditions' => $activity->is_for_all_conditions,
             'image_url' => $activity->imageUrl(),
             'is_published' => $activity->is_published,
+            'is_archived' => $activity->archived_at !== null,
+            'archived_at' => $activity->archived_at,
             'created_by' => $activity->created_by,
             'created_at' => $activity->created_at,
             'updated_at' => $activity->updated_at,

@@ -73,13 +73,13 @@ export const showPassword =
 // ---------- Buttons ----------
 
 export const loginButton =
-    'mb-4 w-full cursor-pointer rounded-full border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
+    'mb-4 w-full cursor-pointer rounded-full p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
 
 export const submitButton =
-    'mb-10 w-full cursor-pointer rounded-full border-0 bg-primary p-3.5 [font-family:inherit] text-[16px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
+    'mb-10 w-full cursor-pointer rounded-full p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
 
 export const registerButton =
-    'mb-5 w-full cursor-pointer rounded-full border-0 bg-primary p-4 [font-family:inherit] text-[15px] font-bold text-white enabled:hover:bg-primary-hover btn-solid';
+    'mb-5 w-full cursor-pointer rounded-full p-4 [font-family:inherit] text-[15px] font-bold btn-glass btn-green';
 
 // ---------- Messages ----------
 

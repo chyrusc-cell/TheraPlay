@@ -16,7 +16,7 @@ class ActivityMaterialController extends Controller
     // A draft's files answer 404, so their existence is not revealed either.
     public function download(Activity $activity, ActivityResource $resource): StreamedResponse
     {
-        abort_unless($activity->is_published, 404);
+        abort_unless($activity->is_published && $activity->archived_at === null, 404);
 
         return $this->streamMaterial($resource);
     }

@@ -5,14 +5,9 @@ import { useAuth } from './authContext.js';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
-import { API_URL } from './api.js';
+import { API_URL, getToken } from './api.js';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
 
 // "2026-10-21" in the viewer's local time (same convention as Progress.jsx).
 const dayKey = (date) => {
@@ -317,7 +312,7 @@ function Dashboard() {
                                             'Explore this activity and its learning objectives.'}
                                     </p>
                                     <button
-                                        className="cursor-pointer rounded-full border-0 bg-primary px-5 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid"
+                                        className="cursor-pointer rounded-full px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-blue"
                                         type="button"
                                         onClick={() =>
                                             navigate(`/activities/${featured.id}`)
@@ -391,7 +386,7 @@ function Dashboard() {
                             </div>
                         </div>
                         <div className="border-t border-edge pt-4">
-                            <Link to="/progress" className="flex items-center justify-between text-[13px] font-bold text-ink no-underline">
+                            <Link to="/progress" className="flex items-center justify-between gap-3 pr-1 text-[13px] font-bold text-ink no-underline">
                                 View detailed progress report
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>

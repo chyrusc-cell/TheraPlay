@@ -30,11 +30,11 @@ use App\Http\Controllers\Api\Admin\DeveloperTeamManagementController;
 
 // Rate limited per client to slow down automated sign-ups.
 Route::post('/register', [RegisterController::class, 'store'])
-    ->middleware('throttle:10,1');
+    ->middleware('throttle:register');
 
 // Rate limited per client to slow down password guessing.
 Route::post('/login', [LoginController::class, 'store'])
-    ->middleware('throttle:10,1');
+    ->middleware('throttle:login');
 
 Route::post('/logout', [LogoutController::class, 'destroy'])
     ->middleware('auth:sanctum');
@@ -94,8 +94,8 @@ Route::delete('/profile', [ProfileController::class, 'destroy'])
 // The logged-in user's own profile picture (no user id: it is always the token's account).
 Route::middleware('auth:sanctum')->prefix('profile/photo')->group(function () {
     Route::get('/', [ProfilePhotoController::class, 'show']);
-    Route::post('/', [ProfilePhotoController::class, 'store'])->middleware('throttle:10,1');
-    Route::delete('/', [ProfilePhotoController::class, 'destroy'])->middleware('throttle:10,1');
+    Route::post('/', [ProfilePhotoController::class, 'store'])->middleware('throttle:profile-photo');
+    Route::delete('/', [ProfilePhotoController::class, 'destroy'])->middleware('throttle:profile-photo');
 });
 
 // Password reset: the request is for the logged-in user's OWN email only;
@@ -125,7 +125,7 @@ Route::get('/contacts/{contact}/photo', [ContactController::class, 'photo'])
 
 // Only logged-in parents can send feedback.
 Route::post('/feedback', [FeedbackController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:parent', 'throttle:10,1']);
+    ->middleware(['auth:sanctum', 'role:parent', 'throttle:feedback']);
 
 // Admin-only management API. Order matters: authenticate first, then check role.
 Route::middleware(['auth:sanctum', 'role:admin'])
@@ -143,21 +143,36 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::post('activities/{activity}/unpublish', [ActivityManagementController::class, 'unpublish'])
             ->name('activities.unpublish');
 
+        // Archive hides an activity (separately from unpublishing); restore brings
+        // it back with its previous publication state. Permanent deletion (the
+        // DELETE route above) is only allowed for an archived activity.
+        Route::post('activities/{activity}/archive', [ActivityManagementController::class, 'archive'])
+            ->whereNumber('activity')
+            ->name('activities.archive');
+
+        Route::post('activities/{activity}/restore', [ActivityManagementController::class, 'restore'])
+            ->whereNumber('activity')
+            ->name('activities.restore');
+
         // The activity's picture (private storage; one per activity).
         Route::get('activities/{activity}/image', [ActivityImageController::class, 'show'])
             ->name('activities.image.show');
 
         Route::post('activities/{activity}/image', [ActivityImageController::class, 'store'])
+            ->middleware('activity.live')
             ->name('activities.image.store');
 
         Route::delete('activities/{activity}/image', [ActivityImageController::class, 'destroy'])
+            ->middleware('activity.live')
             ->name('activities.image.destroy');
 
         // Uploaded file materials of an activity (private storage).
         Route::post('activities/{activity}/resources', [ActivityResourceController::class, 'store'])
+            ->middleware('activity.live')
             ->name('activities.resources.store');
 
         Route::delete('activities/{activity}/resources/{resource}', [ActivityResourceController::class, 'destroy'])
+            ->middleware('activity.live')
             ->scopeBindings()
             ->name('activities.resources.destroy');
 

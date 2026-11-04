@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { API_URL, apiRequest, clearSession } from './api.js';
+import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
@@ -14,11 +14,6 @@ const FEEDBACK_LIMIT = 5;
 const cardClass = 'rounded-[10px] border border-edge bg-white card-soft p-[25px]';
 const noteClass = 'text-[13px] text-faint';
 const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
 
 const formatDate = (value) =>
     value
@@ -446,7 +441,7 @@ function ProfessionalDashboard() {
 
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border btn-glass btn-gray px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
                                         onClick={retryFeedback}
                                     >
                                         Try again

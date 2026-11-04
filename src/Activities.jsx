@@ -79,13 +79,13 @@ const filterLabelClass = 'text-[13px] font-bold text-muted';
 // The native arrow sits flush against the edge, so it is replaced by a chevron
 // (filterArrow) with room on its right; the select keeps its own behavior.
 const filterSelectClass =
-    'w-full min-w-[180px] cursor-pointer appearance-none rounded-full border border-edge-strong btn-glass py-2 pr-10 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
+    'w-full min-w-[180px] cursor-pointer appearance-none rounded-full border btn-glass py-2 pr-12 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
 const filterFieldClass = 'flex flex-col gap-1.5 phone:min-w-0 phone:flex-1';
 const filterArrow = (
     <ChevronDown
         size={16}
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-muted"
+        className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 text-muted"
     />
 );
 
@@ -323,7 +323,7 @@ function Activities() {
                             >
                                 <div className="mb-5">
                                     <ActivityPicture
-                                        url={activity.image_url}
+                                        urls={[activity.image_url, activity.attachment_image_url]}
                                         alt={`Picture of ${activity.title}`}
                                         className="h-[180px] w-full rounded-lg object-cover"
                                         fallback={

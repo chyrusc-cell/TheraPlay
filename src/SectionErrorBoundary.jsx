@@ -34,7 +34,7 @@ class SectionErrorBoundary extends Component {
                 </p>
                 <button
                     type="button"
-                    className="cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink"
+                    className="cursor-pointer rounded-full border btn-glass btn-gray px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink"
                     onClick={() => this.setState({ failed: false })}
                 >
                     Try again

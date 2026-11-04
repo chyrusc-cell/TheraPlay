@@ -62,16 +62,16 @@
     --ui-transition: 0.15s ease;
 
     /*
-     * Glass button colors, changed here for every button. The solid (colored)
-     * buttons paint rgb(--btn-rgb) at --btn-alpha so the glass shows through; the
-     * RGB triplets are a little deeper than the brand accent so white labels stay
-     * at 4.5:1 or better on the page and card surfaces at 75%. A button can set
-     * --btn-rgb / --btn-rgb-hover itself (the danger and success Button variants do).
+     * The one button palette (neutral), changed here for every button. The SURFACE
+     * is --btn-bg at --btn-alpha (80% white): a background color alpha, never
+     * opacity on the element, so labels and icons stay fully opaque.
      */
-    --btn-alpha: 0.75;
-    --btn-blur: 6px;
-    --btn-primary-rgb: 104 62 0;
-    --btn-primary-hover-rgb: 90 53 0;
+    --btn-alpha: 0.8;
+    --btn-bg: 255 255 255;
+    --btn-bg-hover: 243 243 243;
+    --btn-text: #323232;
+    --btn-border: rgba(90, 90, 90, 0.35);
+    --btn-blur: 4px;
 
     /*
      * Frosted glass, the one container design of the whole site (the supplied
@@ -105,31 +105,25 @@
 }
 
 
-/* --- Colored glass buttons ---
-   Unlayered, so the translucent color wins over a bg-* utility left on the element. */
+/* --- Buttons: one neutral glass look ---
+   Unlayered, so the neutral surface, text and border win over any utility left on
+   an element. The ring, sheen and shadows are in tailwind.css (btn-glass). */
 
-.btn-solid,
-.btn-glass,
-.btn-tone {
+.btn-glass {
+    background-color: rgb(var(--btn-bg) / var(--btn-alpha));
+    background-image: none;
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
     font-family: inherit;
     font-weight: 700;
     letter-spacing: -0.01em;
-}
-
-.btn-tone {
     -webkit-backdrop-filter: blur(var(--btn-blur));
     backdrop-filter: blur(var(--btn-blur));
 }
 
-.btn-solid {
-    background-color: rgb(var(--btn-rgb, var(--btn-primary-rgb)) / var(--btn-alpha));
-    -webkit-backdrop-filter: blur(var(--btn-blur));
-    backdrop-filter: blur(var(--btn-blur));
-}
-
-.btn-solid:is(button, [role='button']):enabled:hover,
-a.btn-solid:hover {
-    background-color: rgb(var(--btn-rgb-hover, var(--btn-primary-hover-rgb)) / var(--btn-alpha));
+.btn-glass:is(button, [role='button']):enabled:hover,
+a.btn-glass:hover {
+    background-color: rgb(var(--btn-bg-hover) / var(--btn-alpha));
 }
 
 
@@ -277,15 +271,9 @@ textarea {
     }
 
     /* No lifting or pressing movement. */
-    .btn-solid,
     .btn-glass,
-    .btn-tone,
-    .btn-solid:hover,
     .btn-glass:hover,
-    .btn-tone:hover,
-    .btn-solid:active,
-    .btn-glass:active,
-    .btn-tone:active {
+    .btn-glass:active {
         transform: none !important;
     }
 
@@ -367,4 +355,63 @@ body::before {
     background-color: var(--ui-page);
     background-image: var(--site-wallpaper);
     filter: var(--site-wallpaper-filter);
+}
+
+/* Admin dropdowns: a chevron with breathing room instead of the native arrow
+   that clings to the edge (unlayered so it beats the padding utilities). */
+.ui-select {
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+}
+
+/* --- Button colors ---
+   Color-only modifiers for btn-glass: each changes the --btn-* palette tokens (and
+   the ring) of one button and nothing else, so shape, the 80% surface, blur,
+   shadows and motion stay those of btn-glass. Labels are a dark shade of the hue
+   (all above 4.5:1). green = create / save / publish, yellow = change / replace /
+   unpublish, red = destructive / log out, blue = manage / navigate, gray =
+   secondary / refresh / cancel. */
+
+.btn-green {
+    --btn-bg: 120 185 138;
+    --btn-bg-hover: 105 170 124;
+    --btn-text: #11301d;
+    --btn-border: rgba(120, 185, 138, 0.9);
+    --tp-ring: rgba(120, 185, 138, 0.9);
+}
+
+.btn-yellow {
+    --btn-bg: 229 195 111;
+    --btn-bg-hover: 216 182 98;
+    --btn-text: #3b2d06;
+    --btn-border: rgba(229, 195, 111, 0.9);
+    --tp-ring: rgba(229, 195, 111, 0.9);
+}
+
+.btn-red {
+    --btn-bg: 217 130 130;
+    --btn-bg-hover: 204 117 117;
+    --btn-text: #3d0f0f;
+    --btn-border: rgba(217, 130, 130, 0.9);
+    --tp-ring: rgba(217, 130, 130, 0.9);
+}
+
+.btn-blue {
+    --btn-bg: 130 169 214;
+    --btn-bg-hover: 117 156 201;
+    --btn-text: #0d2540;
+    --btn-border: rgba(130, 169, 214, 0.9);
+    --tp-ring: rgba(130, 169, 214, 0.9);
+}
+
+.btn-gray {
+    --btn-bg: 166 166 166;
+    --btn-bg-hover: 152 152 152;
+    --btn-text: #1c1c1c;
+    --btn-border: rgba(166, 166, 166, 0.9);
+    --tp-ring: rgba(166, 166, 166, 0.9);
 }

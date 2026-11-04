@@ -2,36 +2,29 @@ import { LoaderCircle } from 'lucide-react';
 
 /*
  * The shared button. It is one <button> element (never a wrapper around another
- * button) with the glass 3D look from btn-solid / btn-glass in css/tailwind.css,
- * so a Button looks exactly like the buttons built directly from those classes.
+ * button) with the neutral glass 3D look of btn-glass (css/tailwind.css, palette
+ * tokens --btn-* in css/ui.css): an 80% white surface, dark gray text, a gray edge
+ * ring, a sheen and layered shadows. Every button of the app looks like this, so
+ * a Button looks exactly like the buttons built directly from the btn-glass class
+ * (adminClasses, authClasses and the page-level pill classes).
  *
- *   <Button variant="primary" size="medium" type="submit" loading={saving}>
+ *   <Button size="medium" type="submit" loading={saving} icon={<Plus size={16} />}>
  *       Save Changes
  *   </Button>
  *
- *  - variant: primary (accent), secondary (subtle glass, the default), danger
- *    (destructive, solid), success (green, solid), ghost (light, no surface).
  *  - size: small, medium (default) or large.
+ *  - icon: an optional leading icon element (marked aria-hidden for you).
+ *  - fullWidth: stretches the button to its container.
  *  - type: "button" by default, so a Button inside a form never submits it by
  *    accident; pass type="submit" for the submit button.
  *  - loading: disables the button, marks it aria-busy and shows a spinner next to
  *    the children. Say what is happening in the children ("Saving...").
+ *  - variant: the same glass look in a different hue: primary blue, secondary
+ *    gray, danger red, success green. "ghost" has no surface, for low-emphasis
+ *    text actions.
  *  - className is appended; every other prop (onClick, aria-*, title, ref, ...)
- *    goes to the <button>. Icons are ordinary children.
+ *    goes to the <button>.
  */
-const variants = {
-    primary:
-        'border-0 bg-primary text-white enabled:hover:bg-primary-hover btn-solid',
-    secondary:
-        'border border-edge-strong text-ink enabled:hover:bg-hover btn-glass',
-    danger:
-        'border-0 bg-[#a50e0e] text-white enabled:hover:bg-[#8b0b0b] [--btn-glow:139,11,11] [--btn-rgb:150_12_12] [--btn-rgb-hover:128_10_10] btn-solid',
-    success:
-        'border-0 bg-success text-white enabled:hover:bg-[#0f5c25] [--btn-glow:21,115,47] [--btn-rgb:12_84_35] [--btn-rgb-hover:10_70_29] btn-solid',
-    ghost:
-        'border border-transparent bg-transparent text-ink enabled:hover:bg-hover',
-};
-
 const sizes = {
     small: 'px-4 py-1.5 text-[13px]',
     medium: 'px-[22px] py-2.5 text-[14px]',
@@ -41,20 +34,35 @@ const sizes = {
 const base =
     'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full [font-family:inherit] font-bold disabled:cursor-not-allowed disabled:opacity-60';
 
+// Color only: the look is always btn-glass, the variant picks its hue (ui.css).
+const tones = {
+    primary: 'btn-blue',
+    secondary: 'btn-gray',
+    danger: 'btn-red',
+    success: 'btn-green',
+};
+
+const ghost =
+    'border border-transparent bg-transparent text-ink enabled:hover:bg-hover';
+
 function Button({
     variant = 'secondary',
     size = 'medium',
     type = 'button',
     loading = false,
     disabled = false,
+    fullWidth = false,
+    icon = null,
     className = '',
     children,
     ...rest
 }) {
+    const look = variant === 'ghost' ? ghost : `btn-glass ${tones[variant] || tones.secondary}`;
+
     return (
         <button
             type={type}
-            className={`${base} ${variants[variant] || variants.secondary} ${sizes[size] || sizes.medium} ${className}`.trim()}
+            className={`${base} ${look} ${sizes[size] || sizes.medium} ${fullWidth ? 'w-full' : ''} ${className}`.replace(/\s+/g, ' ').trim()}
             disabled={disabled || loading}
             aria-busy={loading || undefined}
             {...rest}
@@ -65,6 +73,11 @@ function Button({
                     aria-hidden="true"
                     className="shrink-0 motion-safe:animate-spin"
                 />
+            )}
+            {!loading && icon && (
+                <span aria-hidden="true" className="inline-flex shrink-0">
+                    {icon}
+                </span>
             )}
             {children}
         </button>

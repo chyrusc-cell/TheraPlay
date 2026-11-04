@@ -4,7 +4,7 @@ import { apiRequest, clearSession, mapValidationErrors } from './api.js';
 import * as ui from './adminClasses.js';
 
 const smallButton =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-3 py-1.5 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass px-3 py-1.5 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 /*
  * Admin management of the predefined conditions parents choose from (it opens in

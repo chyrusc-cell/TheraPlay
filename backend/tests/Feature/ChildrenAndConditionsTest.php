@@ -265,6 +265,7 @@ class ChildrenAndConditionsTest extends TestCase
         $created = $this->postJson('/api/admin/activities', [
             'title' => 'Matching', 'instructions' => ['Go'], 'materials' => [],
             'difficulty' => 'Easy', 'condition_ids' => [$a->id, $b->id], 'is_for_all_conditions' => false,
+            'category_id' => \App\Models\Category::where('name', 'Sensory')->value('id'),
         ])->assertCreated();
         $id = $created->json('data.id');
         $this->assertEqualsCanonicalizing([$a->id, $b->id], $created->json('data.condition_ids'));

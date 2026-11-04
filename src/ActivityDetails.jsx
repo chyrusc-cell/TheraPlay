@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { API_URL, apiRequest } from './api.js';
+import { API_URL, apiRequest, getToken } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
+import AttachmentViewer from './AttachmentViewer.jsx';
+import { previewKind, typeLabel } from './attachmentTypes.js';
 import { holdSkeleton } from './minLoading.js';
 import { useChildren } from './childContext.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { detailsCardClass, pageMain } from './uiClasses.js';
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
 
 // Is this activity already completed for the logged-in parent? It reads the
 // saved progress from the server, so the answer survives refreshes and new
@@ -53,7 +50,7 @@ const fetchIsCompleted = async (activityId, signal, childId) => {
 };
 
 const completeButtonBase =
-    'cursor-pointer rounded-full border-0 bg-primary p-3 text-[15px] text-white enabled:hover:bg-primary-hover btn-solid';
+    'cursor-pointer rounded-full p-3 text-[15px] btn-glass btn-green';
 
 const messageBase = 'mt-3 text-[14px] font-medium';
 
@@ -87,6 +84,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
     const [downloadingId, setDownloadingId] = useState(null);
     const [downloadError, setDownloadError] = useState('');
+    const [previewResource, setPreviewResource] = useState(null);
 
     useEffect(() => {
         // A parent's children are still loading: the completed state depends on them.
@@ -451,7 +449,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                     {/* Activity Image */}
 
                     <ActivityPicture
-                        url={activity.image_url}
+                        urls={[activity.image_url, activity.attachment_image_url]}
                         alt={`Picture of ${activity.title}`}
                         className="h-[220px] w-full rounded-lg object-cover tablet-sm:h-[180px]"
                         fallback={
@@ -559,18 +557,36 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                                         <li key={resource.id} className="mb-2">
 
-                                            <button
-                                                type="button"
-                                                className="cursor-pointer rounded-xl border border-edge-strong btn-glass px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
-                                                onClick={() =>
-                                                    handleDownload(resource)
-                                                }
-                                                disabled={downloadingId !== null}
-                                            >
-                                                {downloadingId === resource.id
-                                                    ? 'Downloading...'
-                                                    : `Download ${resource.file_name}`}
-                                            </button>
+                                            <p className="text-[13px] text-muted [word-break:break-word]">
+                                                {resource.file_name} &middot; {typeLabel(resource.file_type)}
+                                            </p>
+
+                                            <div className="flex flex-wrap gap-2">
+
+                                                {previewKind(resource.file_type) && (
+                                                    <button
+                                                        type="button"
+                                                        className="cursor-pointer rounded-xl border btn-glass btn-blue px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
+                                                        onClick={() => setPreviewResource(resource)}
+                                                    >
+                                                        {`Preview ${resource.file_name}`}
+                                                    </button>
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    className="cursor-pointer rounded-xl border btn-glass btn-blue px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
+                                                    onClick={() =>
+                                                        handleDownload(resource)
+                                                    }
+                                                    disabled={downloadingId !== null}
+                                                >
+                                                    {downloadingId === resource.id
+                                                        ? 'Downloading...'
+                                                        : `Download ${resource.file_name}`}
+                                                </button>
+
+                                            </div>
 
                                         </li>
 
@@ -585,6 +601,14 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                     {downloadError}
                                 </p>
                             )}
+
+                            <AttachmentViewer
+                                activityId={activityId}
+                                resource={previewResource}
+                                onClose={() => setPreviewResource(null)}
+                                onDownload={handleDownload}
+                                downloading={downloadingId !== null}
+                            />
 
                         </section>
 
@@ -630,7 +654,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                 <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border border-edge-strong btn-glass px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border btn-glass btn-gray px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >

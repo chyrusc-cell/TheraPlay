@@ -10,11 +10,11 @@ import Modal from './Modal.jsx';
 const cardClass =
     'mb-6 overflow-hidden rounded-2xl border border-edge bg-white p-[30px] card-soft phone:p-5';
 const pillClass =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 const primaryClass =
-    'cursor-pointer rounded-full border-0 bg-primary px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-white enabled:hover:bg-primary-hover btn-solid disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green disabled:cursor-not-allowed disabled:opacity-60';
 const cancelClass =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass btn-gray px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const emptyForm = { name: '', dateOfBirth: '', conditionIds: [] };
 
@@ -217,7 +217,7 @@ function ChildrenSection() {
 
                 <button
                     type="button"
-                    className={pillClass}
+                    className={`${pillClass} btn-green`}
                     onClick={(event) => {
                         openerRef.current = event.currentTarget;
                         openAdd();
@@ -250,7 +250,7 @@ function ChildrenSection() {
 
                 <div role="alert">
                     <p className="mb-3 text-[14px] text-[#d93025]">We could not load your child profiles.</p>
-                    <button type="button" className={pillClass} onClick={refreshChildren}>Try again</button>
+                    <button type="button" className={`${pillClass} btn-gray`} onClick={refreshChildren}>Try again</button>
                 </div>
 
             ) : children.length === 0 ? (
@@ -288,13 +288,13 @@ function ChildrenSection() {
 
                                     <div className="flex flex-wrap gap-2">
                                         {!isSelected && (
-                                            <button type="button" className={pillClass} onClick={() => selectChild(child.id)}>
+                                            <button type="button" className={`${pillClass} btn-blue`} onClick={() => selectChild(child.id)}>
                                                 Use this child
                                             </button>
                                         )}
                                         <button
                                             type="button"
-                                            className={pillClass}
+                                            className={`${pillClass} btn-yellow`}
                                             onClick={(event) => {
                                                 openerRef.current = event.currentTarget;
                                                 openEdit(child);
@@ -304,7 +304,7 @@ function ChildrenSection() {
                                         </button>
                                         <button
                                             type="button"
-                                            className={pillClass}
+                                            className={`${pillClass} btn-red`}
                                             onClick={() => setDeleting(child)}
                                         >
                                             Delete
@@ -366,6 +366,7 @@ function ChildrenSection() {
                 title="Delete this child profile?"
                 message={deleting ? `${deleting.name}'s profile will be removed. A profile with saved progress cannot be deleted.` : ''}
                 confirmLabel="Delete"
+                confirmVariant="danger"
                 busyLabel="Deleting..."
                 busy={isDeleting}
                 onConfirm={handleDelete}

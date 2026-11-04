@@ -17,7 +17,7 @@ import ConditionsAdmin from './ConditionsAdmin.jsx';
 import CategoriesAdmin from './CategoriesAdmin.jsx';
 
 // Uploads: the server checks everything again; these only give quick feedback.
-const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx', 'png', 'jpg', 'jpeg', 'txt'];
+const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'xlsx', 'pptx', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'txt'];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_FILES = 10;
 
@@ -60,6 +60,9 @@ function ManageActivities() {
     const [isLoading, setIsLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const [reloadKey, setReloadKey] = useState(0);
+    // 'active' = the normal list, 'archived' = archived activities only.
+    const [view, setView] = useState('active');
+    const isArchivedView = view === 'archived';
 
     const [notice, setNotice] = useState(null);
 
@@ -124,9 +127,10 @@ function ManageActivities() {
 
         const loadActivities = async () => {
             try {
-                const result = await apiRequest('/admin/activities', {
-                    signal: controller.signal,
-                });
+                const result = await apiRequest(
+                    view === 'archived' ? '/admin/activities?archived=1' : '/admin/activities',
+                    { signal: controller.signal }
+                );
 
                 if (result.status === 401) {
                     handleUnauthorized();
@@ -168,7 +172,18 @@ function ManageActivities() {
         loadActivities();
 
         return () => controller.abort();
-    }, [reloadKey, handleUnauthorized]);
+    }, [reloadKey, view, handleUnauthorized]);
+
+    const switchView = (next) => {
+        if (next === view) {
+            return;
+        }
+
+        setNotice(null);
+        setActivities([]);
+        setIsLoading(true);
+        setView(next);
+    };
 
 
     // showSpinner = false refreshes quietly after a save or publish action.
@@ -228,10 +243,6 @@ function ManageActivities() {
                 activity.category_id === saved.id ? { ...activity, category: saved.name } : activity
             )
         );
-    };
-
-    const removeCategory = (id) => {
-        setCategories((current) => current.filter((item) => item.id !== id));
     };
 
 
@@ -602,10 +613,19 @@ function ManageActivities() {
 
         const instructions = linesToArray(form.instructions);
 
+        // The server enforces the category too; this just answers sooner.
+        const missing = {};
+
+        if (!form.categoryId) {
+            missing.category_id = 'Please select a category.';
+        }
+
         if (instructions.length === 0) {
-            setFieldErrors({
-                instructions: 'Add at least one instruction.',
-            });
+            missing.instructions = 'Add at least one instruction.';
+        }
+
+        if (Object.keys(missing).length > 0) {
+            setFieldErrors(missing);
             setFormError('Please fix the highlighted fields.');
             return;
         }
@@ -803,6 +823,55 @@ function ManageActivities() {
     };
 
 
+    // Archive hides an activity without losing anything; restore brings it back
+    // with its previous publication state.
+    const handleArchiveOrRestore = async (activity, action) => {
+        if (busyId !== null) {
+            return;
+        }
+
+        setNotice(null);
+        setBusyId(activity.id);
+
+        try {
+            const result = await apiRequest(
+                `/admin/activities/${activity.id}/${action}`,
+                { method: 'POST' }
+            );
+
+            if (result.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error(
+                    result.data.message ||
+                    `Unable to ${action} this activity.`
+                );
+            }
+
+            setNotice({
+                type: 'success',
+                text:
+                    action === 'archive'
+                        ? `"${activity.title}" was archived. You can restore it from Archived Activities.`
+                        : `"${activity.title}" was restored.`,
+            });
+            reload(false);
+        } catch (error) {
+            setNotice({
+                type: 'error',
+                text:
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+
     // Permanent: the server also deletes the children's progress for this activity.
     const handleDelete = async () => {
         const activity = deleteTarget;
@@ -888,7 +957,7 @@ function ManageActivities() {
 
                         <button
                             type="button"
-                            className={ui.cancelButton}
+                            className={ui.manageButton}
                             onClick={() => setConditionsOpen(true)}
                         >
                             Manage Conditions
@@ -896,7 +965,7 @@ function ManageActivities() {
 
                         <button
                             type="button"
-                            className={ui.cancelButton}
+                            className={ui.manageButton}
                             onClick={openCategories}
                         >
                             Manage Categories
@@ -1180,8 +1249,10 @@ function ManageActivities() {
                                     </label>
 
                                     <p className={ui.fileHint}>
-                                        PDF, DOCX, PPTX, PNG, JPG or TXT, up to
-                                        10 MB each.
+                                        PDF, DOCX, XLSX, PPTX, PNG, JPG, WebP, GIF or TXT,
+                                        up to 10 MB each. An attached image is
+                                        used as the card picture when the activity
+                                        has no picture of its own.
                                     </p>
 
                                     {existingResources.length > 0 && (
@@ -1256,7 +1327,7 @@ function ManageActivities() {
                                         key={fileInputKey}
                                         type="file"
                                         multiple
-                                        accept=".pdf,.docx,.pptx,.png,.jpg,.jpeg,.txt"
+                                        accept=".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.webp,.gif,.txt"
                                         onChange={handleFilesSelected}
                                         disabled={isSaving}
                                     />
@@ -1313,8 +1384,10 @@ function ManageActivities() {
                                             Category
                                         </label>
 
-                                        <select className={ui.input}
+                                        <select className={ui.select}
                                             id="activity-category"
+                                            aria-required="true"
+                                            aria-invalid={fieldErrors.category_id ? true : undefined}
                                             value={form.categoryId}
                                             onChange={(event) =>
                                                 updateField(
@@ -1325,7 +1398,7 @@ function ManageActivities() {
                                         >
 
                                             <option value="">
-                                                No category
+                                                Select a category
                                             </option>
 
                                             {categories.map((category) => (
@@ -1354,7 +1427,7 @@ function ManageActivities() {
                                             Difficulty
                                         </label>
 
-                                        <select className={ui.input}
+                                        <select className={ui.select}
                                             id="activity-difficulty"
                                             value={form.difficulty}
                                             onChange={(event) =>
@@ -1493,6 +1566,34 @@ function ManageActivities() {
                 </Modal>
 
 
+                {/* Active / Archived switch */}
+
+                <div className={ui.actions} role="group" aria-label="Activity list">
+                    <button
+                        type="button"
+                        className={ui.editButton}
+                        aria-pressed={!isArchivedView}
+                        onClick={() => switchView('active')}
+                    >
+                        Activities
+                    </button>
+                    <button
+                        type="button"
+                        className={ui.editButton}
+                        aria-pressed={isArchivedView}
+                        onClick={() => switchView('archived')}
+                    >
+                        Archived Activities
+                    </button>
+                </div>
+
+                {isArchivedView && (
+                    <p className={ui.fileHint}>
+                        These activities are archived: hidden from parents and from the normal list.
+                        Restore one to bring it back, or delete it permanently.
+                    </p>
+                )}
+
                 {/* Activities Table */}
 
                 {isLoading ? (
@@ -1562,9 +1663,9 @@ function ManageActivities() {
                                     <tr className={ui.row}>
 
                                         <td className={ui.tdEmpty} colSpan={5}>
-                                            No activities yet. Use
-                                            &ldquo;+ Add Activity&rdquo; to
-                                            create the first one.
+                                            {isArchivedView
+                                                ? 'No archived activities.'
+                                                : <>No activities yet. Use &ldquo;+ Add Activity&rdquo; to create the first one.</>}
                                         </td>
 
                                     </tr>
@@ -1598,9 +1699,11 @@ function ManageActivities() {
                                             <span
                                                 className={activity.is_published ? ui.badgePublished : ui.badgeDraft}
                                             >
-                                                {activity.is_published
-                                                    ? 'Published'
-                                                    : 'Draft'}
+                                                {isArchivedView
+                                                    ? 'Archived'
+                                                    : activity.is_published
+                                                        ? 'Published'
+                                                        : 'Draft'}
                                             </span>
 
                                         </td>
@@ -1609,6 +1712,34 @@ function ManageActivities() {
 
                                             <div className={ui.actions}>
 
+                                                {isArchivedView ? (
+                                                    <>
+                                                <button
+                                                    type="button"
+                                                    className={ui.publishButton}
+                                                    aria-label={`Restore ${activity.title}`}
+                                                    onClick={() =>
+                                                        handleArchiveOrRestore(activity, 'restore')
+                                                    }
+                                                    disabled={busyId !== null || deletingId !== null}
+                                                >
+                                                    {busyId === activity.id ? 'Working...' : 'Restore'}
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    className={ui.deleteButton}
+                                                    aria-label={`Delete ${activity.title}`}
+                                                    onClick={() =>
+                                                        setDeleteTarget(activity)
+                                                    }
+                                                    disabled={busyId !== null || deletingId !== null}
+                                                >
+                                                    Delete permanently
+                                                </button>
+                                                    </>
+                                                ) : (
+                                                    <>
                                                 <button
                                                     type="button"
                                                     className={ui.editButton}
@@ -1649,18 +1780,17 @@ function ManageActivities() {
 
                                                 <button
                                                     type="button"
-                                                    className={ui.deleteButton}
-                                                    aria-label={`Delete ${activity.title}`}
+                                                    className={ui.editButton}
+                                                    aria-label={`Archive ${activity.title}`}
                                                     onClick={() =>
-                                                        setDeleteTarget(activity)
+                                                        handleArchiveOrRestore(activity, 'archive')
                                                     }
-                                                    disabled={
-                                                        busyId !== null ||
-                                                        deletingId !== null
-                                                    }
+                                                    disabled={busyId !== null}
                                                 >
-                                                    Delete
+                                                    Archive
                                                 </button>
+                                                    </>
+                                                )}
 
                                             </div>
 
@@ -1697,7 +1827,6 @@ function ManageActivities() {
                     <CategoriesAdmin
                         categories={categories}
                         onSaved={mergeCategory}
-                        onDeleted={removeCategory}
                     />
                 </Modal>
 
@@ -1706,7 +1835,7 @@ function ManageActivities() {
                     title="Delete this activity permanently?"
                     message={
                         deleteTarget
-                            ? `"${deleteTarget.title}" will be deleted permanently. This also deletes every child's progress records for this activity. This cannot be undone.`
+                            ? `"${deleteTarget.title}" and its progress history for every child will be permanently removed, along with its attachments and picture. This cannot be undone.`
                             : ''
                     }
                     confirmLabel="Delete permanently"

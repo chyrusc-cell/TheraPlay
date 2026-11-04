@@ -357,7 +357,7 @@ function Register() {
                     {step === 2 && (
                         <button
                             type="button"
-                            className="mb-3 w-full cursor-pointer rounded-full border border-edge-strong btn-glass p-3 [font-family:inherit] text-[15px] font-bold text-ink enabled:hover:bg-hover"
+                            className="mb-3 w-full cursor-pointer rounded-full border btn-glass btn-gray p-3 [font-family:inherit] text-[15px] font-bold text-ink enabled:hover:bg-hover"
                             onClick={() => {
                                 setMessage('');
                                 setStep(1);

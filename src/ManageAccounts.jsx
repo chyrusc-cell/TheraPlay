@@ -373,7 +373,7 @@ function ManageAccounts() {
 
                     <button
                         type="button"
-                        className={ui.deleteButton}
+                        className={isDelete ? ui.deleteButton : ui.editButton}
                         onClick={() =>
                             isDelete
                                 ? handleDelete(account)
@@ -386,7 +386,7 @@ function ManageAccounts() {
 
                     <button
                         type="button"
-                        className={ui.editButton}
+                        className={ui.rowCancelButton}
                         onClick={() => setConfirming(null)}
                         disabled={busyId !== null}
                     >
@@ -727,7 +727,7 @@ function ManageAccounts() {
                         <div className="flex flex-col gap-1.5">
                             <label className={ui.label} htmlFor="account-role-filter">Role</label>
                             <select
-                                className={ui.input}
+                                className={ui.select}
                                 id="account-role-filter"
                                 value={roleFilter}
                                 onChange={(event) => setRoleFilter(event.target.value)}
@@ -741,7 +741,7 @@ function ManageAccounts() {
                         <div className="flex flex-col gap-1.5">
                             <label className={ui.label} htmlFor="account-verified-filter">Email status</label>
                             <select
-                                className={ui.input}
+                                className={ui.select}
                                 id="account-verified-filter"
                                 value={verifiedFilter}
                                 onChange={(event) => setVerifiedFilter(event.target.value)}

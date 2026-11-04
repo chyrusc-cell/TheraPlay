@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AuthContext } from './authContext.js';
-import { API_URL } from './api.js';
-
-// The token is saved by Login.jsx in either localStorage or sessionStorage.
-const getToken = () =>
-    localStorage.getItem('theraplay_token') ||
-    sessionStorage.getItem('theraplay_token');
+import { API_URL, getToken } from './api.js';
 
 /*
  * Verifies the logged-in user once with GET /api/user and shares the result,

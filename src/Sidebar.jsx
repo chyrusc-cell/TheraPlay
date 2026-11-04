@@ -207,7 +207,7 @@ function Sidebar() {
             <div className="mt-auto pt-5 tablet:w-full">
                 <button
                     type="button"
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-[15px] py-3 text-left transition-colors tablet:rounded-2xl [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-body enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
+                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-[15px] py-3 text-left transition-colors tablet:rounded-2xl [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-danger-text enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
                     title="Log Out"
                     onClick={() => setShowLogoutConfirm(true)}
                     disabled={isLoggingOut}
@@ -223,6 +223,7 @@ function Sidebar() {
                 title="Log out?"
                 message="Are you sure you want to log out of TheraPlay?"
                 confirmLabel="Log Out"
+                confirmVariant="danger"
                 busyLabel="Logging out..."
                 busy={isLoggingOut}
                 onConfirm={handleLogout}

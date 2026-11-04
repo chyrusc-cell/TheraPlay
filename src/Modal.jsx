@@ -229,7 +229,7 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                         onClick={onClose}
                         disabled={busy}
                         aria-label="Close"
-                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-edge-strong btn-glass text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border btn-glass text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <X size={20} aria-hidden="true" />
                     </button>

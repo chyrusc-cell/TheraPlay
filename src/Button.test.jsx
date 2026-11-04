@@ -67,22 +67,39 @@ describe('Button', () => {
   })
 
   it.each([
-    ['primary', /btn-solid/, /bg-primary/],
-    ['secondary', /btn-glass/, /border-edge-strong/],
-    ['danger', /btn-solid/, /a50e0e/],
-    ['success', /btn-solid/, /bg-success/],
-  ])('the %s variant uses the shared glass classes and its own color', (variant, glass, color) => {
-    render(<Button variant={variant}>Action</Button>)
+    ['primary', 'btn-blue'],
+    ['secondary', 'btn-gray'],
+    ['danger', 'btn-red'],
+    ['success', 'btn-green'],
+  ])(
+    'the %s variant is the same glass button, only its hue (%s) differs',
+    (variant, tone) => {
+      render(<Button variant={variant}>Action</Button>)
 
-    const classes = screen.getByRole('button', { name: 'Action' }).className
-    expect(classes).toMatch(glass)
-    expect(classes).toMatch(color)
+      const classes = screen.getByRole('button', { name: 'Action' }).className
+      expect(classes).toMatch(/btn-glass/)
+      expect(classes).toContain(tone)
+      expect(classes).not.toMatch(/bg-primary|bg-success|a50e0e|text-white/)
+    }
+  )
+
+  it('shows an optional icon before the label, hidden from screen readers', () => {
+    const { container } = render(<Button icon={<svg data-testid="icon" />}>With icon</Button>)
+
+    expect(screen.getByRole('button', { name: 'With icon' })).toBeInTheDocument()
+    expect(container.querySelector('[data-testid="icon"]').parentElement).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('can be full width', () => {
+    render(<Button fullWidth>Wide</Button>)
+
+    expect(screen.getByRole('button', { name: 'Wide' }).className).toMatch(/(^| )w-full( |$)/)
   })
 
   it('the ghost variant has no glass surface', () => {
     render(<Button variant="ghost">Quiet</Button>)
 
-    expect(screen.getByRole('button', { name: 'Quiet' }).className).not.toMatch(/btn-(solid|glass)/)
+    expect(screen.getByRole('button', { name: 'Quiet' }).className).not.toMatch(/btn-glass/)
   })
 
   it('defaults to the secondary variant and the medium size, and has three sizes', () => {

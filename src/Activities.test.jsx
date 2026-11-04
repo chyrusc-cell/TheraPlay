@@ -119,8 +119,8 @@ describe('Activities: Category and Difficulty filters', () => {
     for (const label of ['Category', 'Difficulty']) {
       const select = screen.getByLabelText(label)
       // The native arrow is replaced by a chevron inset from the right edge.
-      expect(select).toHaveClass('appearance-none', 'pr-10')
-      expect(select.parentElement.querySelector('svg')).toHaveClass('right-4', 'pointer-events-none')
+      expect(select).toHaveClass('appearance-none', 'pr-12')
+      expect(select.parentElement.querySelector('svg')).toHaveClass('right-5', 'pointer-events-none')
     }
 
     await pick('Category', 'Memory')

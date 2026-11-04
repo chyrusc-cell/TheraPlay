@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\AddSecurityHeaders;
+use App\Http\Middleware\EnsureActivityNotArchived;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RequireVerifiedEmailWhenEnforced;
 use Illuminate\Foundation\Application;
@@ -18,10 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'activity.live' => EnsureActivityNotArchived::class,
         ]);
 
         // Every API request: accounts that must verify their email are held back.
-        $middleware->api(append: [RequireVerifiedEmailWhenEnforced::class]);
+        $middleware->api(append: [AddSecurityHeaders::class, RequireVerifiedEmailWhenEnforced::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

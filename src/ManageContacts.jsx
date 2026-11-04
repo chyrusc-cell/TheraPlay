@@ -498,7 +498,7 @@ function ManageContacts() {
 
                         <button
                             type="button"
-                            className={ui.cancelButton}
+                            className={ui.manageButton}
                             onClick={openTeamEditor}
                             disabled={teamOpening}
                         >

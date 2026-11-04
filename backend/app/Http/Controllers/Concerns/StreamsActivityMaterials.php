@@ -16,9 +16,18 @@ trait StreamsActivityMaterials
 
         abort_unless($disk->exists($resource->file_path), 404);
 
+        // Always an attachment (never rendered by the server's own origin), with
+        // a content type taken from the allow-list only: anything else (HTML, SVG,
+        // scripts, old rows with odd values) is sent as opaque bytes.
+        $type = in_array($resource->file_type, ActivityResource::SERVABLE_TYPES, true)
+            ? $resource->file_type
+            : 'application/octet-stream';
+
         return $disk->download($resource->file_path, $resource->file_name, [
-            'Content-Type' => $resource->file_type ?: 'application/octet-stream',
+            'Content-Type' => $type,
             'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; sandbox",
+            'Cache-Control' => 'private, max-age=300',
         ]);
     }
 }

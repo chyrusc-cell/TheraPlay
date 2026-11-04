@@ -4,89 +4,29 @@ import { apiRequest, clearSession, mapValidationErrors } from './api.js';
 import * as ui from './adminClasses.js';
 
 const smallButton =
-    'cursor-pointer rounded-full border border-edge-strong btn-glass px-3 py-1.5 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass px-3 py-1.5 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 /*
- * Admin management of the activity categories (it opens in a modal on the Manage
- * Activities page). A category that still has activities cannot be deleted; the
- * server refuses it and says why, so no activity is ever left without the
- * category it was given. The server checks the admin role on every request.
+ * Admin view of the activity categories (it opens in a modal on the Manage
+ * Activities page). The six categories are a fixed set: they cannot be added,
+ * renamed or deleted, only their description can be edited. The server enforces
+ * this and checks the admin role on every request.
  */
-function CategoriesAdmin({ categories, onSaved, onDeleted }) {
+function CategoriesAdmin({ categories, onSaved }) {
     const navigate = useNavigate();
 
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [errors, setErrors] = useState({});
-    const [busyId, setBusyId] = useState(null); // 'new' or a category id
+    const [busyId, setBusyId] = useState(null);
     const [notice, setNotice] = useState(null);
 
     const [editingId, setEditingId] = useState(null);
-    const [editName, setEditName] = useState('');
     const [editDescription, setEditDescription] = useState('');
     const [editErrors, setEditErrors] = useState({});
-    const [confirmingId, setConfirmingId] = useState(null);
-
-    // Runs a request and reports validation errors through setFieldErrors.
-    const send = async (path, method, body, setFieldErrors) => {
-        const result = await apiRequest(path, { method, body });
-
-        if (result.status === 401) {
-            clearSession();
-            navigate('/login', { replace: true, state: { message: 'Please log in to continue.' } });
-            return null;
-        }
-
-        if (result.status === 422) {
-            setFieldErrors(mapValidationErrors(result.data.errors));
-            return null;
-        }
-
-        if (!result.ok) {
-            throw new Error(result.data.message || 'Unable to save. Please try again.');
-        }
-
-        return result.data;
-    };
-
-    const handleAdd = async (event) => {
-        event.preventDefault();
-
-        if (busyId !== null) {
-            return;
-        }
-
-        setBusyId('new');
-        setErrors({});
-        setNotice(null);
-
-        try {
-            const saved = await send(
-                '/admin/categories',
-                'POST',
-                { name: name.trim(), description: description.trim() || null },
-                setErrors
-            );
-
-            if (saved) {
-                onSaved(saved.data);
-                setName('');
-                setDescription('');
-                setNotice({ type: 'success', text: 'Category added.' });
-            }
-        } catch (error) {
-            setNotice({ type: 'error', text: error.message || 'Unable to connect to the server.' });
-        } finally {
-            setBusyId(null);
-        }
-    };
 
     const startEdit = (category) => {
         setEditingId(category.id);
-        setEditName(category.name);
         setEditDescription(category.description || '');
         setEditErrors({});
-        setConfirmingId(null);
+        setNotice(null);
     };
 
     const handleEditSave = async (category) => {
@@ -99,43 +39,32 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
         setNotice(null);
 
         try {
-            const saved = await send(
-                `/admin/categories/${category.id}`,
-                'PUT',
-                { name: editName.trim(), description: editDescription.trim() || null },
-                setEditErrors
-            );
+            // The name is sent unchanged: the server refuses to rename a category.
+            const result = await apiRequest(`/admin/categories/${category.id}`, {
+                method: 'PUT',
+                body: { name: category.name, description: editDescription.trim() || null },
+            });
 
-            if (saved) {
-                onSaved(saved.data);
-                setEditingId(null);
+            if (result.status === 401) {
+                clearSession();
+                navigate('/login', { replace: true, state: { message: 'Please log in to continue.' } });
+                return;
             }
+
+            if (result.status === 422) {
+                setEditErrors(mapValidationErrors(result.data.errors));
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error(result.data.message || 'Unable to save. Please try again.');
+            }
+
+            onSaved(result.data.data);
+            setEditingId(null);
         } catch (error) {
             setNotice({ type: 'error', text: error.message || 'Unable to connect to the server.' });
         } finally {
-            setBusyId(null);
-        }
-    };
-
-    const handleDelete = async (category) => {
-        if (busyId !== null) {
-            return;
-        }
-
-        setBusyId(category.id);
-        setNotice(null);
-
-        try {
-            const done = await send(`/admin/categories/${category.id}`, 'DELETE', undefined, () => {});
-
-            if (done) {
-                onDeleted(category.id);
-                setNotice({ type: 'success', text: 'Category deleted.' });
-            }
-        } catch (error) {
-            setNotice({ type: 'error', text: error.message || 'Unable to connect to the server.' });
-        } finally {
-            setConfirmingId(null);
             setBusyId(null);
         }
     };
@@ -144,61 +73,19 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
         <div>
 
             <p className={ui.fileHint}>
-                Categories group activities and are the choices in the Category filter parents see.
-                A category that still has activities cannot be deleted. Rename it, or move its
-                activities to another category first.
+                These six categories group the activities and are the choices in the Category filter
+                parents see. Their names are fixed; you can edit each description.
             </p>
 
             {notice && (
-                <p
-                    className={notice.type === 'error' ? ui.messageError : ui.messageSuccess}
-                    role={notice.type === 'error' ? 'alert' : 'status'}
-                >
+                <p className={ui.messageError} role="alert">
                     {notice.text}
                 </p>
             )}
 
-            <form onSubmit={handleAdd} className="mb-6 rounded-lg border border-edge card-soft p-4" noValidate>
-
-                <h3 className="mb-3 text-[15px] font-bold text-ink">Add a category</h3>
-
-                <div className={ui.formGroup}>
-                    <label className={ui.label} htmlFor="category-name">Name</label>
-                    <input
-                        className={ui.input}
-                        id="category-name"
-                        type="text"
-                        value={name}
-                        maxLength={255}
-                        onChange={(event) => setName(event.target.value)}
-                        disabled={busyId !== null}
-                    />
-                    {errors.name && <p className={ui.fieldError}>{errors.name}</p>}
-                </div>
-
-                <div className={ui.formGroup}>
-                    <label className={ui.label} htmlFor="category-description">Description (optional)</label>
-                    <input
-                        className={ui.input}
-                        id="category-description"
-                        type="text"
-                        value={description}
-                        maxLength={2000}
-                        onChange={(event) => setDescription(event.target.value)}
-                        disabled={busyId !== null}
-                    />
-                    {errors.description && <p className={ui.fieldError}>{errors.description}</p>}
-                </div>
-
-                <button type="submit" className={ui.saveButton} disabled={busyId !== null}>
-                    {busyId === 'new' ? 'Adding...' : 'Add Category'}
-                </button>
-
-            </form>
-
             {categories.length === 0 ? (
 
-                <p className={ui.fileHint}>No categories yet. Add the first one above.</p>
+                <p className={ui.fileHint}>No categories were found.</p>
 
             ) : (
 
@@ -208,19 +95,7 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
                             {editingId === category.id ? (
 
                                 <div>
-                                    <div className={ui.formGroup}>
-                                        <label className={ui.label} htmlFor={`category-edit-name-${category.id}`}>Name</label>
-                                        <input
-                                            className={ui.input}
-                                            id={`category-edit-name-${category.id}`}
-                                            type="text"
-                                            value={editName}
-                                            maxLength={255}
-                                            onChange={(event) => setEditName(event.target.value)}
-                                            disabled={busyId !== null}
-                                        />
-                                        {editErrors.name && <p className={ui.fieldError}>{editErrors.name}</p>}
-                                    </div>
+                                    <p className="mb-2 text-[15px] font-bold text-ink [overflow-wrap:anywhere]">{category.name}</p>
                                     <div className={ui.formGroup}>
                                         <label className={ui.label} htmlFor={`category-edit-desc-${category.id}`}>Description</label>
                                         <input
@@ -232,6 +107,8 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
                                             onChange={(event) => setEditDescription(event.target.value)}
                                             disabled={busyId !== null}
                                         />
+                                        {editErrors.description && <p className={ui.fieldError}>{editErrors.description}</p>}
+                                        {editErrors.name && <p className={ui.fieldError}>{editErrors.name}</p>}
                                     </div>
                                     <div className="flex gap-2">
                                         <button type="button" className={smallButton} onClick={() => handleEditSave(category)} disabled={busyId !== null}>
@@ -256,31 +133,9 @@ function CategoriesAdmin({ categories, onSaved, onDeleted }) {
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {confirmingId === category.id ? (
-                                            <>
-                                                <button type="button" className={smallButton} onClick={() => handleDelete(category)} disabled={busyId !== null}>
-                                                    {busyId === category.id ? 'Deleting...' : `Confirm delete ${category.name}`}
-                                                </button>
-                                                <button type="button" className={smallButton} onClick={() => setConfirmingId(null)} disabled={busyId !== null}>
-                                                    Keep
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <button type="button" className={smallButton} onClick={() => startEdit(category)} disabled={busyId !== null}>
-                                                    Edit
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className={smallButton}
-                                                    onClick={() => setConfirmingId(category.id)}
-                                                    disabled={busyId !== null || category.activities_count > 0}
-                                                    title={category.activities_count > 0 ? 'In use by activities, so it cannot be deleted' : undefined}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </>
-                                        )}
+                                        <button type="button" className={smallButton} onClick={() => startEdit(category)} disabled={busyId !== null}>
+                                            Edit
+                                        </button>
                                     </div>
                                 </div>
 

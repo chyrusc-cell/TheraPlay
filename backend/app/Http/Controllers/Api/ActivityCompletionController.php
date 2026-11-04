@@ -19,6 +19,7 @@ class ActivityCompletionController extends Controller
     {
         $activity = Activity::query()
             ->where('is_published', true)
+            ->whereNull('archived_at')
             ->findOrFail($id);
 
         // The child always comes from the logged-in user, never from the request.

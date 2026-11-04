@@ -36,7 +36,7 @@ class AdminActivityManagementTest extends TestCase
         return $this->makeUser($email, 'admin');
     }
 
-    private function makeActivity(string $title = 'Button Practice', bool $published = true, ?User $owner = null): Activity
+    private function makeActivity(string $title = 'Button Practice', bool $published = true, ?User $owner = null, bool $archived = false): Activity
     {
         $activity = new Activity([
             'title' => $title,
@@ -45,6 +45,9 @@ class AdminActivityManagementTest extends TestCase
             'is_published' => $published,
         ]);
         $activity->created_by = $owner?->id;
+        if ($archived) {
+            $activity->archived_at = now();
+        }
         $activity->save();
 
         return $activity;
@@ -59,6 +62,7 @@ class AdminActivityManagementTest extends TestCase
             'instructions' => ['Pick up a bead.', 'Thread it.'],
             'materials' => ['Beads', 'String'],
             'difficulty' => 'Medium',
+            'category_id' => Category::where('name', 'Sensory')->value('id'),
         ], $extra);
     }
 
@@ -137,7 +141,7 @@ class AdminActivityManagementTest extends TestCase
     public function test_admin_can_create_a_valid_activity_owned_by_themselves(): void
     {
         $admin = $this->makeAdmin();
-        $category = Category::create(['name' => 'Fine Motor']);
+        $category = Category::where('name', 'Fine Motor Skills')->firstOrFail();
         Sanctum::actingAs($admin);
 
         $response = $this->postJson('/api/admin/activities', $this->validPayload([
@@ -145,7 +149,7 @@ class AdminActivityManagementTest extends TestCase
         ]))
             ->assertCreated()
             ->assertJsonPath('data.title', 'Bead Threading')
-            ->assertJsonPath('data.category', 'Fine Motor')
+            ->assertJsonPath('data.category', 'Fine Motor Skills')
             ->assertJsonPath('data.created_by', $admin->id)
             ->assertJsonPath('data.is_published', false)
             ->assertJsonPath('data.instructions', ['Pick up a bead.', 'Thread it.']);
@@ -188,6 +192,8 @@ class AdminActivityManagementTest extends TestCase
             'materials missing' => ['materials' => null],
             'bad difficulty' => ['difficulty' => 'Impossible'],
             'unknown category' => ['category_id' => 9999],
+            'null category' => ['category_id' => null],
+            'category outside the approved set' => ['category_id' => Category::create(['name' => 'Speech'])->id],
             'non-numeric category' => ['category_id' => 'abc'],
             'description too long' => ['description' => str_repeat('a', 5001)],
         ];
@@ -206,6 +212,67 @@ class AdminActivityManagementTest extends TestCase
         }
 
         $this->assertSame(0, Activity::count());
+    }
+
+    public function test_an_activity_cannot_be_created_without_a_category(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+
+        $payload = $this->validPayload();
+        unset($payload['category_id']);
+
+        $this->postJson('/api/admin/activities', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('category_id');
+
+        $this->assertSame(0, Activity::count());
+    }
+
+    public function test_each_of_the_six_required_categories_is_accepted(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+
+        foreach (Category::REQUIRED_NAMES as $name) {
+            $this->postJson('/api/admin/activities', $this->validPayload([
+                'category_id' => Category::where('name', $name)->value('id'),
+            ]))->assertCreated()->assertJsonPath('data.category', $name);
+        }
+    }
+
+    public function test_updates_keep_the_category_and_cannot_remove_or_swap_it_for_an_unapproved_one(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+        $handwriting = Category::where('name', 'Handwriting')->value('id');
+        $activity = Activity::create(array_merge($this->validPayload(), ['category_id' => $handwriting]));
+
+        // A partial update that does not mention the category leaves it alone.
+        $this->putJson("/api/admin/activities/{$activity->id}", ['title' => 'Renamed'])
+            ->assertOk()->assertJsonPath('data.category', 'Handwriting');
+
+        $this->putJson("/api/admin/activities/{$activity->id}", ['category_id' => null])
+            ->assertStatus(422)->assertJsonValidationErrors('category_id');
+        $this->putJson("/api/admin/activities/{$activity->id}", ['category_id' => Category::create(['name' => 'Speech'])->id])
+            ->assertStatus(422)->assertJsonValidationErrors('category_id');
+
+        $this->assertSame($handwriting, $activity->fresh()->category_id);
+
+        // Moving it to another required category works.
+        $visual = Category::where('name', 'Visual')->value('id');
+        $this->putJson("/api/admin/activities/{$activity->id}", ['category_id' => $visual])
+            ->assertOk()->assertJsonPath('data.category', 'Visual');
+    }
+
+    public function test_an_activity_with_no_category_cannot_be_saved_until_one_is_chosen(): void
+    {
+        Sanctum::actingAs($this->makeAdmin());
+        $activity = Activity::create(array_merge($this->validPayload(), ['category_id' => null]));
+
+        $this->putJson("/api/admin/activities/{$activity->id}", ['category_id' => null])
+            ->assertStatus(422)->assertJsonValidationErrors('category_id');
+
+        $this->putJson("/api/admin/activities/{$activity->id}", [
+            'category_id' => Category::where('name', 'Sensory')->value('id'),
+        ])->assertOk()->assertJsonPath('data.category', 'Sensory');
     }
 
     public function test_materials_may_be_an_empty_list(): void
@@ -335,7 +402,7 @@ class AdminActivityManagementTest extends TestCase
     public function test_an_admin_can_delete_an_activity_that_has_no_progress(): void
     {
         $admin = $this->makeAdmin();
-        $activity = $this->makeActivity();
+        $activity = $this->makeActivity(published: false, archived: true);
         Sanctum::actingAs($admin);
 
         $this->deleteJson("/api/admin/activities/{$activity->id}")
@@ -352,7 +419,7 @@ class AdminActivityManagementTest extends TestCase
         $parent = $this->makeUser('parent@example.com');
         $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
         $sibling = Child::create(['user_id' => $parent->id, 'name' => 'Sibling']);
-        $activity = $this->makeActivity();
+        $activity = $this->makeActivity(published: false, archived: true);
         $this->makeProgress($child, $activity);
         $this->makeProgress($sibling, $activity);
         $condition = Condition::create(['name' => 'Autism']);
@@ -381,7 +448,7 @@ class AdminActivityManagementTest extends TestCase
         $admin = $this->makeAdmin();
         $parent = $this->makeUser('parent@example.com');
         $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
-        $doomed = $this->makeActivity('Doomed');
+        $doomed = $this->makeActivity('Doomed', published: false, archived: true);
         $kept = $this->makeActivity('Kept');
         $this->makeProgress($child, $doomed);
         $keptProgress = $this->makeProgress($child, $kept);
@@ -397,7 +464,29 @@ class AdminActivityManagementTest extends TestCase
         Storage::disk('local')->assertExists('activity-materials/kept.txt');
     }
 
-    public function test_deleting_a_missing_activity_returns_404(): void
+    public function test_a_live_activity_cannot_be_deleted_until_it_is_archived(): void
+    {
+        Storage::fake('local');
+        $admin = $this->makeAdmin();
+        $parent = $this->makeUser('parent@example.com');
+        $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
+        Sanctum::actingAs($admin);
+
+        foreach ([true, false] as $published) {
+            $activity = $this->makeActivity('Live '.(int) $published, published: $published);
+            $this->makeProgress($child, $activity);
+
+            $this->deleteJson("/api/admin/activities/{$activity->id}")
+                ->assertStatus(409)
+                ->assertJsonPath('code', 'activity_not_archived');
+
+            $this->assertNotNull($activity->fresh());
+        }
+
+        $this->assertSame(2, ActivityProgress::count());
+    }
+
+public function test_deleting_a_missing_activity_returns_404(): void
     {
         Sanctum::actingAs($this->makeAdmin());
 
@@ -408,7 +497,7 @@ class AdminActivityManagementTest extends TestCase
     {
         $parent = $this->makeUser('parent@example.com');
         $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
-        $activity = $this->makeActivity();
+        $activity = $this->makeActivity(published: false, archived: true);
         $this->makeProgress($child, $activity);
 
         $this->deleteJson("/api/admin/activities/{$activity->id}")->assertUnauthorized();
@@ -426,7 +515,7 @@ class AdminActivityManagementTest extends TestCase
         $admin = $this->makeAdmin();
         $parent = $this->makeUser('parent@example.com');
         $child = Child::create(['user_id' => $parent->id, 'name' => 'Kid']);
-        $activity = $this->makeActivity();
+        $activity = $this->makeActivity(published: false, archived: true);
         $this->makeProgress($child, $activity);
         $this->makeResource($activity, 'activity-materials/sheet.txt');
         // The last step fails, after the progress and resource rows were deleted.

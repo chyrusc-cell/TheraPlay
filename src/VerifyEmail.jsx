@@ -169,7 +169,7 @@ function VerifyEmail() {
                         </p>
 
                         {canAskForNewLink && loggedIn && (
-                            <button type="button" className={auth.submitButton} onClick={handleResend} disabled={isSending}>
+                            <button type="button" className={`${auth.submitButton} btn-blue`} onClick={handleResend} disabled={isSending}>
                                 {isSending ? 'Sending...' : 'Send me a new link'}
                             </button>
                         )}
