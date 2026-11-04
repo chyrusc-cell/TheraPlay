@@ -19,8 +19,8 @@ import { LoaderCircle } from 'lucide-react';
  *    accident; pass type="submit" for the submit button.
  *  - loading: disables the button, marks it aria-busy and shows a spinner next to
  *    the children. Say what is happening in the children ("Saving...").
- *  - variant: the same glass look in a different hue: primary blue, secondary
- *    gray, danger red, success green. "ghost" has no surface, for low-emphasis
+ *  - variant: the same glass look in a different hue: primary and secondary
+ *    are white (there are no blue or gray buttons), danger red, success green. "ghost" has no surface, for low-emphasis
  *    text actions.
  *  - className is appended; every other prop (onClick, aria-*, title, ref, ...)
  *    goes to the <button>.
@@ -36,8 +36,8 @@ const base =
 
 // Color only: the look is always btn-glass, the variant picks its hue (ui.css).
 const tones = {
-    primary: 'btn-blue',
-    secondary: 'btn-gray',
+    primary: 'btn-white',
+    secondary: 'btn-white',
     danger: 'btn-red',
     success: 'btn-green',
 };

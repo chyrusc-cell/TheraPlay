@@ -371,47 +371,53 @@ body::before {
 /* --- Button colors ---
    Color-only modifiers for btn-glass: each changes the --btn-* palette tokens (and
    the ring) of one button and nothing else, so shape, the 80% surface, blur,
-   shadows and motion stay those of btn-glass. Labels are a dark shade of the hue
-   (all above 4.5:1). green = create / save / publish, yellow = change / replace /
-   unpublish, red = destructive / log out, blue = manage / navigate, gray =
-   secondary / refresh / cancel. */
+   shadows and motion stay those of btn-glass. There are NO blue or gray buttons.
+   white = the default (manage, navigate, cancel, refresh, select, archive,
+   replace, send), green = create / save / publish, yellow = change / edit,
+   red = destructive / unpublish / log out. The three hues are muted versions of
+   a muted green, #FFFF69 yellow and #FF0055 red (no neon); labels are a dark
+   shade of the hue (all above 4.5:1). */
 
 .btn-green {
-    --btn-bg: 120 185 138;
-    --btn-bg-hover: 105 170 124;
+    --btn-bg: 124 187 138;
+    --btn-bg-hover: 109 172 124;
     --btn-text: #11301d;
-    --btn-border: rgba(120, 185, 138, 0.9);
-    --tp-ring: rgba(120, 185, 138, 0.9);
+    --btn-border: rgba(124, 187, 138, 0.9);
+    --tp-ring: rgba(124, 187, 138, 0.9);
 }
 
 .btn-yellow {
-    --btn-bg: 229 195 111;
-    --btn-bg-hover: 216 182 98;
-    --btn-text: #3b2d06;
-    --btn-border: rgba(229, 195, 111, 0.9);
-    --tp-ring: rgba(229, 195, 111, 0.9);
+    --btn-bg: 236 226 128;
+    --btn-bg-hover: 224 213 112;
+    --btn-text: #3b3306;
+    --btn-border: rgba(236, 226, 128, 0.9);
+    --tp-ring: rgba(236, 226, 128, 0.9);
 }
 
 .btn-red {
-    --btn-bg: 217 130 130;
-    --btn-bg-hover: 204 117 117;
-    --btn-text: #3d0f0f;
-    --btn-border: rgba(217, 130, 130, 0.9);
-    --tp-ring: rgba(217, 130, 130, 0.9);
+    --btn-bg: 224 112 130;
+    --btn-bg-hover: 212 98 117;
+    --btn-text: #3d0a14;
+    --btn-border: rgba(224, 112, 130, 0.9);
+    --tp-ring: rgba(224, 112, 130, 0.9);
 }
 
-.btn-blue {
-    --btn-bg: 130 169 214;
-    --btn-bg-hover: 117 156 201;
-    --btn-text: #0d2540;
-    --btn-border: rgba(130, 169, 214, 0.9);
-    --tp-ring: rgba(130, 169, 214, 0.9);
+/* White is the btn-glass default; the class exists so buttons say what they are
+   and so the default can never be overridden by an inherited hue. */
+.btn-white {
+    --btn-bg: 255 255 255;
+    --btn-bg-hover: 243 243 243;
+    --btn-text: #323232;
+    --btn-border: rgba(90, 90, 90, 0.35);
+    --tp-ring: rgba(70, 70, 70, 0.45);
 }
 
-.btn-gray {
-    --btn-bg: 166 166 166;
-    --btn-bg-hover: 152 152 152;
-    --btn-text: #1c1c1c;
-    --btn-border: rgba(166, 166, 166, 0.9);
-    --tp-ring: rgba(166, 166, 166, 0.9);
+/* Sidebar glow (nav-glow, tailwind.css): the global reduced-motion rule above
+   would make its fade instant; keep a short 0.2s fade, with no movement. */
+@media (prefers-reduced-motion: reduce) {
+    .nav-glow::before,
+    .nav-glow::after {
+        animation: none !important;
+        transition-duration: 0.2s !important;
+    }
 }

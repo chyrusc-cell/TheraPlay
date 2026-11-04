@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CardsSkeleton } from './Skeleton.jsx';
+import { DashboardSkeleton } from './PageSkeletons.jsx';
 import { useAuth } from './authContext.js';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
@@ -227,7 +227,7 @@ function Dashboard() {
         return (
             <div className="flex min-h-page flex-col">
                 <div className={pageMain}>
-                    <CardsSkeleton label="Loading your dashboard..." cards={3} />
+                    <DashboardSkeleton />
                 </div>
             </div>
         );
@@ -283,7 +283,8 @@ function Dashboard() {
         ? publishedById.get(inProgressRecord.activity_id)
         : activities.find((a) => !completedIds.has(a.id)) || activities[0];
 
-    const recent = records.slice(0, 3);
+    // A completion that was undone (not_started) is not recent activity.
+    const recent = records.filter((r) => r.status !== 'not_started').slice(0, 3);
 
     return (
         <div className="flex min-h-page flex-col">
@@ -312,7 +313,7 @@ function Dashboard() {
                                             'Explore this activity and its learning objectives.'}
                                     </p>
                                     <button
-                                        className="cursor-pointer rounded-full px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-blue"
+                                        className="cursor-pointer rounded-full px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white"
                                         type="button"
                                         onClick={() =>
                                             navigate(`/activities/${featured.id}`)

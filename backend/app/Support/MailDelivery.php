@@ -11,6 +11,19 @@ class MailDelivery
      */
     public static function isConfigured(): bool
     {
-        return ! in_array(config('mail.default'), ['log', 'array'], true);
+        $default = config('mail.default');
+
+        if (in_array($default, ['log', 'array'], true)) {
+            return false;
+        }
+
+        // An SMTP mailer without a host cannot connect to anything.
+        if (config("mail.mailers.{$default}.transport") === 'smtp'
+            && blank(config("mail.mailers.{$default}.url"))
+            && blank(config("mail.mailers.{$default}.host"))) {
+            return false;
+        }
+
+        return true;
     }
 }

@@ -7,7 +7,7 @@ import ChildrenSection from './ChildrenSection.jsx';
 import EmailVerificationStatus from './EmailVerificationStatus.jsx';
 import DeleteAccountCard from './DeleteAccountCard.jsx';
 import SectionErrorBoundary from './SectionErrorBoundary.jsx';
-import { CardsSkeleton } from './Skeleton.jsx';
+import { ProfileSkeleton } from './PageSkeletons.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { pageMainNarrow, pageHeader, pageTitle } from './uiClasses.js';
 
@@ -462,7 +462,7 @@ function Profile() {
         return (
             <div className="flex min-h-page flex-col">
                 <div className={pageMainNarrow}>
-                    <CardsSkeleton label="Loading your profile..." cards={2} />
+                    <ProfileSkeleton />
                 </div>
             </div>
         );
@@ -512,7 +512,7 @@ function Profile() {
                                     </button>
                                     <button
                                         type="button"
-                                        className={`${smallPillClass} btn-gray`}
+                                        className={`${smallPillClass} btn-white`}
                                         onClick={discardPhoto}
                                         disabled={photoBusy}
                                     >
@@ -523,7 +523,7 @@ function Profile() {
                                 <>
                                     <button
                                         type="button"
-                                        className={`${smallPillClass} btn-yellow`}
+                                        className={`${smallPillClass} btn-white`}
                                         onClick={() => photoInputRef.current?.click()}
                                         disabled={photoBusy}
                                     >
@@ -682,7 +682,7 @@ function Profile() {
                         <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="cursor-pointer rounded-full border btn-glass btn-gray px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
+                                className="cursor-pointer rounded-full border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
                                 onClick={handleCancel}
                                 disabled={isSaving}
                             >

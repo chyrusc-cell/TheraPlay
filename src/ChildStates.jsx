@@ -4,7 +4,7 @@ import { useChildren } from './childContext.js';
 const panelClass =
     'mx-auto max-w-[560px] rounded-xl border border-edge bg-white card-soft px-6 py-10 text-center';
 const buttonClass =
-    'mt-5 inline-block cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold no-underline btn-glass btn-blue';
+    'mt-5 inline-block cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold no-underline btn-glass btn-white';
 
 // Shown instead of child-dependent content when the parent has no child profile.
 export function NoChildPrompt() {

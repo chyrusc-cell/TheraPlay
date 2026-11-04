@@ -15,7 +15,7 @@ function NotFound() {
             <p className="mt-6">
                 <Link
                     to="/"
-                    className="inline-block rounded-full btn-glass btn-blue px-5 py-2.5 text-[14px] font-bold no-underline"
+                    className="inline-block rounded-full btn-glass btn-white px-5 py-2.5 text-[14px] font-bold no-underline"
                 >
                     Go to the home page
                 </Link>

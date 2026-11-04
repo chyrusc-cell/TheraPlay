@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ActivityCompletionController;
+use App\Http\Controllers\Api\ActivityUndoController;
 use App\Http\Controllers\Api\ChildController;
 use App\Http\Controllers\Api\LogoutController;
 use App\Http\Controllers\Api\ContactController;
@@ -70,6 +71,11 @@ Route::get('/activities/{activity}/resources/{resource}/download', [ActivityMate
 // Progress belongs to a parent's own child, so only parents can record it.
 Route::post('/activities/{id}/complete', [ActivityCompletionController::class, 'store'])
     ->whereNumber('id')
+    ->middleware(['auth:sanctum', 'role:parent']);
+
+// Undo an accidental completion: the record must belong to the parent's own child.
+Route::post('/progress/{progress}/undo', [ActivityUndoController::class, 'undo'])
+    ->whereNumber('progress')
     ->middleware(['auth:sanctum', 'role:parent']);
 
 // A parent's own children (several per parent). Every route works only on the

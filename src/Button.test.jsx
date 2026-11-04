@@ -67,8 +67,8 @@ describe('Button', () => {
   })
 
   it.each([
-    ['primary', 'btn-blue'],
-    ['secondary', 'btn-gray'],
+    ['primary', 'btn-white'],
+    ['secondary', 'btn-white'],
     ['danger', 'btn-red'],
     ['success', 'btn-green'],
   ])(

@@ -33,6 +33,12 @@ class AppServiceProvider extends ServiceProvider
             config(['app.debug' => false]);
         }
 
+        // A deployed site still on the log/array mail driver looks fine while
+        // sending nothing. Record it loudly (users already get delivered:false).
+        if (! $this->app->environment(['local', 'testing']) && ! MailDelivery::isConfigured()) {
+            \Illuminate\Support\Facades\Log::critical('Email is NOT being delivered: MAIL_MAILER is "'.config('mail.default').'" or its SMTP settings are incomplete. Verification and password-reset emails will not reach anyone.');
+        }
+
         // "composer run dev" / "php artisan dev": run the API server and the
         // React frontend (the Vite app in the repo root, not this folder's own
         // unused Vite setup). The queue worker is not needed: mail is not queued.

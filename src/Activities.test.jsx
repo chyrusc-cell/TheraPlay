@@ -118,9 +118,9 @@ describe('Activities: Category and Difficulty filters', () => {
 
     for (const label of ['Category', 'Difficulty']) {
       const select = screen.getByLabelText(label)
-      // The native arrow is replaced by a chevron inset from the right edge.
-      expect(select).toHaveClass('appearance-none', 'pr-12')
-      expect(select.parentElement.querySelector('svg')).toHaveClass('right-5', 'pointer-events-none')
+      // Same shared filter look as Manage Accounts: the native arrow is replaced by
+      // the ui-select chevron, inset from the right edge, on the glass pill.
+      expect(select).toHaveClass('ui-select', 'btn-glass', 'rounded-full')
     }
 
     await pick('Category', 'Memory')

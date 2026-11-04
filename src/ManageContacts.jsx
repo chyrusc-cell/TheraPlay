@@ -594,7 +594,7 @@ function ManageContacts() {
 
                                         <button
                                             type="button"
-                                            className={ui.fileRemove}
+                                            className={ui.fileReplace}
                                             onClick={() => photoInputRef.current?.click()}
                                             disabled={isSaving}
                                         >

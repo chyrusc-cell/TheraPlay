@@ -26,7 +26,7 @@ const errorClass = 'text-[14px] font-medium text-[#d93025]';
 const detailLinkClass =
     'text-[14px] font-medium text-ink underline [overflow-wrap:anywhere]';
 const editTeamButtonClass =
-    'cursor-pointer rounded-full border btn-glass btn-blue px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass btn-white px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover';
 const toggleClass =
     'mt-2 cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-medium text-ink underline underline-offset-4';
 const fieldClass = 'mb-[18px] flex flex-col gap-2';
@@ -35,9 +35,9 @@ const fieldErrorClass = 'text-[13px] text-[#d93025]';
 const messageBase =
     'mb-4 animate-[ui-fade-in_0.2s_ease-out] text-[14px] font-medium';
 const retryClass =
-    'mt-3 cursor-pointer rounded-full border btn-glass btn-gray px-5 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
+    'mt-3 cursor-pointer rounded-full border btn-glass btn-white px-5 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 const submitClass =
-    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green phone:w-full';
+    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white border phone:w-full';
 
 // How much of the next contact card peeks out below the second one, so it is
 // clear the list scrolls.

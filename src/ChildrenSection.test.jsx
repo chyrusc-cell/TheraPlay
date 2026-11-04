@@ -60,16 +60,16 @@ describe('My Children: listing and selecting', () => {
     expect(within(childCard('Mia')).getByText(/years old/)).toBeInTheDocument()
   })
 
-  it('"Use this child" changes the selected child', async () => {
+  it('"Select Child" changes the selected child', async () => {
     const user = userEvent.setup()
     setup()
     await screen.findByRole('heading', { level: 3, name: /^Mia/ })
 
-    await user.click(within(childCard('Leo')).getByRole('button', { name: 'Use this child' }))
+    await user.click(within(childCard('Leo')).getByRole('button', { name: 'Select Child' }))
 
     expect(within(childCard('Leo')).getByText('Selected')).toBeInTheDocument()
     expect(within(childCard('Mia')).queryByText('Selected')).not.toBeInTheDocument()
-    expect(within(childCard('Mia')).getByRole('button', { name: 'Use this child' })).toBeInTheDocument()
+    expect(within(childCard('Mia')).getByRole('button', { name: 'Select Child' })).toBeInTheDocument()
   })
 
   it('invites a parent with no child to add the first one', async () => {

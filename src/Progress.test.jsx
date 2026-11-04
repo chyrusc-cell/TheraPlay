@@ -257,3 +257,74 @@ describe('Progress: no request before there is enough verified information', () 
     expect(document.querySelector('.skeleton')).toBeNull()
   })
 })
+
+describe('Progress: undo a completion', () => {
+  const undoButton = () => screen.getByRole('button', { name: 'Undo completion of Memory Match' })
+
+  it('asks first, then marks the activity as no longer completed straight away', async () => {
+    const user = userEvent.setup()
+    const api = await setup({
+      'POST /progress/1/undo': {
+        body: { message: 'ok', data: { record: { id: 1, status: 'not_started', completed_at: null } } },
+      },
+    })
+    await screen.findByText('Progress for Mia')
+
+    await user.click(undoButton())
+    // Nothing is sent until the parent confirms.
+    expect(api.callsTo('POST', '/progress/1/undo')).toHaveLength(0)
+
+    await user.click(await screen.findByRole('button', { name: 'Undo completion' }))
+
+    expect(await screen.findByText(/is no longer marked as completed/)).toBeInTheDocument()
+    expect(api.callsTo('POST', '/progress/1/undo')).toHaveLength(1)
+    // The row left the list and the totals dropped.
+    expect(screen.queryByRole('button', { name: 'Undo completion of Memory Match' })).not.toBeInTheDocument()
+    expect(screen.getByText('No activity has been recorded yet.')).toBeInTheDocument()
+  })
+
+  it('cancelling sends nothing and keeps the completion', async () => {
+    const user = userEvent.setup()
+    const api = await setup()
+    await screen.findByText('Progress for Mia')
+
+    await user.click(undoButton())
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+
+    expect(api.callsTo('POST', '/progress/1/undo')).toHaveLength(0)
+    expect(undoButton()).toBeInTheDocument()
+  })
+
+  it('shows the server\'s error and keeps the activity completed (for example a record that is not theirs)', async () => {
+    const user = userEvent.setup()
+    await setup({ 'POST /progress/1/undo': { status: 404, body: { message: 'Not found.' } } })
+    await screen.findByText('Progress for Mia')
+
+    await user.click(undoButton())
+    await user.click(await screen.findByRole('button', { name: 'Undo completion' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Not found.')
+    expect(undoButton()).toBeInTheDocument()
+  })
+
+  it('sends one request even when the confirm button is clicked twice', async () => {
+    const user = userEvent.setup()
+    let release
+    const api = await setup({
+      'POST /progress/1/undo': () =>
+        new Promise((resolve) => {
+          release = () => resolve({ body: { data: { record: { id: 1, status: 'not_started', completed_at: null } } } })
+        }),
+    })
+    await screen.findByText('Progress for Mia')
+
+    await user.click(undoButton())
+    const confirm = await screen.findByRole('button', { name: 'Undo completion' })
+    await user.click(confirm)
+    await user.click(confirm)
+    release()
+
+    await screen.findByText(/is no longer marked as completed/)
+    expect(api.callsTo('POST', '/progress/1/undo')).toHaveLength(1)
+  })
+})

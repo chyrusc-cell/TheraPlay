@@ -1207,7 +1207,7 @@ function ManageActivities() {
 
                                             <button
                                                 type="button"
-                                                className={ui.fileRemove}
+                                                className={ui.fileReplace}
                                                 onClick={() => pictureInputRef.current?.click()}
                                                 disabled={isSaving}
                                             >
@@ -1568,10 +1568,10 @@ function ManageActivities() {
 
                 {/* Active / Archived switch */}
 
-                <div className={ui.actions} role="group" aria-label="Activity list">
+                <div className={ui.viewSwitch} role="group" aria-label="Activity list">
                     <button
                         type="button"
-                        className={ui.editButton}
+                        className={ui.viewSwitchButton}
                         aria-pressed={!isArchivedView}
                         onClick={() => switchView('active')}
                     >
@@ -1579,7 +1579,7 @@ function ManageActivities() {
                     </button>
                     <button
                         type="button"
-                        className={ui.editButton}
+                        className={ui.viewSwitchButton}
                         aria-pressed={isArchivedView}
                         onClick={() => switchView('archived')}
                     >
@@ -1780,7 +1780,7 @@ function ManageActivities() {
 
                                                 <button
                                                     type="button"
-                                                    className={ui.editButton}
+                                                    className={ui.archiveButton}
                                                     aria-label={`Archive ${activity.title}`}
                                                     onClick={() =>
                                                         handleArchiveOrRestore(activity, 'archive')

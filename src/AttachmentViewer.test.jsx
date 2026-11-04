@@ -159,26 +159,38 @@ describe('Activity details: attachment rows', () => {
     await screen.findByText(/guide.pdf · PDF document/)
   }
 
-  it('shows each file name and type, with Preview only for previewable files', async () => {
+  it('shows each file name and type, with View only for previewable files', async () => {
     await open()
 
     expect(screen.getByText(/guide\.pdf · PDF document/)).toBeInTheDocument()
     expect(screen.getByText(/plan\.docx · Word document/)).toBeInTheDocument()
 
     for (const name of ['guide.pdf', 'photo.webp', 'notes.txt']) {
-      expect(screen.getByRole('button', { name: `Preview ${name}` })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: `View ${name}` })).toBeInTheDocument()
     }
     for (const name of ['plan.docx', 'budget.xlsx', 'deck.pptx']) {
-      expect(screen.queryByRole('button', { name: `Preview ${name}` })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: `View ${name}` })).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: `Download ${name}` })).toBeInTheDocument()
     }
+  })
+
+  it('previewable files get an icon-only Download beside View; download-only files keep a labeled button', async () => {
+    await open()
+
+    const view = screen.getByRole('button', { name: 'View guide.pdf' })
+    const icon = screen.getByRole('button', { name: 'Download guide.pdf' })
+    expect(icon).toHaveAttribute('title', 'Download guide.pdf')
+    expect(icon).toHaveTextContent('')
+    expect(icon.previousElementSibling).toBe(view)
+
+    expect(screen.getByRole('button', { name: 'Download plan.docx' })).toHaveTextContent('Download plan.docx')
   })
 
   it('opens the preview in a dialog', async () => {
     await open()
     const fetchMock = stubDownload({ body: 'hello notes' })
 
-    await userEvent.click(screen.getByRole('button', { name: 'Preview notes.txt' }))
+    await userEvent.click(screen.getByRole('button', { name: 'View notes.txt' }))
 
     expect(await screen.findByLabelText('Contents of notes.txt')).toHaveTextContent('hello notes')
     expect(fetchMock).toHaveBeenCalled()

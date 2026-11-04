@@ -17,7 +17,7 @@ import {
 
 const cardClass = 'rounded-2xl border border-edge bg-white card-soft p-5';
 
-function SkeletonStatus({ label, children, className }) {
+export function SkeletonStatus({ label, children, className }) {
     return (
         <div
             className={className}
@@ -49,18 +49,27 @@ export function SkeletonBlock({ className = '', style }) {
 // Activity cards: same grid as the real list.
 export function ActivityCardsSkeleton({ count = 6 }) {
     return (
-        <SkeletonStatus
-            label="Loading activities..."
-            className={activityGridClass}
-        >
-            {Array.from({ length: count }, (_, index) => (
-                <div className={cardClass} key={index}>
-                    <SkeletonBlock className="mb-5 h-[180px] rounded-lg" />
-                    <SkeletonBlock className="mb-3.5 h-[22px] w-[70%]" />
-                    <SkeletonBlock className="mb-2.5 h-3.5" />
-                    <SkeletonBlock className="mb-2.5 h-3.5 w-3/5" />
-                </div>
-            ))}
+        <SkeletonStatus label="Loading activities...">
+            {/* The two filter dropdowns (label + rounded pill) of the real page. */}
+            <div className="mb-8 flex flex-wrap items-end gap-4">
+                {[0, 1].map((index) => (
+                    <div className="flex flex-col gap-1.5 phone:min-w-0 phone:flex-1" key={index}>
+                        <SkeletonBlock className="h-3.5 w-16" />
+                        <SkeletonBlock className="h-[42px] w-full min-w-[180px] rounded-full phone:min-w-0" />
+                    </div>
+                ))}
+            </div>
+
+            <div className={activityGridClass}>
+                {Array.from({ length: count }, (_, index) => (
+                    <div className={cardClass} key={index}>
+                        <SkeletonBlock className="mb-5 h-[180px] rounded-lg" />
+                        <SkeletonBlock className="mb-3.5 h-[22px] w-[70%]" />
+                        <SkeletonBlock className="mb-2.5 h-3.5" />
+                        <SkeletonBlock className="mb-2.5 h-3.5 w-3/5" />
+                    </div>
+                ))}
+            </div>
         </SkeletonStatus>
     );
 }

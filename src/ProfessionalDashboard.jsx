@@ -441,7 +441,7 @@ function ProfessionalDashboard() {
 
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border btn-glass btn-gray px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
                                         onClick={retryFeedback}
                                     >
                                         Try again

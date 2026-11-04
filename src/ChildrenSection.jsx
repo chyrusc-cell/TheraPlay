@@ -12,9 +12,9 @@ const cardClass =
 const pillClass =
     'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 const primaryClass =
-    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white border disabled:cursor-not-allowed disabled:opacity-60';
 const cancelClass =
-    'cursor-pointer rounded-full border btn-glass btn-gray px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-full border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const emptyForm = { name: '', dateOfBirth: '', conditionIds: [] };
 
@@ -217,7 +217,7 @@ function ChildrenSection() {
 
                 <button
                     type="button"
-                    className={`${pillClass} btn-green`}
+                    className={`${pillClass} btn-white`}
                     onClick={(event) => {
                         openerRef.current = event.currentTarget;
                         openAdd();
@@ -250,7 +250,7 @@ function ChildrenSection() {
 
                 <div role="alert">
                     <p className="mb-3 text-[14px] text-[#d93025]">We could not load your child profiles.</p>
-                    <button type="button" className={`${pillClass} btn-gray`} onClick={refreshChildren}>Try again</button>
+                    <button type="button" className={`${pillClass} btn-white`} onClick={refreshChildren}>Try again</button>
                 </div>
 
             ) : children.length === 0 ? (
@@ -288,8 +288,8 @@ function ChildrenSection() {
 
                                     <div className="flex flex-wrap gap-2">
                                         {!isSelected && (
-                                            <button type="button" className={`${pillClass} btn-blue`} onClick={() => selectChild(child.id)}>
-                                                Use this child
+                                            <button type="button" className={`${pillClass} btn-white`} onClick={() => selectChild(child.id)}>
+                                                Select Child
                                             </button>
                                         )}
                                         <button

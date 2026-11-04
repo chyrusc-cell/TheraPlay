@@ -39,11 +39,11 @@ export const saveButton =
     'cursor-pointer rounded-full px-[18px] py-2.5 text-[14px] btn-glass btn-green';
 
 export const cancelButton =
-    'cursor-pointer rounded-full border btn-glass btn-gray px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
 // Management / navigation actions (Manage Conditions, Manage Categories, Edit Development Team).
 export const manageButton =
-    'cursor-pointer rounded-full border btn-glass btn-blue px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
 // Small buttons inside table rows and file lists.
 export const editButton =
@@ -51,19 +51,22 @@ export const editButton =
 
 // Cancel inside a table row: the row-sized button in neutral gray.
 export const rowCancelButton =
-    'cursor-pointer rounded-full border btn-glass btn-gray px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+    'cursor-pointer rounded-full border btn-glass btn-white px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
 // Delete is red; the label says "Delete".
 export const deleteButton =
     'cursor-pointer rounded-full border btn-glass btn-red px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
-// Publish (green) and Unpublish (yellow) have the SAME fixed size, so
+// Publish (green) and Unpublish (red) have the SAME fixed size, so
 // switching the label never changes the width or shifts the row.
 export const publishButton =
     'inline-flex w-[100px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-green px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
+export const archiveButton =
+    'cursor-pointer rounded-full border btn-glass btn-white px-[11px] py-[7px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+
 export const unpublishButton =
-    'inline-flex w-[100px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-yellow px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
+    'inline-flex w-[100px] cursor-pointer items-center justify-center whitespace-nowrap rounded-full border btn-glass btn-red px-[11px] py-[7px] text-[12px] phone-lg:min-h-9';
 
 // "Make Admin" / "Make Parent": one fixed size for both labels.
 export const neutralRowButton =
@@ -84,6 +87,11 @@ export const input =
 // Dropdowns: the native arrow sits flush against the edge, so ui-select (ui.css)
 // swaps it for a chevron with room on its right.
 export const select = `${input} ui-select`;
+
+// Filter dropdowns (All Roles, ...): the same rounded glass pill as the Choose
+// Child control and the Activities filters. The select stays a native select.
+export const filterSelect =
+    'ui-select w-full min-w-[180px] cursor-pointer rounded-full border btn-glass py-2 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
 
 export const textarea =
     'resize-y rounded-xl border border-edge-strong p-[11px] [font-family:inherit] text-[14px]';
@@ -153,6 +161,10 @@ export const fileName = '[word-break:break-word]';
 export const fileSize = 'text-faint';
 export const fileActions = 'flex flex-wrap items-center gap-2';
 
+// Choose / replace a picture or file: white. (Remove stays red, below.)
+export const fileReplace =
+    'shrink-0 cursor-pointer rounded-full border btn-glass btn-white px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
+
 export const fileRemove =
     'shrink-0 cursor-pointer rounded-full border btn-glass btn-red px-2.5 py-[5px] text-[12px] text-ink enabled:hover:bg-hover phone-lg:min-h-9';
 
@@ -192,3 +204,10 @@ export const avatarCircle =
 // The clickable picture box in the activity form (shows the picture, or a prompt).
 export const activityPictureButton =
     'flex h-52 w-full cursor-pointer items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-edge-strong bg-white p-0 text-center text-[13px] leading-[1.5] text-faint enabled:hover:bg-hover';
+
+// The Activities / Archived Activities switch: two white buttons with room around
+// them; the one that is showing (aria-pressed) is bold with a darker edge.
+export const viewSwitch = 'mt-2 mb-5 flex flex-wrap gap-3';
+
+export const viewSwitchButton =
+    'cursor-pointer rounded-full border btn-glass btn-white px-[18px] py-2 text-[14px] font-medium text-ink enabled:hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink aria-pressed:border-ink aria-pressed:font-bold aria-pressed:shadow-[inset_0_2px_4px_rgba(60,60,60,0.18)]';

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\MailDelivery;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -113,7 +114,7 @@ class PasswordResetController extends Controller
         }
 
         return response()->json([
-            'message' => 'If an account exists for that email address, a password reset link has been sent. The link expires in 60 minutes.',
+            'message' => 'If an account exists for that email address, we will email a password reset link (it expires in 60 minutes). If nothing arrives within a few minutes, check your spam folder or try again.',
             'delivery_available' => true,
         ]);
     }
@@ -174,6 +175,6 @@ class PasswordResetController extends Controller
     // needs a real transport (for example smtp) in the mail configuration.
     private function emailDeliveryIsConfigured(): bool
     {
-        return ! in_array(config('mail.default'), ['log', 'array'], true);
+        return MailDelivery::isConfigured();
     }
 }

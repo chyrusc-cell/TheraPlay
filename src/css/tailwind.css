@@ -279,40 +279,186 @@
 }
 
 /*
- * Navigation items (sidebar). nav-item is the resting + hover look: no
- * decoration until hovered, then a frosted cream pill with a soft shadow.
- * nav-item-active is the CURRENT page: a persistent warm highlight (soft amber
- * fill, a thin brown edge and a light rim) that does not depend on hover. They
- * are used exclusively (a link has one or the other), so nothing fights over the
- * same property. Nothing moves, so hovering never shifts the layout.
+ * Navigation items (sidebar). The link itself NEVER has a background, border
+ * colour, shadow or blur: it is only its icon and label (plus a transparent 2px
+ * border so the size is the same in every state). All the glass lives on ONE
+ * layer, the ::after of nav-glow (below), and appears and disappears by fading
+ * that layer's opacity alone, so the glass, its border, shadow and backdrop blur
+ * go 100% -> 0% together (fading blur/shadow/colour as separate properties
+ * looked like a drop to ~70% and then a jump). The glow ring (::before) fades
+ * on the same curve. nav-item-active is the CURRENT page (NavLink isActive): the
+ * same layers, held on, with a bold dark-brown label. A link has nav-item OR
+ * nav-item-active, plus nav-glow.
  */
 @utility nav-item {
-    border: 1px solid transparent;
-    transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        color 0.2s ease;
+    position: relative;
+    background: none;
+    border: 2px solid transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: color 0.6s ease-in-out;
 
-    &:hover {
-        background-color: rgba(255, 252, 247, 0.9);
-        border-color: rgba(231, 222, 211, 0.95);
-        box-shadow:
-            0 4px 12px -6px rgba(120, 80, 30, 0.24),
-            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    &:hover,
+    &:focus-visible {
         color: var(--ui-text);
+        transition: color 0.5s ease;
+    }
+
+    &:focus-visible {
+        outline: 2px solid rgba(90, 90, 90, 0.55);
+        outline-offset: 2px;
     }
 }
 
 @utility nav-item-active {
-    color: var(--ui-accent);
-    background-color: var(--ui-accent-soft);
-    background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(254, 243, 231, 0));
-    border: 1px solid rgba(161, 98, 7, 0.3);
-    box-shadow:
-        0 4px 12px -6px rgba(161, 98, 7, 0.38),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 -1px 0 rgba(161, 98, 7, 0.12);
+    position: relative;
+    color: #6f4304;
+    background: none;
+    border: 2px solid transparent;
+
+    &:focus-visible {
+        outline: 2px solid rgba(90, 90, 90, 0.55);
+        outline-offset: 2px;
+    }
+}
+
+/*
+ * The glass and the glow of the sidebar links ONLY (added in Sidebar.jsx next to
+ * nav-item / nav-item-active; no other control uses it).
+ *  - ::after = the glass surface: the TheraPlay glass tokens (--glass-*), drawn as
+ *    before (a 50% white fill, a second 50% fill inside the border, the 2px glass
+ *    border, the glass shadow, the backdrop blur), at opacity 0 until the link is
+ *    hovered, keyboard-focused or the current page.
+ *  - ::before = the glow: a blurred (5px), slowly moving (30s) ring in exactly
+ *    #FF0055, #FFFF69 and #00FFFF, 2px outside the link, behind the glass.
+ * Both sit behind the icon and label, ignore the pointer, fade IN over 0.5s and
+ * OUT over 0.6s on the same ease-in-out curve, and are then hidden (the hide waits
+ * for the fade, so it can never cut it short; showing is immediate). The current
+ * page holds both at opacity 1; its ring is in muted colours until it is hovered
+ * or focused (the three colours are registered custom properties and cross-fade).
+ * Reduced motion: no gradient movement, 0.2s fades (ui.css).
+ */
+@utility nav-glow {
+    z-index: 0;
+    isolation: isolate;
+    overflow: visible;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        --glow-pink: #ff0055;
+        --glow-yellow: #ffff69;
+        --glow-cyan: #00ffff;
+        background: linear-gradient(45deg, var(--glow-pink), var(--glow-yellow), var(--glow-cyan), var(--glow-pink));
+        background-size: 400%;
+        z-index: -1;
+        filter: blur(5px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        animation: navigation-glowing 30s linear infinite;
+        transition:
+            opacity 0.6s ease-in-out,
+            visibility 0s linear 0.6s;
+        border-radius: inherit;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        z-index: -1;
+        border-radius: inherit;
+        background:
+            linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+            var(--glass-bg) border-box;
+        border: var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+            opacity 0.6s ease-in-out,
+            visibility 0s linear 0.6s;
+    }
+
+    &:hover::before,
+    &:focus-visible::before,
+    &.nav-item-active::before {
+        opacity: 1;
+        visibility: visible;
+        transition:
+            opacity 0.5s ease-in-out,
+            --glow-pink 0.5s ease-in-out,
+            --glow-yellow 0.5s ease-in-out,
+            --glow-cyan 0.5s ease-in-out;
+    }
+
+    &:hover::after,
+    &:focus-visible::after,
+    &.nav-item-active::after {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    /* The current page at rest: the same ring in muted versions of the three hues.
+       Hovering or focusing it brings back the vibrant colors (the vars transition). */
+    &.nav-item-active:not(:hover):not(:focus-visible)::before {
+        --glow-pink: #e07082;
+        --glow-yellow: #ece280;
+        --glow-cyan: #86cfcf;
+        transition:
+            opacity 0.6s ease-in-out,
+            --glow-pink 0.6s ease-in-out,
+            --glow-yellow 0.6s ease-in-out,
+            --glow-cyan 0.6s ease-in-out;
+    }
+}
+
+@property --glow-pink {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #ff0055;
+}
+
+@property --glow-yellow {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #ffff69;
+}
+
+@property --glow-cyan {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #00ffff;
+}
+
+@keyframes navigation-glowing {
+    0% {
+        background-position: 0 0;
+    }
+
+    50% {
+        background-position: 400% 0;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-glow::before {
+        animation: none;
+    }
 }
 
 /*

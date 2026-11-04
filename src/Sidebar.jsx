@@ -23,12 +23,12 @@ import { logo } from './brand.js';
 // readers (sr-only) and the icon is centered. Active and inactive links are
 // written out in full so no two classes set the same property.
 const linkCommon =
-    'flex items-center gap-3 rounded-xl px-[15px] py-3 text-[15px] whitespace-nowrap no-underline tablet:justify-center tablet:rounded-2xl tablet:px-2';
+    'flex items-center gap-3 rounded-xl px-[14px] py-[11px] text-[15px] whitespace-nowrap no-underline tablet:justify-center tablet:rounded-2xl tablet:px-[6px]';
 
 const linkClass = ({ isActive }) =>
     isActive
-        ? `${linkCommon} nav-item-active font-bold`
-        : `${linkCommon} nav-item font-medium text-body`;
+        ? `${linkCommon} nav-glow nav-item-active font-bold`
+        : `${linkCommon} nav-glow nav-item font-medium text-body`;
 
 const labelClass = 'tablet:sr-only';
 

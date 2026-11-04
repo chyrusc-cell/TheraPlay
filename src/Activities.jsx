@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
@@ -10,6 +9,7 @@ import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
+import { filterSelect } from './adminClasses.js';
 
 // Which activities has the selected child completed? This reads the same saved
 // progress as the Progress page. Only a parent with a selected child has any:
@@ -76,18 +76,9 @@ const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
 const filterLabelClass = 'text-[13px] font-bold text-muted';
-// The native arrow sits flush against the edge, so it is replaced by a chevron
-// (filterArrow) with room on its right; the select keeps its own behavior.
-const filterSelectClass =
-    'w-full min-w-[180px] cursor-pointer appearance-none rounded-full border btn-glass py-2 pr-12 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
+// The shared filter dropdown look (adminClasses.js), same as Manage Accounts.
+const filterSelectClass = filterSelect;
 const filterFieldClass = 'flex flex-col gap-1.5 phone:min-w-0 phone:flex-1';
-const filterArrow = (
-    <ChevronDown
-        size={16}
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 right-5 -translate-y-1/2 text-muted"
-    />
-);
 
 function Activities() {
     // Every parent sees ALL published activities (their child's conditions do
@@ -268,7 +259,6 @@ function Activities() {
                                     </option>
                                 ))}
                             </select>
-                            {filterArrow}
                             </div>
                         </div>
 
@@ -290,7 +280,6 @@ function Activities() {
                                     </option>
                                 ))}
                             </select>
-                            {filterArrow}
                             </div>
                         </div>
 
@@ -428,6 +417,13 @@ function Activities() {
                         embedded
                         onCompleted={(id) =>
                             setCompletedIds((current) => new Set([...current, Number(id)]))
+                        }
+                        onUndone={(id) =>
+                            setCompletedIds((current) => {
+                                const next = new Set(current);
+                                next.delete(Number(id));
+                                return next;
+                            })
                         }
                     />
                 )}

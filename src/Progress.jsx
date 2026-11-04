@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CardsSkeleton } from './Skeleton.jsx';
+import { ProgressSkeleton } from './PageSkeletons.jsx';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
-import { pageMain, pageHeader, pageTitle } from './uiClasses.js';
-import { API_URL, getToken } from './api.js';
+import { pageMain, pageHeader, pageTitle, smallActionClass } from './uiClasses.js';
+import { API_URL, apiRequest, getToken } from './api.js';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -66,7 +67,7 @@ const getLongestStreak = (completed) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
+    'min-w-0 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
 const cardHeaderClass = 'px-6 pt-5 pb-2.5';
 const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5';
 const cardTitleClass = 'text-[16px] font-bold text-ink';
@@ -91,6 +92,64 @@ function Progress() {
     const [records, setRecords] = useState([]);
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+
+    // Undo an accidental completion: the record being confirmed, whether the
+    // request is running, and the last result to show.
+    const [undoTarget, setUndoTarget] = useState(null);
+    const [isUndoing, setIsUndoing] = useState(false);
+    const [undoNotice, setUndoNotice] = useState(null);
+
+    const confirmUndo = async () => {
+        if (!undoTarget || isUndoing) {
+            return;
+        }
+
+        const target = undoTarget;
+        setIsUndoing(true);
+
+        try {
+            const result = await apiRequest(`/progress/${target.id}/undo`, { method: 'POST' });
+
+            if (result.status === 401) {
+                navigate('/login', {
+                    replace: true,
+                    state: { message: 'Please log in to view your progress.' },
+                });
+                return;
+            }
+
+            if (!result.ok) {
+                setUndoNotice({
+                    type: 'error',
+                    text: result.data?.message || 'We could not undo this completion. Please try again.',
+                });
+                return;
+            }
+
+            // Show the new state straight away from the server's answer.
+            const saved = result.data?.data?.record;
+
+            setRecords((current) =>
+                current.map((record) =>
+                    record.id === target.id
+                        ? { ...record, status: saved?.status ?? 'not_started', completed_at: saved?.completed_at ?? null }
+                        : record
+                )
+            );
+            setUndoNotice({
+                type: 'success',
+                text: `"${target.activity_title || 'The activity'}" is no longer marked as completed.`,
+            });
+        } catch {
+            setUndoNotice({
+                type: 'error',
+                text: 'We could not reach the server. Please try again.',
+            });
+        } finally {
+            setIsUndoing(false);
+            setUndoTarget(null);
+        }
+    };
 
     // The selection changed but its load has not finished: show the skeleton, not
     // the previous child's progress.
@@ -208,7 +267,7 @@ function Progress() {
         return (
             <div className="flex min-h-page flex-col">
                 <div className={pageMain}>
-                    <CardsSkeleton label="Loading your progress..." cards={3} />
+                    <ProgressSkeleton />
                 </div>
             </div>
         );
@@ -268,7 +327,9 @@ function Progress() {
     });
     const skills = Object.entries(skillCounts).sort((a, b) => b[1] - a[1]);
 
-    const recent = records.slice(0, 5);
+    // A completion that was undone (not_started) is no longer activity to show.
+    const shownRecords = records.filter((r) => r.status !== 'not_started');
+    const recent = shownRecords.slice(0, 5);
 
     return (
         <div className="flex min-h-page flex-col">
@@ -282,24 +343,46 @@ function Progress() {
                     )}
                 </div>
 
-                {records.length === 0 && (
+                {undoNotice && (
+                    <p
+                        role={undoNotice.type === 'error' ? 'alert' : 'status'}
+                        className={`mb-6 text-[14px] font-medium ${
+                            undoNotice.type === 'error' ? 'text-[#d93025]' : 'text-[#188038]'
+                        }`}
+                    >
+                        {undoNotice.text}
+                    </p>
+                )}
+
+                <ConfirmDialog
+                    open={undoTarget !== null}
+                    title="Undo completion?"
+                    message={`"${undoTarget?.activity_title || 'This activity'}" will no longer be marked as completed. You can mark it as completed again later.`}
+                    confirmLabel="Undo completion"
+                    busyLabel="Undoing..."
+                    busy={isUndoing}
+                    onConfirm={confirmUndo}
+                    onCancel={() => setUndoTarget(null)}
+                />
+
+                {shownRecords.length === 0 && (
                     <p className="mb-[30px] text-[13px] font-medium text-faint">
                         No activity has been recorded yet.
                     </p>
                 )}
 
-                {/* 2-Column Grid Layout */}
+                {/* One grid, so the cards of a row (Weekly + Trend, Skills + Recent) stretch to the same height. The two column wrappers use display: contents; order puts the pairs in the same row on desktop and keeps the original single-column order on tablets and phones. */}
                 <div className="grid grid-cols-2 gap-6 tablet:grid-cols-1">
                     {/* Left Column */}
-                    <div className="flex flex-col gap-6">
+                    <div className="contents">
                         {/* Weekly Participation Card */}
-                        <div className={cardClass}>
+                        <div className={`${cardClass} order-1 tablet:order-1`}>
                             <div className={cardHeaderClass}>
                                 <h2 className={cardTitleClass}>Weekly Participation</h2>
                             </div>
 
                             <div className={cardBodyClass}>
-                                <div className="mb-4 flex items-end justify-between">
+                                <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
                                     <div>
                                         <p className={bigNumberClass}>{completedThisWeek}</p>
                                         <span className={bigLabelClass}>activities completed this week</span>
@@ -342,7 +425,7 @@ function Progress() {
                         </div>
 
                         {/* Skills Practiced Card */}
-                        <div className={cardClass}>
+                        <div className={`${cardClass} order-3 tablet:order-2`}>
                             <div className={cardHeaderRuleClass}>
                                 <h2 className={cardTitleClass}>Skills Practiced</h2>
                             </div>
@@ -385,9 +468,9 @@ function Progress() {
                     </div>
 
                     {/* Right Column */}
-                    <div className="flex flex-col gap-6">
+                    <div className="contents">
                         {/* Activity Trend Card */}
-                        <div className={cardClass}>
+                        <div className={`${cardClass} order-2 tablet:order-3`}>
                             <div className={cardHeaderRuleClass}>
                                 <h2 className={cardTitleClass}>Activity Trend</h2>
                             </div>
@@ -425,7 +508,7 @@ function Progress() {
                         </div>
 
                         {/* Recent Activity Card */}
-                        <div className={cardClass}>
+                        <div className={`${cardClass} order-4 tablet:order-4`}>
                             <div className={cardHeaderRuleClass}>
                                 <h2 className={cardTitleClass}>Recent Activity</h2>
                             </div>
@@ -478,8 +561,8 @@ function Progress() {
                                                         )}
                                                     </div>
 
-                                                    <div>
-                                                        <h3 className="mb-1 text-[13px] font-bold text-ink">
+                                                    <div className="min-w-0 flex-1">
+                                                        <h3 className="mb-1 text-[13px] font-bold text-ink [overflow-wrap:anywhere]">
                                                             {record.activity_title ||
                                                                 'Activity'}
                                                         </h3>
@@ -493,6 +576,20 @@ function Progress() {
                                                                 ` • ${record.category}`}
                                                         </p>
                                                     </div>
+
+                                                    {isDone && (
+                                                        <button
+                                                            type="button"
+                                                            className={smallActionClass}
+                                                            aria-label={`Undo completion of ${record.activity_title || 'activity'}`}
+                                                            onClick={() => {
+                                                                setUndoNotice(null);
+                                                                setUndoTarget(record);
+                                                            }}
+                                                        >
+                                                            Undo
+                                                        </button>
+                                                    )}
                                                 </div>
                                             );
                                         })

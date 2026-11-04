@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Download, LoaderCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { API_URL, apiRequest, getToken } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
@@ -8,16 +9,18 @@ import { previewKind, typeLabel } from './attachmentTypes.js';
 import { holdSkeleton } from './minLoading.js';
 import { useChildren } from './childContext.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
-import { detailsCardClass, pageMain } from './uiClasses.js';
+import { detailsCardClass, pageMain, smallActionClass } from './uiClasses.js';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
-// Is this activity already completed for the logged-in parent? It reads the
+// Is this activity already completed for the logged-in parent? (Resolves with the
+// completed progress record, or null.) It reads the
 // saved progress from the server, so the answer survives refreshes and new
 // logins. Guests and failures count as "not completed" and never claim a
 // completion that was not saved.
 // Completion is per child: this asks about the selected child's progress.
 const fetchIsCompleted = async (activityId, signal, childId) => {
     if (!getToken()) {
-        return false;
+        return null;
     }
 
     try {
@@ -27,25 +30,26 @@ const fetchIsCompleted = async (activityId, signal, childId) => {
         );
 
         if (!result.ok) {
-            return false;
+            return null;
         }
 
         const records = result.data.data?.records;
 
         return (
-            Array.isArray(records) &&
-            records.some(
-                (record) =>
-                    String(record.activity_id) === String(activityId) &&
-                    record.status === 'completed'
-            )
+            (Array.isArray(records) &&
+                records.find(
+                    (record) =>
+                        String(record.activity_id) === String(activityId) &&
+                        record.status === 'completed'
+                )) ||
+            null
         );
     } catch (error) {
         if (error.name === 'AbortError') {
             throw error;
         }
 
-        return false;
+        return null;
     }
 };
 
@@ -54,13 +58,19 @@ const completeButtonBase =
 
 const messageBase = 'mt-3 text-[14px] font-medium';
 
+const attachmentButtonClass =
+    'cursor-pointer rounded-xl border btn-glass btn-white px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink tablet-sm:w-full';
+
+const downloadIconClass =
+    'inline-flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border btn-glass btn-white text-ink enabled:hover:bg-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60';
+
 /*
  * The activity page. Used as the /activities/:activityId route, and inside the
  * View Activity modal on the Activities page (embedded: it gets the id as a
  * prop and drops the page wrapper and the "Back" link). onCompleted lets the
- * Activities page mark its card as completed.
+ * Activities page mark its card as completed; onUndone lets it clear that mark.
  */
-function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompleted }) {
+function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompleted, onUndone }) {
 
     const params = useParams();
     const activityId = activityIdProp ?? params.activityId;
@@ -75,6 +85,9 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [completionRecordId, setCompletionRecordId] = useState(null);
+    const [confirmingUndo, setConfirmingUndo] = useState(false);
+    const [isUndoing, setIsUndoing] = useState(false);
     const [message, setMessage] = useState('');
     const [isMessageError, setIsMessageError] = useState(false);
 
@@ -120,7 +133,8 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                 const result = await response.json();
                 setActivity(result.data);
-                setIsCompleted(completed);
+                setIsCompleted(Boolean(completed));
+                setCompletionRecordId(completed?.id ?? null);
                 setMessage('');
             } catch (err) {
                 if (err.name === 'AbortError') {
@@ -196,9 +210,48 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
         setShowChildForm(false);
         setIsCompleted(true);
+        setCompletionRecordId(data.data?.record?.id ?? null);
         onCompleted?.(activityId);
         setMessage(data.message || 'Activity marked as completed.');
         return true;
+    };
+
+    // Takes an accidental completion back. The server checks the record belongs
+    // to one of this parent's own children.
+    const handleUndo = async () => {
+        if (isUndoing || !completionRecordId) {
+            return;
+        }
+
+        setIsUndoing(true);
+        setMessage('');
+        setIsMessageError(false);
+
+        try {
+            const result = await apiRequest(`/progress/${completionRecordId}/undo`, { method: 'POST' });
+
+            if (result.status === 401) {
+                redirectToLogin('Your session has expired. Please log in again.');
+                return;
+            }
+
+            if (!result.ok) {
+                setIsMessageError(true);
+                setMessage(result.data?.message || 'We could not undo this completion. Please try again.');
+                return;
+            }
+
+            setIsCompleted(false);
+            setCompletionRecordId(null);
+            onUndone?.(activityId);
+            setMessage('Completion undone. This activity is no longer marked as completed.');
+        } catch {
+            setIsMessageError(true);
+            setMessage('We could not reach the server. Please try again.');
+        } finally {
+            setIsUndoing(false);
+            setConfirmingUndo(false);
+        }
     };
 
     const handleComplete = async () => {
@@ -563,28 +616,47 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                                             <div className="flex flex-wrap gap-2">
 
-                                                {previewKind(resource.file_type) && (
+                                                {previewKind(resource.file_type) ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            className={attachmentButtonClass}
+                                                            onClick={() => setPreviewResource(resource)}
+                                                        >
+                                                            {`View ${resource.file_name}`}
+                                                        </button>
+
+                                                        {/* Icon-only download, right beside View. */}
+                                                        <button
+                                                            type="button"
+                                                            className={downloadIconClass}
+                                                            aria-label={`Download ${resource.file_name}`}
+                                                            title={`Download ${resource.file_name}`}
+                                                            onClick={() => handleDownload(resource)}
+                                                            disabled={downloadingId !== null}
+                                                            aria-busy={downloadingId === resource.id || undefined}
+                                                        >
+                                                            {downloadingId === resource.id ? (
+                                                                <LoaderCircle size={18} aria-hidden="true" className="motion-safe:animate-spin" />
+                                                            ) : (
+                                                                <Download size={18} aria-hidden="true" />
+                                                            )}
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    // Download-only files (Word, Excel, PowerPoint) have nothing to
+                                                    // view, so their one action keeps its visible label.
                                                     <button
                                                         type="button"
-                                                        className="cursor-pointer rounded-xl border btn-glass btn-blue px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
-                                                        onClick={() => setPreviewResource(resource)}
+                                                        className={attachmentButtonClass}
+                                                        onClick={() => handleDownload(resource)}
+                                                        disabled={downloadingId !== null}
                                                     >
-                                                        {`Preview ${resource.file_name}`}
+                                                        {downloadingId === resource.id
+                                                            ? 'Downloading...'
+                                                            : `Download ${resource.file_name}`}
                                                     </button>
                                                 )}
-
-                                                <button
-                                                    type="button"
-                                                    className="cursor-pointer rounded-xl border btn-glass btn-blue px-3 py-2 text-left text-[13px] text-ink [word-break:break-word] enabled:hover:bg-hover tablet-sm:w-full"
-                                                    onClick={() =>
-                                                        handleDownload(resource)
-                                                    }
-                                                    disabled={downloadingId !== null}
-                                                >
-                                                    {downloadingId === resource.id
-                                                        ? 'Downloading...'
-                                                        : `Download ${resource.file_name}`}
-                                                </button>
 
                                             </div>
 
@@ -654,7 +726,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                 <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border btn-glass btn-gray px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-full border btn-glass btn-white px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >
@@ -685,6 +757,28 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                     ? 'Completed'
                                     : 'Mark as Completed'}
                         </button>
+
+                        {isCompleted && completionRecordId && (
+                            <button
+                                type="button"
+                                className={`${smallActionClass} mt-3`}
+                                onClick={() => setConfirmingUndo(true)}
+                                disabled={isUndoing}
+                            >
+                                Undo completion
+                            </button>
+                        )}
+
+                        <ConfirmDialog
+                            open={confirmingUndo}
+                            title="Undo completion?"
+                            message={`"${activity?.title || 'This activity'}" will no longer be marked as completed. You can mark it as completed again later.`}
+                            confirmLabel="Undo completion"
+                            busyLabel="Undoing..."
+                            busy={isUndoing}
+                            onConfirm={handleUndo}
+                            onCancel={() => setConfirmingUndo(false)}
+                        />
 
                         {message && (
                             <p
