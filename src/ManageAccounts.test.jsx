@@ -44,6 +44,10 @@ async function setup({ accounts = base(), routes = {} } = {}) {
   return { api, db }
 }
 
+// The two sections of the page (each a labelled region with its own table and search).
+const parentSection = () => screen.getByRole('region', { name: 'Parent Accounts' })
+const adminSection = () => screen.getByRole('region', { name: 'Administrator Accounts' })
+
 // The table row of an account (rows only, so a notice mentioning the name is not matched).
 const rowFor = (name) =>
   screen.getAllByRole('row').find((tr) => tr.querySelector('td') && tr.textContent.includes(name))
@@ -60,20 +64,34 @@ const fillCreate = async (user, dialog, values = {}) => {
 }
 
 describe('Manage Accounts: listing', () => {
-  it('shows every account with its role, email status and a "you" marker', async () => {
+  it('shows parents and administrators in two separate tables, with email status and a "you" marker', async () => {
     await setup()
 
     expect(await screen.findByText('Pat Parent')).toBeInTheDocument()
-    expect(within(rowFor('Ada Admin')).getByText('Admin')).toBeInTheDocument()
-    expect(within(rowFor('Ada Admin')).getByText('you')).toBeInTheDocument()
-    expect(within(rowFor('Pat Parent')).getByText('Parent')).toBeInTheDocument()
+
+    // Parent Accounts: parents only. Administrator Accounts: admins only.
+    const parents = within(parentSection())
+    const admins = within(adminSection())
+    for (const name of ['Pat Parent', 'Una Unverified', 'Kim Kids']) expect(parents.getByText(name)).toBeInTheDocument()
+    for (const name of ['Ada Admin', 'Other Admin']) expect(admins.getByText(name)).toBeInTheDocument()
+    expect(parents.queryByText('Ada Admin')).not.toBeInTheDocument()
+    expect(parents.queryByText('Other Admin')).not.toBeInTheDocument()
+    expect(admins.queryByText('Pat Parent')).not.toBeInTheDocument()
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Parent Accounts' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Administrator Accounts' })).toBeInTheDocument()
+
+    // Email verification status stays visible for parents (and admins).
     expect(within(rowFor('Pat Parent')).getByText('Verified')).toBeInTheDocument()
     expect(within(rowFor('Una Unverified')).getByText('Not verified')).toBeInTheDocument()
+    expect(parents.getByRole('columnheader', { name: 'Email status' })).toBeInTheDocument()
+    expect(within(rowFor('Ada Admin')).getByText('you')).toBeInTheDocument()
     // The child-profile indicator is no longer shown (the deletion safeguard is
     // enforced by the server; see the 409 test below).
     expect(screen.queryByText(/child profile/i)).not.toBeInTheDocument()
     expect(within(rowFor('Kim Kids')).getByText(/Joined/)).toBeInTheDocument()
-    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Showing 5 of 5 accounts')
+    expect(within(parentSection()).getByRole('status')).toHaveTextContent('Showing 3 of 3 parent accounts')
+    expect(within(adminSection()).getByRole('status')).toHaveTextContent('Showing 2 of 2 administrator accounts')
   })
 
   it('never shows passwords, tokens or hashes', async () => {
@@ -98,7 +116,8 @@ describe('Manage Accounts: listing', () => {
     })
     renderWithProviders(<ManageAccounts />, { route: '/manage-accounts' })
 
-    expect(await screen.findByText('Loading accounts...')).toBeInTheDocument()
+    expect(await screen.findByText('Loading parent accounts...')).toBeInTheDocument()
+    expect(screen.getByText('Loading administrator accounts...')).toBeInTheDocument()
     expect(screen.queryByText('Pat Parent')).not.toBeInTheDocument()
 
     release()
@@ -108,7 +127,8 @@ describe('Manage Accounts: listing', () => {
   it('says so when there are no accounts', async () => {
     await setup({ accounts: [] })
 
-    expect(await screen.findByText('No accounts found.')).toBeInTheDocument()
+    expect(await screen.findByText('No parent accounts found.')).toBeInTheDocument()
+    expect(screen.getByText('No administrator accounts found.')).toBeInTheDocument()
   })
 
   it('shows an error with a retry when the list cannot be loaded', async () => {
@@ -134,59 +154,106 @@ describe('Manage Accounts: listing', () => {
   })
 })
 
-describe('Manage Accounts: search and filters', () => {
-  it('searches by name or email', async () => {
+describe('Manage Accounts: two independent searches', () => {
+  it('has a dedicated search field in each table and no role or email-status filter at all', async () => {
+    await setup()
+    await screen.findByText('Pat Parent')
+
+    expect(screen.getByLabelText('Search parent accounts')).toBeInTheDocument()
+    expect(screen.getByLabelText('Search administrator accounts')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Search accounts')).not.toBeInTheDocument()
+
+    // The old combined filters are gone: no role select, no email-status select, no select at all.
+    expect(screen.queryByLabelText('Role')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Email status')).not.toBeInTheDocument()
+    expect(screen.queryByText('All roles')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('searches the parent table by name or email without touching the administrator table', async () => {
     const user = userEvent.setup()
     await setup()
     await screen.findByText('Pat Parent')
 
-    await user.type(screen.getByLabelText('Search accounts'), 'KIM@')
+    await user.type(screen.getByLabelText('Search parent accounts'), 'KIM@')
 
-    expect(screen.getByText('Kim Kids')).toBeInTheDocument()
-    expect(screen.queryByText('Pat Parent')).not.toBeInTheDocument()
-    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('Showing 1 of 5 accounts')
+    const parents = within(parentSection())
+    expect(parents.getByText('Kim Kids')).toBeInTheDocument()
+    expect(parents.queryByText('Pat Parent')).not.toBeInTheDocument()
+    expect(parents.getByRole('status')).toHaveTextContent('Showing 1 of 3 parent accounts')
+
+    // The administrator table is exactly as before.
+    const admins = within(adminSection())
+    expect(admins.getByText('Ada Admin')).toBeInTheDocument()
+    expect(admins.getByText('Other Admin')).toBeInTheDocument()
+    expect(admins.getByRole('status')).toHaveTextContent('Showing 2 of 2 administrator accounts')
+    expect(screen.getByLabelText('Search administrator accounts')).toHaveValue('')
   })
 
-  it('filters by role and by email status, alone and together', async () => {
+  it('searches the administrator table without touching the parent table', async () => {
     const user = userEvent.setup()
     await setup()
     await screen.findByText('Pat Parent')
 
-    await user.selectOptions(screen.getByLabelText('Role'), 'admin')
-    expect(screen.queryByText('Pat Parent')).not.toBeInTheDocument()
-    expect(screen.getByText('Other Admin')).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Search administrator accounts'), 'other@')
 
-    await user.selectOptions(screen.getByLabelText('Role'), 'parent')
-    await user.selectOptions(screen.getByLabelText('Email status'), 'unverified')
-    expect(screen.getByText('Una Unverified')).toBeInTheDocument()
-    expect(screen.queryByText('Pat Parent')).not.toBeInTheDocument()
-    expect(screen.queryByText('Ada Admin')).not.toBeInTheDocument()
+    const admins = within(adminSection())
+    expect(admins.getByText('Other Admin')).toBeInTheDocument()
+    expect(admins.queryByText('Ada Admin')).not.toBeInTheDocument()
+    expect(admins.getByRole('status')).toHaveTextContent('Showing 1 of 2 administrator accounts')
+
+    const parents = within(parentSection())
+    for (const name of ['Pat Parent', 'Una Unverified', 'Kim Kids']) expect(parents.getByText(name)).toBeInTheDocument()
+    expect(screen.getByLabelText('Search parent accounts')).toHaveValue('')
   })
 
-  it('explains an empty result and "Clear filters" restores everything', async () => {
+  it('a name only searches its own table (an admin name typed in the parent search finds nothing)', async () => {
     const user = userEvent.setup()
     await setup()
     await screen.findByText('Pat Parent')
 
-    await user.type(screen.getByLabelText('Search accounts'), 'nobody-here')
-    expect(screen.getByText(/No accounts match your search or filters/)).toBeInTheDocument()
+    await user.type(screen.getByLabelText('Search parent accounts'), 'Ada')
 
-    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
-
-    expect(screen.getByText('Pat Parent')).toBeInTheDocument()
-    expect(screen.getByLabelText('Search accounts')).toHaveValue('')
+    expect(within(parentSection()).getByText(/No parent accounts match your search/)).toBeInTheDocument()
+    expect(within(adminSection()).getByText('Ada Admin')).toBeInTheDocument()
   })
 
-  it('filters without asking the server again', async () => {
+  it('explains an empty result and "Clear search" restores only that table', async () => {
+    const user = userEvent.setup()
+    await setup()
+    await screen.findByText('Pat Parent')
+
+    await user.type(screen.getByLabelText('Search administrator accounts'), 'nobody-here')
+    await user.type(screen.getByLabelText('Search parent accounts'), 'pat')
+    expect(within(adminSection()).getByText(/No administrator accounts match your search/)).toBeInTheDocument()
+
+    await user.click(within(adminSection()).getByRole('button', { name: 'Clear search' }))
+
+    expect(within(adminSection()).getByText('Ada Admin')).toBeInTheDocument()
+    expect(screen.getByLabelText('Search administrator accounts')).toHaveValue('')
+    // The parent search was left alone.
+    expect(screen.getByLabelText('Search parent accounts')).toHaveValue('pat')
+    expect(within(parentSection()).queryByText('Kim Kids')).not.toBeInTheDocument()
+  })
+
+  it('searches without asking the server again', async () => {
     const user = userEvent.setup()
     const { api } = await setup()
     await screen.findByText('Pat Parent')
     const before = api.calls.length
 
-    await user.type(screen.getByLabelText('Search accounts'), 'pat')
-    await user.selectOptions(screen.getByLabelText('Role'), 'parent')
+    await user.type(screen.getByLabelText('Search parent accounts'), 'pat')
+    await user.type(screen.getByLabelText('Search administrator accounts'), 'ada')
 
     expect(api.calls).toHaveLength(before)
+  })
+
+  it('has no pagination controls (every account of a role is listed)', async () => {
+    await setup()
+    await screen.findByText('Pat Parent')
+
+    expect(screen.queryByRole('navigation', { name: /pagination/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /next page|previous page/i })).not.toBeInTheDocument()
   })
 })
 
@@ -298,7 +365,7 @@ describe('Manage Accounts: creating an administrator', () => {
 })
 
 describe('Manage Accounts: editing', () => {
-  it('edits only the name and email, never sends a role, and has no role control', async () => {
+  it('edits only the name (the email is read-only), never sends a role, and has no role control', async () => {
     const user = userEvent.setup()
     const { api } = await setup({ routes: { 'PATCH /admin/users/2': { body: { data: row(2, 'Pat Renamed', 'pat@example.com') } } } })
     await screen.findByText('Pat Parent')
@@ -307,13 +374,18 @@ describe('Manage Accounts: editing', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Edit Account' })
     expect(within(dialog).queryByLabelText('Role')).not.toBeInTheDocument()
 
+    const emailField = within(dialog).getByLabelText('Email')
+    expect(emailField).toHaveAttribute('readonly')
+    expect(emailField).toBeDisabled()
+    expect(emailField.className).toContain('bg-black/10')
+    expect(emailField).toHaveValue('pat@example.com')
     const name = within(dialog).getByLabelText('Name')
     await user.clear(name)
     await user.type(name, 'Pat Renamed')
     await user.click(within(dialog).getByRole('button', { name: 'Save Changes' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(api.callsTo('PATCH', '/admin/users/2')[0].body).toEqual({ name: 'Pat Renamed', email: 'pat@example.com' })
+    expect(api.callsTo('PATCH', '/admin/users/2')[0].body).toEqual({ name: 'Pat Renamed' })
     expect(screen.getByText('Account updated.')).toBeInTheDocument()
   })
 })
@@ -351,7 +423,8 @@ describe('Manage Accounts: promoting and demoting', () => {
 
     expect(await screen.findByText('"Pat Parent" is now an admin.')).toBeInTheDocument()
     expect(api.callsTo('POST', '/admin/users/2/promote')[0].body).toBeUndefined()
-    await waitFor(() => expect(within(rowFor('Pat Parent')).getByText('Admin')).toBeInTheDocument())
+    await waitFor(() => expect(within(adminSection()).getByText('Pat Parent')).toBeInTheDocument())
+    expect(within(parentSection()).queryByText('Pat Parent')).not.toBeInTheDocument()
     expect(within(rowFor('Pat Parent')).getByRole('button', { name: 'Make parent: Pat Parent' })).toBeInTheDocument()
   })
 
@@ -364,7 +437,9 @@ describe('Manage Accounts: promoting and demoting', () => {
     await user.click(within(rowFor('Pat Parent')).getByRole('button', { name: 'Yes, continue' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('This account is already an administrator.')
-    expect(within(rowFor('Pat Parent')).getByText('Parent')).toBeInTheDocument()
+    // Still in the parent table.
+    expect(within(parentSection()).getByText('Pat Parent')).toBeInTheDocument()
+    expect(within(adminSection()).queryByText('Pat Parent')).not.toBeInTheDocument()
   })
 
   it('demotes another administrator through the dedicated endpoint', async () => {
@@ -453,5 +528,29 @@ describe('Manage Accounts: deleting', () => {
     await user.click(within(rowFor('Una Unverified')).getByRole('button', { name: 'Yes, continue' }))
 
     await waitFor(() => expect(api.callsTo('GET', '/admin/users').length).toBeGreaterThan(before))
+  })
+})
+
+describe('Manage Accounts: layered glass tables', () => {
+  it('draws each table as a glass-stack container (shadow layer behind every glass surface) with its own rounded clipping wrapper', async () => {
+    await setup()
+    await screen.findByText('Pat Parent')
+
+    for (const section of [parentSection(), adminSection()]) {
+      const table = within(section).getByRole('table')
+      const clip = table.parentElement
+      expect(clip).toHaveClass('overflow-hidden')
+      expect(clip.parentElement).toHaveClass('glass-stack')
+      // The glass container itself never clips, so its shadow is not cut off.
+      expect(clip.parentElement).not.toHaveClass('overflow-hidden')
+    }
+  })
+
+  it('keeps the page-level actions: Refresh and + Create Administrator', async () => {
+    await setup()
+    await screen.findByText('Pat Parent')
+
+    expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '+ Create Administrator' })).toBeInTheDocument()
   })
 })

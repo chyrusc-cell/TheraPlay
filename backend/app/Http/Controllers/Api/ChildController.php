@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Child;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -31,24 +32,55 @@ class ChildController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        // A child profile can only be created once the parent has verified their
+        // email address. This is checked here on the server (not only by the app),
+        // so calling the API directly, logging out and in, or refreshing cannot
+        // get around it.
+        if (! $request->user()->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Please verify your email address before creating a child profile. Enter the code we emailed you.',
+                'code' => 'email_not_verified',
+            ], 403);
+        }
+
         $validated = $request->validate(self::rules());
 
-        $child = DB::transaction(function () use ($request, $validated) {
+        // A repeated submission (a double click, a retry, a second tab) of the same
+        // child within a minute returns the profile that was just made instead of
+        // creating a duplicate. Requests of one parent run one at a time here.
+        [$child, $created] = DB::transaction(function () use ($request, $validated) {
+            User::whereKey($request->user()->id)->lockForUpdate()->first();
+
+            $name = trim($validated['name']);
+            $dob = $validated['date_of_birth'] ?? null;
+
+            $recent = Child::query()
+                ->where('user_id', $request->user()->id)
+                ->where('name', $name)
+                ->when($dob, fn ($query) => $query->whereDate('date_of_birth', $dob), fn ($query) => $query->whereNull('date_of_birth'))
+                ->where('created_at', '>=', now()->subMinute())
+                ->latest('id')
+                ->first();
+
+            if ($recent) {
+                return [$recent, false];
+            }
+
             $child = Child::create([
                 'user_id' => $request->user()->id,
-                'name' => trim($validated['name']),
-                'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'name' => $name,
+                'date_of_birth' => $dob,
             ]);
 
             $child->conditions()->sync($validated['condition_ids'] ?? []);
 
-            return $child;
+            return [$child, true];
         });
 
         return response()->json([
-            'message' => 'Child profile created.',
+            'message' => $created ? 'Child profile created.' : 'This child profile was already created.',
             'data' => ['child' => self::format($child->load('conditions:id,name,is_active'))],
-        ], 201);
+        ], $created ? 201 : 200);
     }
 
     public function update(Request $request, int $child): JsonResponse

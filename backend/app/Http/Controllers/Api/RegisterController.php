@@ -3,11 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Api\ChildController;
-use App\Models\Child;
 use App\Models\User;
+use App\Support\EmailVerificationCode;
 use App\Support\MailDelivery;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 use Illuminate\Http\JsonResponse;
@@ -19,28 +17,32 @@ class RegisterController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
+        // A "child" sent by a client is deliberately not validated or used: a
+        // child profile can only be created by a parent whose email address is
+        // verified (ChildController::store), never during registration.
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => [
+                'required', 'email', 'max:255', 'unique:users,email',
+                // The official administrator address is reserved.
+                function ($attribute, $value, $fail) {
+                    if (mb_strtolower(trim((string) $value)) === mb_strtolower(trim((string) config('theraplay.admin.email')))) {
+                        $fail('This email address cannot be used to register.');
+                    }
+                },
+            ],
             'phone' => ['required', 'string', 'max:30'],
             'password' => [
                 'required',
                 'confirmed',
                 Password::min(8),
             ],
-            // The first child (the sign-up form asks for it). Optional for API
-            // clients that register only the account.
-            'child' => ['sometimes', 'array'],
-            // required only when a child is sent at all.
-            'child.name' => array_merge(['required_with:child'], array_slice(ChildController::rules()['name'], 1)),
-            'child.date_of_birth' => ChildController::rules()['date_of_birth'],
-            'child.condition_ids' => ChildController::rules()['condition_ids'],
-            'child.condition_ids.*' => ChildController::rules()['condition_ids.*'],
         ]);
 
-        // Parent and first child are saved together or not at all.
-        $user = DB::transaction(function () use ($validated) {
+        // The account is created UNVERIFIED (email_verified_at stays empty) and
+        // is restricted until its address is verified. The unique rule above keeps
+        // the same address from registering twice, also while it is unverified.
         $user = User::create([
             'name' => trim(
                 $validated['first_name'] . ' ' . $validated['last_name']
@@ -51,28 +53,16 @@ class RegisterController extends Controller
             'role' => 'parent',
         ]);
 
-        if (isset($validated['child'])) {
-            $child = Child::create([
-                'user_id' => $user->id,
-                'name' => trim($validated['child']['name']),
-                'date_of_birth' => $validated['child']['date_of_birth'] ?? null,
-            ]);
-
-            $child->conditions()->sync($validated['child']['condition_ids'] ?? []);
-        }
-
-        return $user;
-        });
-
-        // Ask the new account to verify its address. A mail problem must never
-        // fail the sign-up: the person can resend from the app.
+        // Email the six-digit verification code. A mail problem must never fail the
+        // sign-up; the response says honestly whether it went out, and the person
+        // can ask for another code on the verification screen.
         $verificationSent = false;
 
         try {
-            $user->sendEmailVerificationNotification();
+            EmailVerificationCode::issue($user);
             $verificationSent = true;
         } catch (Throwable $e) {
-            Log::warning('Verification email could not be sent after registration.', [
+            Log::warning('Verification code email could not be sent after registration.', [
                 'user_id' => $user->id,
                 'error' => class_basename($e),
             ]);
@@ -80,11 +70,16 @@ class RegisterController extends Controller
 
         return response()->json([
             'message' => 'Registration successful.',
+            // The person stays signed in, so the next steps (verify the code, then
+            // create the child profile) continue without a login page. The account
+            // is still unverified and the server limits what it can do.
+            'token' => $user->createToken('theraplay-app')->plainTextToken,
             // Honest about delivery: with the log/array mail drivers nothing is
             // delivered, so the app must not say an email is on its way.
             'email_verification' => [
                 'sent' => $verificationSent,
                 'delivery_available' => MailDelivery::isConfigured(),
+                'expires_in' => $verificationSent ? EmailVerificationCode::secondsLeft($user) : null,
             ],
             'user' => [
                 'id' => $user->id,

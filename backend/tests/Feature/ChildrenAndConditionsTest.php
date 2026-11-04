@@ -19,7 +19,7 @@ class ChildrenAndConditionsTest extends TestCase
     private function user(string $role, string $email): User
     {
         $user = User::create(['name' => ucfirst($role), 'email' => $email, 'password' => 'password123']);
-        $user->forceFill(['role' => $role])->save();
+        $user->forceFill(['role' => $role, 'email_verified_at' => now()])->save();
 
         return $user;
     }
@@ -67,65 +67,71 @@ class ChildrenAndConditionsTest extends TestCase
         ], $extra);
     }
 
-    // ---------------- Registration with the first child ----------------
+    // ---------------- Registration creates no child ----------------
 
-    public function test_registration_creates_the_parent_and_the_first_child_together(): void
+    public function test_registration_creates_only_the_unverified_parent_and_no_child(): void
     {
         $adhd = $this->condition('ADHD');
-        $dob = now()->subYears(5)->toDateString();
 
         $this->postJson('/api/register', $this->registration([
-            'child' => ['name' => ' Sam ', 'date_of_birth' => $dob, 'condition_ids' => [$adhd->id]],
+            'child' => ['name' => 'Sam', 'condition_ids' => [$adhd->id], 'user_id' => 999],
         ]))->assertCreated();
 
         $parent = User::where('email', 'new@example.com')->firstOrFail();
-        $child = $parent->children()->firstOrFail();
-
-        $this->assertSame('Sam', $child->name);
-        $this->assertSame($dob, $child->date_of_birth->toDateString());
-        $this->assertSame([$adhd->id], $child->conditions()->pluck('conditions.id')->all());
+        $this->assertNull($parent->email_verified_at);
+        $this->assertSame(0, Child::count());
     }
 
-    public function test_registration_without_a_child_still_works_for_api_clients(): void
+    public function test_an_invalid_child_payload_is_ignored_it_never_blocks_or_creates_anything(): void
+    {
+        $this->postJson('/api/register', $this->registration(['child' => ['date_of_birth' => 'not a date']]))->assertCreated();
+
+        $this->assertSame(1, User::count());
+        $this->assertSame(0, Child::count());
+    }
+
+    public function test_registering_the_same_email_twice_is_rejected_even_while_unverified(): void
+    {
+        $this->postJson('/api/register', $this->registration())->assertCreated();
+        $this->postJson('/api/register', $this->registration(['email' => 'new@example.com']))
+            ->assertStatus(422)->assertJsonValidationErrors('email');
+
+        $this->assertSame(1, User::count());
+    }
+
+    // ---------------- Child creation needs a verified email ----------------
+
+    public function test_an_unverified_parent_cannot_create_a_child_through_the_api(): void
+    {
+        $parent = $this->parent('unverified@example.com');
+        $parent->forceFill(['email_verified_at' => null])->save();
+        $this->actAs($parent->fresh());
+
+        $this->postJson('/api/children', ['name' => 'Sam'])
+            ->assertForbidden()
+            ->assertJsonPath('code', 'email_not_verified');
+
+        $this->assertSame(0, Child::count());
+    }
+
+    public function test_logging_in_again_does_not_get_an_unverified_parent_past_the_rule(): void
     {
         $this->postJson('/api/register', $this->registration())->assertCreated();
 
+        $token = $this->postJson('/api/login', ['email' => 'new@example.com', 'password' => 'password123'])
+            ->assertOk()->json('token');
+
+        $this->withToken($token)->postJson('/api/children', ['name' => 'Sam'])->assertForbidden();
         $this->assertSame(0, Child::count());
     }
 
-    public function test_invalid_child_information_rejects_the_whole_registration(): void
+    public function test_a_verified_parent_can_create_a_child_and_an_unverified_one_still_reads_nothing_else(): void
     {
-        $inactive = $this->condition('Old', false);
-        $url = '/api/register';
+        $parent = $this->parent('ok@example.com');
+        $this->actAs($parent);
 
-        $this->postJson($url, $this->registration(['child' => ['date_of_birth' => '2020-01-01']]))
-            ->assertStatus(422)->assertJsonValidationErrors('child.name');
-        $this->postJson($url, $this->registration(['child' => ['name' => 'Sam', 'date_of_birth' => now()->addDay()->toDateString()]]))
-            ->assertStatus(422)->assertJsonValidationErrors('child.date_of_birth');
-        $this->postJson($url, $this->registration(['child' => ['name' => 'Sam', 'date_of_birth' => now()->subYears(40)->toDateString()]]))
-            ->assertStatus(422)->assertJsonValidationErrors('child.date_of_birth');
-        $this->postJson($url, $this->registration(['child' => ['name' => 'Sam', 'date_of_birth' => 'not a date']]))
-            ->assertStatus(422)->assertJsonValidationErrors('child.date_of_birth');
-        $this->postJson($url, $this->registration(['child' => ['name' => 'Sam', 'condition_ids' => [9999]]]))
-            ->assertStatus(422)->assertJsonValidationErrors('child.condition_ids.0');
-        $this->postJson($url, $this->registration(['child' => ['name' => 'Sam', 'condition_ids' => [$inactive->id]]]))
-            ->assertStatus(422);
-
-        // Nothing partial was created.
-        $this->assertSame(0, User::count());
-        $this->assertSame(0, Child::count());
-    }
-
-    public function test_registration_ignores_a_forged_parent_id(): void
-    {
-        $victim = $this->parent('victim@example.com');
-
-        $this->postJson('/api/register', $this->registration([
-            'child' => ['name' => 'Sam', 'user_id' => $victim->id],
-        ]))->assertCreated();
-
-        $this->assertSame(0, $victim->children()->count());
-        $this->assertSame(1, User::where('email', 'new@example.com')->firstOrFail()->children()->count());
+        $this->postJson('/api/children', ['name' => 'Sam'])->assertCreated();
+        $this->assertSame(1, Child::count());
     }
 
     // ---------------- Managing children ----------------

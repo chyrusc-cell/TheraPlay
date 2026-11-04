@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useChildren } from './childContext.js';
+import { useAuth } from './authContext.js';
 
 const panelClass =
     'mx-auto max-w-[560px] rounded-xl border border-edge bg-white card-soft px-6 py-10 text-center';
@@ -8,6 +9,22 @@ const buttonClass =
 
 // Shown instead of child-dependent content when the parent has no child profile.
 export function NoChildPrompt() {
+    const { user } = useAuth();
+
+    // A parent must verify their email address before a child profile can be created
+    // (the server refuses it otherwise), so say that first.
+    if (user && user.email_verified === false) {
+        return (
+            <div className={panelClass}>
+                <h2 className="mb-2 text-[20px] font-bold text-ink">Verify your email first</h2>
+                <p className="text-[14px] leading-[1.6] text-muted">
+                    Open the verification link we emailed to {user.email}. After that you can
+                    create your child's profile. Check your spam folder if you cannot find it.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className={panelClass}>
             <h2 className="mb-2 text-[20px] font-bold text-ink">Add a child profile first</h2>

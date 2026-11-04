@@ -10,6 +10,20 @@
 export const activityGridClass =
     'grid grid-cols-3 gap-6 laptop:grid-cols-2 phone-lg:grid-cols-1';
 
+// An activity card (and its loading skeleton): plain frosted glass with NO shadow
+// (glow-card, css/tailwind.css). The 2px transparent border + inset variable keep
+// the glass exactly as large as the old card-soft box (its 2px glass border sat
+// outside the padding).
+export const activityCardShell =
+    'p-5 glow-card border-2 border-transparent [--glass-stack-inset:2px]';
+
+// What the real card adds. Hover (devices that hover) or a keyboard-focused control
+// inside it lights the animated glow of the sidebar links (the glow itself is in
+// glow-card) and lifts the card 3px over the same 0.5s; with reduced motion there
+// is no lift and the glow only fades (ui.css).
+export const activityCardClass =
+    `flex flex-col ${activityCardShell} transition-transform duration-500 ease-in-out hover:-translate-y-[3px] has-[:focus-visible]:-translate-y-[3px] motion-reduce:hover:translate-y-0 motion-reduce:has-[:focus-visible]:translate-y-0`;
+
 // Contact Us: a white rounded container (Professional Contacts, Developer Team,
 // Feedback) and the smaller card used for each professional inside the list.
 export const contactPanelClass =
@@ -41,3 +55,10 @@ export const pageSubtitle = 'mt-2 text-[15px] font-medium text-muted';
 // A small white glass action inside a card row (for example "Undo").
 export const smallActionClass =
     'shrink-0 cursor-pointer rounded-full border btn-glass btn-white px-3 py-1 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+
+// A value that is shown but cannot be edited (the email address of an account):
+// darker than the editable fields, a not-allowed cursor, and still fully readable.
+// Used together with the `disabled` attribute, so it cannot be focused, typed in
+// or pasted into.
+export const readOnlyFieldClass =
+    'cursor-not-allowed bg-black/10! text-ink! opacity-100 disabled:opacity-100 border-edge';

@@ -70,7 +70,10 @@ class EmailTransportTest extends TestCase
         $this->assertCount(1, $messages);
         $text = $messages[0]->getOriginalMessage()->toString();
         $this->assertStringContainsString('new@example.com', $text);
-        $this->assertStringContainsString('/verify-email', $text);
+        $this->assertStringContainsString('Your TheraPlay verification code', $text);
+        // The message carries a six-digit code, not a link.
+        $this->assertMatchesRegularExpression('/letter-spacing: 8px;?"?>\s*\d{6}\s*</', str_replace(["=\r\n", "=\n", '=3D'], ['', '', '='], $text));
+        $this->assertStringNotContainsString('/verify-email', $text);
     }
 
     public function test_resend_hands_a_fresh_email_to_the_transport(): void

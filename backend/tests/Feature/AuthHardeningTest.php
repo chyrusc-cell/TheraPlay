@@ -37,7 +37,9 @@ class AuthHardeningTest extends TestCase
 
     public function test_parents_can_still_create_their_child_profile(): void
     {
-        Sanctum::actingAs(User::create(['name' => 'P', 'email' => 'p@example.com', 'password' => 'password123'])->fresh());
+        $parent = User::create(['name' => 'P', 'email' => 'p@example.com', 'password' => 'password123']);
+        $parent->forceFill(['email_verified_at' => now()])->save();
+        Sanctum::actingAs($parent->fresh());
 
         $this->postJson('/api/children', ['name' => 'Kid'])->assertCreated();
     }

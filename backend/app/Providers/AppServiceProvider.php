@@ -75,6 +75,8 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('profile-photo', fn (Request $request) => Limit::perMinute(10)->by($perUserOrIp($request)));
         RateLimiter::for('email-verify', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('email-resend', fn (Request $request) => Limit::perMinute(3)->by($perUserOrIp($request)));
+        RateLimiter::for('email-code-verify', fn (Request $request) => Limit::perMinute(10)->by($perUserOrIp($request)));
+        RateLimiter::for('email-code-resend', fn (Request $request) => Limit::perMinute(3)->by($perUserOrIp($request)));
         RateLimiter::for('forgot-password', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
         RateLimiter::for('reset-password', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
         RateLimiter::for('profile-password-reset', fn (Request $request) => Limit::perMinute(5)->by($perUserOrIp($request)));

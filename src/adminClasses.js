@@ -19,6 +19,9 @@ export const header = 'mb-8 flex flex-wrap items-center justify-between gap-4';
 export const title =
     'text-[36px] leading-[1.2] font-bold text-ink phone:text-[28px]';
 export const subtitle = 'mt-2 text-[15px] font-medium text-muted';
+
+// A heading of one section of an admin page (for example "Parent Accounts").
+export const sectionTitle = 'mb-4 text-[24px] leading-[1.2] font-bold text-ink phone:text-[20px]';
 export const headerActions = 'flex flex-wrap gap-2.5';
 
 export const messageSuccess =

@@ -41,6 +41,8 @@ class ActivityController extends Controller
                 'difficulty' => $activity->difficulty,
                 'image_url' => $activity->imageUrl(),
                 'attachment_image_url' => $activity->attachmentImageUrl(),
+                // Card picture: an attached image's original, or the page-1 thumbnail of a PDF.
+                'thumbnail_url' => $activity->thumbnailUrl(),
             ]);
 
         return response()->json(['data' => $activities]);
@@ -72,6 +74,7 @@ class ActivityController extends Controller
                 ])->values(),
                 'image_url' => $activity->imageUrl(),
                 'attachment_image_url' => $activity->attachmentImageUrl(),
+                'thumbnail_url' => $activity->thumbnailUrl(),
             ],
         ]);
     }

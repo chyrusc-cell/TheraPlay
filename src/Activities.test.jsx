@@ -479,3 +479,69 @@ describe('Activities: no request before there is enough verified information', (
     expect(api.calls.map((c) => c.path)).toEqual(['/activities'])
   })
 })
+
+describe('Activities: card glass and hover glow', () => {
+  // The card element itself (the heading's closest glow-card ancestor).
+  const glowCardFor = (title) => screen.getByRole('heading', { name: title }).closest('.glow-card')
+
+  it('idle: plain frosted glass with no shadow and no glow classes, same transparent 2px border', async () => {
+    await setup()
+    await waitForCards()
+
+    for (const title of ['Memory Match', 'Memory Master', 'Block Stacking', 'Free Play']) {
+      const card = glowCardFor(title)
+      expect(card).toHaveClass('glow-card', 'border-2', 'border-transparent')
+      expect(card.className).toContain('[--glass-stack-inset:2px]')
+      expect(card).not.toHaveClass('card-soft')
+      expect(card).not.toHaveClass('glass-stack')
+      expect(card).not.toHaveClass('bg-white')
+      // No shadow of its own, and nothing that lights up without hover or focus.
+      expect(card.className).not.toMatch(/(^| )(hover:)?(before:)*shadow-/)
+      expect(card.className).not.toMatch(/(^| )hover:before:/)
+    }
+  })
+
+  it('hover and keyboard focus: a 3px lift over 0.5s (the glow itself is the glow-card CSS)', async () => {
+    await setup()
+    await waitForCards()
+
+    const card = glowCardFor('Memory Match')
+    expect(card).toHaveClass('transition-transform', 'duration-500', 'hover:-translate-y-[3px]')
+    // Keyboard focus inside the card lifts it too, so focus never depends on hover.
+    expect(card.className).toContain('has-[:focus-visible]:-translate-y-[3px]')
+  })
+
+  it('reduced motion: no lift on hover or focus', async () => {
+    await setup()
+    await waitForCards()
+
+    const card = glowCardFor('Memory Match')
+    expect(card).toHaveClass('motion-reduce:hover:translate-y-0')
+    expect(card.className).toContain('motion-reduce:has-[:focus-visible]:translate-y-0')
+  })
+
+  it('keeps the card content: title, difficulty badge, description and the details link', async () => {
+    await setup()
+    await waitForCards()
+
+    const card = glowCardFor('Memory Match')
+    expect(within(card).getByRole('heading', { name: 'Memory Match' })).toBeInTheDocument()
+    expect(within(card).getByText('Easy')).toBeInTheDocument()
+    expect(within(card).getByText('Memory Match description')).toBeInTheDocument()
+    expect(within(card).getByRole('link', { name: 'View activity: Memory Match' })).toHaveAttribute('href', '/activities/1')
+  })
+
+  it('the details link is still a real, focusable link (focus shows the glow without hover)', async () => {
+    const user = userEvent.setup()
+    await setup()
+    await waitForCards()
+
+    await user.tab()
+    // Tab until the first card link is focused.
+    for (let i = 0; i < 20 && !document.activeElement?.getAttribute('aria-label')?.startsWith('View activity'); i++) await user.tab()
+
+    const link = document.activeElement
+    expect(link).toHaveAttribute('aria-label', 'View activity: Memory Match')
+    expect(link.closest('.glow-card')).toBeInTheDocument()
+  })
+})

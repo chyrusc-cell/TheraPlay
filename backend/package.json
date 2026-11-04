@@ -15,5 +15,9 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "@napi-rs/canvas": "0.1.65",
+        "pdfjs-dist": "4.10.38"
     }
 }

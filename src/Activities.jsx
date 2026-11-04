@@ -8,7 +8,7 @@ import Modal from './Modal.jsx';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
-import { activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
+import { activityCardClass, activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 import { filterSelect } from './adminClasses.js';
 
 // Which activities has the selected child completed? This reads the same saved
@@ -66,9 +66,6 @@ const imagePlaceholders = [
     'bg-sunken',
     'bg-[#fbeedd]',
 ];
-
-const cardClass =
-    'flex flex-col rounded-2xl border border-edge bg-white p-5 card-soft transition-[transform,box-shadow] duration-200 hover:-translate-y-[3px] hover:shadow-[0_16px_32px_-12px_rgba(120,80,30,0.26)] motion-reduce:hover:translate-y-0';
 
 const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 
@@ -307,12 +304,12 @@ function Activities() {
                     <div className={activityGridClass}>
                         {visibleActivities.map((activity) => (
                             <div
-                                className={cardClass}
+                                className={activityCardClass}
                                 key={activity.id}
                             >
                                 <div className="mb-5">
                                     <ActivityPicture
-                                        urls={[activity.image_url, activity.attachment_image_url]}
+                                        urls={[activity.image_url, activity.thumbnail_url, activity.attachment_image_url]}
                                         alt={`Picture of ${activity.title}`}
                                         className="h-[180px] w-full rounded-lg object-cover"
                                         fallback={

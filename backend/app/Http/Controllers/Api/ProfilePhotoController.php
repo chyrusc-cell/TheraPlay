@@ -24,8 +24,8 @@ class ProfilePhotoController extends Controller
 {
     use ValidatesImageUploads;
 
-    // At most 2 MB (the usual PHP upload limit).
-    private const MAX_KB = 2048;
+    // At most 5 MB (PHP upload_max_filesize must be at least this; Herd uses 10M).
+    private const MAX_KB = 5120;
 
     public function show(Request $request): StreamedResponse
     {

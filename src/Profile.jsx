@@ -9,7 +9,7 @@ import DeleteAccountCard from './DeleteAccountCard.jsx';
 import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { ProfileSkeleton } from './PageSkeletons.jsx';
 import { holdSkeleton } from './minLoading.js';
-import { pageMainNarrow, pageHeader, pageTitle } from './uiClasses.js';
+import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
 
 // The database stores one "name", while this page shows first and last name.
 const splitName = (fullName = '') => {
@@ -53,7 +53,7 @@ const smallPillClass =
 
 // Picture rules (the server checks again, from the file's real content).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
 
 // Colors for the password-reset notice, by type.
 const noticeColors = {
@@ -92,12 +92,6 @@ function Profile() {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
-    // Needed (only) when the email address is being changed.
-    const [currentPassword, setCurrentPassword] = useState('');
-
-    const emailIsChanging =
-        Boolean(savedUser) &&
-        email.trim().toLowerCase() !== (savedUser.email || '').toLowerCase();
 
     const fillForm = (user) => {
         const values = toFormValues(user);
@@ -206,11 +200,6 @@ function Profile() {
             return;
         }
 
-        if (emailIsChanging && !currentPassword) {
-            showMessage('Enter your current password to change your email address.', true);
-            return;
-        }
-
         setIsSaving(true);
         showMessage('', false);
 
@@ -224,10 +213,7 @@ function Profile() {
                 },
                 body: JSON.stringify({
                     name,
-                    email: email.trim(),
                     contact_number: phone.trim() || null,
-                    // Sent only for an email change; the server checks it.
-                    ...(emailIsChanging ? { current_password: currentPassword } : {}),
                 }),
             });
 
@@ -261,14 +247,13 @@ function Profile() {
                 }
             });
 
-            // The server keeps the old address until the new one is verified.
+            // The email address is fixed; only name and phone are saved.
             // "email_delivered: false" means the verification email did not go out.
             showMessage(
                 data.message || 'Profile updated successfully.',
                 false,
                 data.email_delivered === false
             );
-            setCurrentPassword('');
             setIsEditing(false);
         } catch (error) {
             showMessage(
@@ -287,7 +272,6 @@ function Profile() {
         }
 
         showMessage('', false);
-        setCurrentPassword('');
         setIsEditing(false);
     };
 
@@ -362,7 +346,7 @@ function Profile() {
         }
 
         if (file.size > PHOTO_MAX_BYTES) {
-            setPhotoNotice({ type: 'error', text: 'The picture must be 2 MB or smaller.' });
+            setPhotoNotice({ type: 'error', text: 'The picture must be 5 MB or smaller.' });
             return;
         }
 
@@ -554,7 +538,7 @@ function Profile() {
                             disabled={photoBusy}
                         />
 
-                        <p className="mt-2 text-[12px] text-faint">JPG, PNG or WebP, up to 2 MB.</p>
+                        <p className="mt-2 text-[12px] text-faint">JPG, PNG or WebP, up to 5 MB.</p>
 
                         {photoNotice && (
                             <p
@@ -634,33 +618,18 @@ function Profile() {
 
                                 <div className={fieldClass}>
                                     <label className={fieldLabelClass} htmlFor="email">Email Address</label>
-                                    <input className={fieldInputClass}
+                                    <input className={`${fieldInputClass} ${readOnlyFieldClass}`}
                                         id="email"
                                         type="email"
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
+                                        disabled
+                                        readOnly
+                                        aria-describedby="email-fixed-hint"
                                     />
+                                    <p id="email-fixed-hint" className="text-[12px] leading-[1.5] text-faint">
+                                        Your email address can't be changed.
+                                    </p>
                                 </div>
-
-                                {emailIsChanging && (
-                                    <div className={`${fieldClass} col-span-2 phone:col-span-1`}>
-                                        <label className={fieldLabelClass} htmlFor="current-password">Current password</label>
-                                        <input className={fieldInputClass}
-                                            id="current-password"
-                                            type="password"
-                                            autoComplete="current-password"
-                                            aria-describedby="email-change-hint"
-                                            value={currentPassword}
-                                            onChange={(e) => setCurrentPassword(e.target.value)}
-                                            required
-                                        />
-                                        <p id="email-change-hint" className="text-[12px] leading-[1.5] text-faint">
-                                            Needed to change your email address. We will send a link to the new
-                                            address, and your email only changes after you open it.
-                                        </p>
-                                    </div>
-                                )}
 
                                 <div className={fieldClass}>
                                     <label className={fieldLabelClass} htmlFor="phone">Phone Number</label>

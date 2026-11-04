@@ -206,18 +206,19 @@ class AdminAccountManagementTest extends TestCase
 
     // ---------------------------------------------------------------- email changes by an admin
 
-    public function test_changing_an_accounts_email_clears_its_verification_and_asks_the_new_address(): void
+    public function test_an_admin_cannot_change_an_accounts_email(): void
     {
         Notification::fake();
         $this->actingAsAdmin();
         $parent = $this->makeUser('old@example.com', 'parent', true);
 
         $this->patchJson("/api/admin/users/{$parent->id}", ['email' => 'new@example.com'])
-            ->assertOk()
-            ->assertJsonPath('data.email_verified', false);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('email');
 
-        $this->assertNull($parent->fresh()->email_verified_at);
-        Notification::assertSentTo($parent->fresh(), VerifyEmailAddress::class);
+        $this->assertSame('old@example.com', $parent->fresh()->email);
+        $this->assertNotNull($parent->fresh()->email_verified_at);
+        Notification::assertNothingSent();
     }
 
     public function test_changing_only_the_name_keeps_the_verification(): void

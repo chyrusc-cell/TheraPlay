@@ -1,5 +1,4 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import VerifyEmail from './VerifyEmail.jsx'
@@ -47,8 +46,8 @@ describe('Verify email page', () => {
     open()
 
     expect(await screen.findByRole('heading', { name: 'Email verified' })).toBeInTheDocument()
-    expect(screen.getByText('Your email address is verified. Thank you!')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Go to login' })).toHaveAttribute('href', '/login')
+    expect(screen.getByText(/Your email address is verified. Thank you!/)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Log in to continue' })).toHaveAttribute('href', '/login')
   })
 
   it('reports a completed email change', async () => {
@@ -72,24 +71,29 @@ describe('Verify email page', () => {
 
     expect(await screen.findByRole('heading', { name: 'This link has expired' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toBeInTheDocument()
-    expect(screen.getByText(/Log in, then open your Profile/)).toBeInTheDocument()
+    expect(screen.getByText(/open your Profile to request a new one/)).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Send me a new link' })).not.toBeInTheDocument()
   })
 
-  it('offers a logged-in person a button to send a new link, and reports delivery honestly', async () => {
-    const user = userEvent.setup()
+  it('never shows a resend action, also for a logged-in person with an expired link', async () => {
     signIn()
-    const api = mockApi({
-      ...verifyRoute({ status: 410, body: { status: 'expired' } }),
-      'POST /email/verification-notification': { body: { message: 'Email delivery is not set up on this server yet.', delivered: false } },
-    })
+    const api = mockApi(verifyRoute({ status: 410, body: { status: 'expired' } }))
     open()
 
-    await user.click(await screen.findByRole('button', { name: 'Send me a new link' }))
+    await screen.findByRole('heading', { name: 'This link has expired' })
+    await settle(api)
 
-    expect(await screen.findByText('Email delivery is not set up on this server yet.')).toBeInTheDocument()
-    expect(api.callsTo('POST', '/email/verification-notification')).toHaveLength(1)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(api.callsTo('POST', '/email/verification-notification')).toHaveLength(0)
     expect(screen.getByRole('link', { name: 'Go to my profile' })).toHaveAttribute('href', '/profile')
+  })
+
+  it('sends a logged-in parent on to the dashboard (and the child step) after verifying', async () => {
+    signIn()
+    mockApi(verifyRoute({ body: { status: 'verified' } }))
+    open()
+
+    expect(await screen.findByRole('link', { name: 'Continue' })).toHaveAttribute('href', '/dashboard')
   })
 
   it('explains an invalid link', async () => {
@@ -144,5 +148,15 @@ describe('Verify email page', () => {
 
     expect(screen.getAllByRole('main')).toHaveLength(1)
     expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+  })
+})
+
+describe('Verify email page layout', () => {
+  it('centers the card in the page, horizontally and vertically', async () => {
+    mockApi(verifyRoute({ body: { status: 'verified' } }))
+    open()
+    await screen.findByRole('heading', { name: 'Email verified' })
+
+    expect(screen.getByRole('main')).toHaveClass('flex', 'items-center', 'justify-center', 'min-h-screen')
   })
 })

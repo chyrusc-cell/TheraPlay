@@ -502,7 +502,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                     {/* Activity Image */}
 
                     <ActivityPicture
-                        urls={[activity.image_url, activity.attachment_image_url]}
+                        urls={[activity.image_url, activity.thumbnail_url, activity.attachment_image_url]}
                         alt={`Picture of ${activity.title}`}
                         className="h-[220px] w-full rounded-lg object-cover tablet-sm:h-[180px]"
                         fallback={

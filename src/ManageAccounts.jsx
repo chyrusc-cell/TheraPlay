@@ -9,6 +9,7 @@ import {
 import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
+import { readOnlyFieldClass } from './uiClasses.js';
 import Modal from './Modal.jsx';
 
 const emptyForm = {
@@ -28,6 +29,156 @@ const formatDate = (value) =>
               year: 'numeric',
           })
         : '';
+
+// The two account lists of this page. The server's role decides the section; the
+// page offers no way to move an account between them except the existing
+// "Make admin" / "Make parent" action with its confirmation.
+const SECTIONS = [
+    { key: 'parent-accounts', title: 'Parent Accounts', label: 'parent accounts', empty: 'No parent accounts found.' },
+    { key: 'admin-accounts', title: 'Administrator Accounts', label: 'administrator accounts', empty: 'No administrator accounts found.' },
+];
+
+// One table with its own heading, search field, count and rows. It keeps its own
+// search text, so the other table is never affected.
+function AccountsSection({ section, accounts, currentUser, renderActions }) {
+    const [search, setSearch] = useState('');
+    const searchId = `${section.key}-search`;
+
+    const visible = useMemo(() => {
+        const term = search.trim().toLowerCase();
+
+        return accounts.filter(
+            (account) =>
+                term === '' ||
+                (account.name || '').toLowerCase().includes(term) ||
+                (account.email || '').toLowerCase().includes(term)
+        );
+    }, [accounts, search]);
+
+    return (
+        <section className="mb-12 phone:mb-10" aria-labelledby={`${section.key}-heading`}>
+
+            <h2 className={ui.sectionTitle} id={`${section.key}-heading`}>
+                {section.title}
+            </h2>
+
+            <div className="mb-4 flex flex-wrap items-end gap-3">
+
+                <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
+                    <label className={ui.label} htmlFor={searchId}>Search {section.label}</label>
+                    <input
+                        className={ui.input}
+                        id={searchId}
+                        type="search"
+                        placeholder="Name or email"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                    />
+                </div>
+
+            </div>
+
+            <p className={`${ui.cellSub} mb-3`} role="status" aria-label={`${section.title} count`}>
+                Showing {visible.length} of {accounts.length} {section.label}
+            </p>
+
+            {/* glass-stack: the glass and its shadow are separate layers, so no table's shadow is drawn over another table */}
+            <div className="glass-stack">
+            <div className="overflow-hidden rounded-[inherit]">
+
+                <table className={ui.table}>
+
+                    <thead className={ui.thead}>
+
+                        <tr>
+                            <th className={ui.th}>Name</th>
+                            <th className={ui.th}>Email</th>
+                            <th className={ui.th}>Email status</th>
+                            <th className={ui.th}>Actions</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody className={ui.tbody}>
+
+                        {visible.length === 0 && (
+
+                            <tr className={ui.row}>
+
+                                <td className={ui.tdEmpty} colSpan={4}>
+                                    {accounts.length === 0
+                                        ? section.empty
+                                        : `No ${section.label} match your search.`}
+                                    {accounts.length > 0 && (
+                                        <>
+                                            {' '}
+                                            <button
+                                                type="button"
+                                                className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-bold text-ink underline"
+                                                onClick={() => setSearch('')}
+                                            >
+                                                Clear search
+                                            </button>
+                                        </>
+                                    )}
+                                </td>
+
+                            </tr>
+
+                        )}
+
+                        {visible.map((account) => (
+
+                            <tr className={ui.row} key={account.id}>
+
+                                <td className={ui.td} data-label="Name">
+
+                                    {account.name}
+
+                                    {currentUser?.id === account.id && (
+                                        <span className={ui.youTag}>
+                                            you
+                                        </span>
+                                    )}
+
+                                    <div className={ui.cellSub}>
+                                        Joined {formatDate(account.created_at)}
+                                    </div>
+
+                                </td>
+
+                                <td className={ui.td} data-label="Email">
+                                    {account.email}
+                                </td>
+
+                                <td className={ui.td} data-label="Email status">
+
+                                    <span
+                                        className={account.email_verified ? ui.badgePublished : ui.badgeDraft}
+                                    >
+                                        {account.email_verified ? 'Verified' : 'Not verified'}
+                                    </span>
+
+                                </td>
+
+                                <td className={ui.td} data-label="Actions">
+                                    {renderActions(account)}
+                                </td>
+
+                            </tr>
+
+                        ))}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+            </div>
+
+        </section>
+    );
+}
 
 function ManageAccounts() {
 
@@ -50,10 +201,6 @@ function ManageAccounts() {
     const [formError, setFormError] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Search and filters work on the list that is already loaded.
-    const [search, setSearch] = useState('');
-    const [roleFilter, setRoleFilter] = useState('all');
-    const [verifiedFilter, setVerifiedFilter] = useState('all');
 
     // { id, type: 'delete' | 'role' } while a row asks "are you sure?"
     const [confirming, setConfirming] = useState(null);
@@ -242,7 +389,6 @@ function ManageAccounts() {
         const payload = isEditing
             ? {
                   name: form.name.trim(),
-                  email: form.email.trim(),
               }
             : {
                   name: form.name.trim(),
@@ -443,19 +589,10 @@ function ManageAccounts() {
 
     const isEditing = editingId !== null;
 
-    const visibleAccounts = useMemo(() => {
-        const term = search.trim().toLowerCase();
-
-        return accounts.filter(
-            (account) =>
-                (roleFilter === 'all' || account.role === roleFilter) &&
-                (verifiedFilter === 'all' ||
-                    (verifiedFilter === 'verified') === Boolean(account.email_verified)) &&
-                (term === '' ||
-                    (account.name || '').toLowerCase().includes(term) ||
-                    (account.email || '').toLowerCase().includes(term))
-        );
-    }, [accounts, search, roleFilter, verifiedFilter]);
+    // Two separate lists, split by the role the server reports. Each has its own
+    // search (inside AccountsSection), so searching one never affects the other.
+    const parents = useMemo(() => accounts.filter((account) => account.role === 'parent'), [accounts]);
+    const admins = useMemo(() => accounts.filter((account) => account.role === 'admin'), [accounts]);
 
     return (
         <div className={ui.page}>
@@ -560,7 +697,7 @@ function ManageAccounts() {
                                     Email
                                 </label>
 
-                                <input className={ui.input}
+                                <input className={editingId !== null ? `${ui.input} ${readOnlyFieldClass}` : ui.input}
                                     id="account-email"
                                     type="email"
                                     value={form.email}
@@ -568,8 +705,14 @@ function ManageAccounts() {
                                     onChange={(event) =>
                                         updateField('email', event.target.value)
                                     }
+                                    disabled={editingId !== null}
+                                    readOnly={editingId !== null}
                                     required
                                 />
+
+                                {editingId !== null && (
+                                    <p className={ui.cellSub}>The email address of an existing account can't be changed.</p>
+                                )}
 
                                 {fieldErrors.email && (
                                     <p className={ui.fieldError}>
@@ -683,10 +826,17 @@ function ManageAccounts() {
 
                 {isLoading ? (
 
-                    <TableSkeleton
-                        label="Loading accounts..."
-                        columns={['Name', 'Email', 'Role', 'Email status', 'Actions']}
-                    />
+                    <>
+                        {SECTIONS.map((section) => (
+                            <section className="mb-10" key={section.key} aria-labelledby={`${section.key}-heading`}>
+                                <h2 className={ui.sectionTitle} id={`${section.key}-heading`}>{section.title}</h2>
+                                <TableSkeleton
+                                    label={`Loading ${section.label}...`}
+                                    columns={['Name', 'Email', 'Email status', 'Actions']}
+                                />
+                            </section>
+                        ))}
+                    </>
 
                 ) : loadError ? (
 
@@ -710,178 +860,19 @@ function ManageAccounts() {
 
                     <>
 
-                    <div className="mb-4 flex flex-wrap items-end gap-3">
+                    <AccountsSection
+                        section={SECTIONS[0]}
+                        accounts={parents}
+                        currentUser={currentUser}
+                        renderActions={renderActions}
+                    />
 
-                        <div className="flex min-w-[220px] flex-1 flex-col gap-1.5">
-                            <label className={ui.label} htmlFor="account-search">Search accounts</label>
-                            <input
-                                className={ui.input}
-                                id="account-search"
-                                type="search"
-                                placeholder="Name or email"
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <label className={ui.label} htmlFor="account-role-filter">Role</label>
-                            <select
-                                className={ui.filterSelect}
-                                id="account-role-filter"
-                                value={roleFilter}
-                                onChange={(event) => setRoleFilter(event.target.value)}
-                            >
-                                <option value="all">All roles</option>
-                                <option value="admin">Admins</option>
-                                <option value="parent">Parents</option>
-                            </select>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <label className={ui.label} htmlFor="account-verified-filter">Email status</label>
-                            <select
-                                className={ui.filterSelect}
-                                id="account-verified-filter"
-                                value={verifiedFilter}
-                                onChange={(event) => setVerifiedFilter(event.target.value)}
-                            >
-                                <option value="all">All</option>
-                                <option value="verified">Verified</option>
-                                <option value="unverified">Not verified</option>
-                            </select>
-                        </div>
-
-                    </div>
-
-                    <p className={`${ui.cellSub} mb-3`} role="status">
-                        Showing {visibleAccounts.length} of {accounts.length} accounts
-                    </p>
-
-                    <section className={ui.tableContainer}>
-
-                        <table className={ui.table}>
-
-                            <thead className={ui.thead}>
-
-                                <tr>
-
-                                    <th className={ui.th}>
-                                        Name
-                                    </th>
-
-                                    <th className={ui.th}>
-                                        Email
-                                    </th>
-
-                                    <th className={ui.th}>
-                                        Role
-                                    </th>
-
-                                    <th className={ui.th}>
-                                        Email status
-                                    </th>
-
-                                    <th className={ui.th}>
-                                        Actions
-                                    </th>
-
-                                </tr>
-
-                            </thead>
-
-
-                            <tbody className={ui.tbody}>
-
-                                {visibleAccounts.length === 0 && (
-
-                                    <tr className={ui.row}>
-
-                                        <td className={ui.tdEmpty} colSpan={5}>
-                                            {accounts.length === 0
-                                                ? 'No accounts found.'
-                                                : 'No accounts match your search or filters.'}
-                                            {accounts.length > 0 && (
-                                                <>
-                                                    {' '}
-                                                    <button
-                                                        type="button"
-                                                        className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[14px] font-bold text-ink underline"
-                                                        onClick={() => {
-                                                            setSearch('');
-                                                            setRoleFilter('all');
-                                                            setVerifiedFilter('all');
-                                                        }}
-                                                    >
-                                                        Clear filters
-                                                    </button>
-                                                </>
-                                            )}
-                                        </td>
-
-                                    </tr>
-
-                                )}
-
-                                {visibleAccounts.map((account) => (
-
-                                    <tr className={ui.row} key={account.id}>
-
-                                        <td className={ui.td} data-label="Name">
-
-                                            {account.name}
-
-                                            {currentUser?.id === account.id && (
-                                                <span className={ui.youTag}>
-                                                    you
-                                                </span>
-                                            )}
-
-                                            <div className={ui.cellSub}>
-                                                Joined {formatDate(account.created_at)}
-                                            </div>
-
-                                        </td>
-
-                                        <td className={ui.td} data-label="Email">
-                                            {account.email}
-                                        </td>
-
-                                        <td className={ui.td} data-label="Role">
-
-                                            <span
-                                                className={account.role === 'admin' ? ui.badgeAdmin : ui.badgeParent}
-                                            >
-                                                {account.role === 'admin'
-                                                    ? 'Admin'
-                                                    : 'Parent'}
-                                            </span>
-
-                                        </td>
-
-                                        <td className={ui.td} data-label="Email status">
-
-                                            <span
-                                                className={account.email_verified ? ui.badgePublished : ui.badgeDraft}
-                                            >
-                                                {account.email_verified ? 'Verified' : 'Not verified'}
-                                            </span>
-
-                                        </td>
-
-                                        <td className={ui.td} data-label="Actions">
-                                            {renderActions(account)}
-                                        </td>
-
-                                    </tr>
-
-                                ))}
-
-                            </tbody>
-
-                        </table>
-
-                    </section>
+                    <AccountsSection
+                        section={SECTIONS[1]}
+                        accounts={admins}
+                        currentUser={currentUser}
+                        renderActions={renderActions}
+                    />
 
                     </>
 

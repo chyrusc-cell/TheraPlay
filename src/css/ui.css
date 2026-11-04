@@ -346,11 +346,14 @@ html[data-child-selector] {
     --wallpaper-previous-filter: saturate(1.5625);
 }
 
+/* The wallpaper is the lowest layer of the page (z-index -3): glass-stack
+   containers (tailwind.css) draw their shadow at -2 and their glass at -1, so every
+   shadow is behind every glass surface and all of them are above the wallpaper. */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
-    z-index: -1;
+    z-index: -3;
     pointer-events: none;
     background-color: var(--ui-page);
     background-image: var(--site-wallpaper);
@@ -417,6 +420,16 @@ body::before {
 @media (prefers-reduced-motion: reduce) {
     .nav-glow::before,
     .nav-glow::after {
+        animation: none !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* Activity card glow (glow-card, tailwind.css): same exception as the sidebar glow.
+   The global rule above would make the fade instant; keep a short 0.2s fade and no
+   gradient movement (the 3px lift is removed in the card's own classes). */
+@media (prefers-reduced-motion: reduce) {
+    .glow-card::before {
         animation: none !important;
         transition-duration: 0.2s !important;
     }

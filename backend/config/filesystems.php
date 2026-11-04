@@ -88,6 +88,17 @@ return [
         'disk' => 'local',
         'max_kb' => (int) env('ACTIVITY_MATERIAL_MAX_KB', 10240),
         'max_files' => (int) env('ACTIVITY_MATERIAL_MAX_FILES', 10),
+
+        // Card thumbnails of PDF attachments (App\Support\PdfThumbnail): page 1 is
+        // rendered by a small Node script, so Node must be installed on the server
+        // (THUMBNAIL_NODE_BINARY if it is not "node" on the PATH) and
+        // "npm install" run once in backend/.
+        'thumbnail' => [
+            'node' => env('THUMBNAIL_NODE_BINARY', 'node'),
+            'script' => base_path('tools/pdf-thumbnail.mjs'),
+            'width' => (int) env('THUMBNAIL_WIDTH', 600),
+            'timeout' => (int) env('THUMBNAIL_TIMEOUT', 60),
+        ],
     ],
 
     'links' => [

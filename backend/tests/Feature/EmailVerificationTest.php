@@ -54,7 +54,9 @@ class EmailVerificationTest extends TestCase
 
         $user = User::where('email', 'new@example.com')->first();
         $this->assertNull($user->email_verified_at);
-        Notification::assertSentTo($user, VerifyEmailAddress::class);
+        // Registration now emails a six-digit code (not a link).
+        Notification::assertSentTo($user, \App\Notifications\VerificationCodeNotification::class);
+        Notification::assertNotSentTo($user, VerifyEmailAddress::class);
     }
 
     public function test_the_registration_response_does_not_claim_delivery_with_the_log_driver(): void
@@ -260,13 +262,13 @@ class EmailVerificationTest extends TestCase
     {
         $example = file_get_contents(base_path('.env.example'));
 
-        $this->assertMatchesRegularExpression('/^MAIL_MAILER=log$/m', $example);
+        $this->assertMatchesRegularExpression('/^MAIL_MAILER=smtp$/m', $example);
+        $this->assertMatchesRegularExpression('/^MAIL_HOST=smtp.gmail.com$/m', $example);
         $this->assertMatchesRegularExpression('/^EMAIL_VERIFICATION_ENFORCED_FROM=$/m', $example);
         $this->assertStringContainsString('smtp.gmail.com', $example);
         $this->assertStringContainsString('App password', $example);
-        // No credentials are shipped.
-        $this->assertDoesNotMatchRegularExpression('/^MAIL_PASSWORD=(?!null$).+$/m', $example);
-        $this->assertDoesNotMatchRegularExpression('/^MAIL_USERNAME=(?!null$).+$/m', $example);
+        // No secret is shipped: the App Password stays empty (the sender address is public).
+        $this->assertMatchesRegularExpression('/^MAIL_PASSWORD=$/m', $example);
         $this->assertNull(config('auth.verification.enforced_from'));
     }
 

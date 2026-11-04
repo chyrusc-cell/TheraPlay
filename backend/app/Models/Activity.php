@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Support\PdfThumbnail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -75,6 +76,28 @@ class Activity extends Model
             : null;
     }
 
+    /**
+     * The picture for the activity CARD made from the attachments: the first
+     * attachment (lowest id) that is an image (its original file is used as it is)
+     * or a PDF that has a generated thumbnail (page 1). The original attachment is
+     * never replaced: viewing and downloading still serve the real file. Both URLs
+     * are public routes that only serve published, non-archived activities.
+     */
+    public function thumbnailUrl(): ?string
+    {
+        foreach ($this->resources->sortBy('id') as $resource) {
+            if (in_array($resource->file_type, ActivityResource::IMAGE_TYPES, true)) {
+                return url("/api/activities/{$this->id}/resources/{$resource->id}/download");
+            }
+
+            if ($resource->file_type === 'application/pdf' && PdfThumbnail::exists($resource)) {
+                return url("/api/activities/{$this->id}/resources/{$resource->id}/thumbnail");
+            }
+        }
+
+        return null;
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -115,6 +138,7 @@ class Activity extends Model
         $disk = Storage::disk(config('filesystems.activity_materials.disk'));
         $imagePath = $this->image_path;
         $filePaths = $this->resources()->pluck('file_path')->unique()->all();
+        $thumbnails = $this->resources()->get()->map(fn (ActivityResource $r) => PdfThumbnail::path($r))->all();
 
         DB::transaction(function () {
             $this->progressRecords()->delete();
@@ -127,6 +151,11 @@ class Activity extends Model
             && str_starts_with($imagePath, self::IMAGE_DIRECTORY.'/')
             && ! self::where('image_path', $imagePath)->exists()) {
             $disk->delete($imagePath);
+        }
+
+        // Generated thumbnails belong to the resource that is gone.
+        foreach ($thumbnails as $thumbnail) {
+            $disk->delete($thumbnail);
         }
 
         foreach ($filePaths as $path) {

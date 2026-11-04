@@ -131,6 +131,8 @@ return [
 
     'verification' => [
         'expire' => (int) env('EMAIL_VERIFICATION_EXPIRE', 60),
+        // Minutes a six-digit verification code (OTP) stays valid.
+        'code_expire' => (int) env('EMAIL_CODE_EXPIRE_MINUTES', 10),
         'enforced_from' => env('EMAIL_VERIFICATION_ENFORCED_FROM') ?: null,
     ],
 

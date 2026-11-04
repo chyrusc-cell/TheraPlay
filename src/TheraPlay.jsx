@@ -21,6 +21,9 @@ import Contact from './Contact.jsx';
 import ManageContacts from './ManageContacts.jsx';
 import ManageAccounts from './ManageAccounts.jsx';
 import ResetPassword from './ResetPassword.jsx';
+import VerifyCode from './VerifyCode.jsx';
+import CreateChild from './CreateChild.jsx';
+import OnboardingGate from './OnboardingGate.jsx';
 import NotFound from './NotFound.jsx';
 import VerifyEmail from './VerifyEmail.jsx';
 import GuestOnly from './GuestOnly.jsx';
@@ -63,6 +66,16 @@ export function AppRoutes() {
                     />
 
                 </Route>
+
+                {/* Sign-up stages after the account exists: email code, then child profile */}
+                <Route
+                    path="/verify-code"
+                    element={<OnboardingGate step="verify_email"><VerifyCode /></OnboardingGate>}
+                />
+                <Route
+                    path="/create-child"
+                    element={<OnboardingGate step="create_child"><CreateChild /></OnboardingGate>}
+                />
 
                 {/* Opened from the link in the email verification email */}
                 <Route

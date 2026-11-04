@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as auth from './authClasses.js';
 import { logo } from './brand.js';
-import ChildFormFields from './ChildFormFields.jsx';
-import { validateChild } from './childValidation.js';
 import { API_URL } from './api.js';
 
 function Register() {
@@ -15,12 +13,6 @@ function Register() {
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
-    // Step 1 = the parent account, step 2 = the first child. Everything typed is
-    // kept when going back and forth; nothing is sent until the last step.
-    const [step, setStep] = useState(1);
-    const [child, setChild] = useState({ name: '', dateOfBirth: '', conditionIds: [] });
-    const [childErrors, setChildErrors] = useState({});
 
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,22 +33,6 @@ function Register() {
             return;
         }
 
-        // Step 1 only moves on; the account is created after the child step.
-        if (step === 1) {
-            setStep(2);
-            return;
-        }
-
-        const problems = validateChild(child);
-
-        if (Object.keys(problems).length > 0) {
-            setChildErrors(problems);
-            setMessage('Please fix the highlighted fields.');
-            setIsError(true);
-            return;
-        }
-
-        setChildErrors({});
         setIsLoading(true);
 
         try {
@@ -75,11 +51,6 @@ function Register() {
                         phone: phone.trim(),
                         password,
                         password_confirmation: confirmPassword,
-                        child: {
-                            name: child.name.trim(),
-                            date_of_birth: child.dateOfBirth || null,
-                            condition_ids: child.conditionIds,
-                        },
                     }),
                 }
             );
@@ -87,20 +58,6 @@ function Register() {
             const data = await response.json();
 
             if (!response.ok) {
-                // Show a child problem on the child step, an account problem (for
-                // example an email already in use) on the first step.
-                const keys = Object.keys(data.errors || {});
-
-                if (keys.some((key) => key.startsWith('child.'))) {
-                    setChildErrors({
-                        name: data.errors['child.name']?.[0],
-                        date_of_birth: data.errors['child.date_of_birth']?.[0],
-                        condition_ids: data.errors[keys.find((key) => key.startsWith('child.condition_ids'))]?.[0],
-                    });
-                } else if (keys.length > 0) {
-                    setStep(1);
-                }
-
                 const validationErrors = data.errors
                     ? Object.values(data.errors).flat()
                     : [];
@@ -112,18 +69,18 @@ function Register() {
                 );
             }
 
-            // Redirect to Login after successful registration. Only say a
-            // verification email is on its way when the server really delivers mail.
-            const verification = data.email_verification;
-            const registeredMessage =
-                verification?.sent && verification?.delivery_available
-                    ? 'Registration successful! We sent a verification link to your email address. Please verify it, then log in.'
-                    : 'Registration successful! Please log in. You can verify your email address later from your Profile page.';
+            // The account exists but is NOT usable yet. Stay signed in (so the next
+            // stages need no login page) and continue to the email code screen. Only say
+            // a message is on its way when the server really sent one.
+            localStorage.setItem('theraplay_token', data.token);
+            sessionStorage.removeItem('theraplay_token');
+            localStorage.setItem('theraplay_user', JSON.stringify(data.user));
+            sessionStorage.removeItem('theraplay_user');
 
-            navigate('/login', {
-                state: {
-                    message: registeredMessage,
-                },
+            const verification = data.email_verification;
+
+            navigate('/verify-code', {
+                state: { sent: Boolean(verification?.sent && verification?.delivery_available) },
                 replace: true,
             });
         } catch (error) {
@@ -154,12 +111,6 @@ function Register() {
 
                 <form onSubmit={handleRegister}>
 
-                    <p className="mb-6 text-[13px] font-bold text-muted" aria-live="polite">
-                        Step {step} of 2: {step === 1 ? 'Your account' : "Your child's information"}
-                    </p>
-
-                    {step === 1 && (
-                        <>
                     <div className={auth.inputRow}>
                         <div className={auth.fieldInRow}>
                             <input className={auth.input}
@@ -323,28 +274,6 @@ function Register() {
                             </span>
                         </label>
                     </div>
-                        </>
-                    )}
-
-                    {step === 2 && (
-                        <div className="mb-6">
-
-                            <p className="mb-5 text-[14px] leading-[1.5] text-muted">
-                                Tell us about your first child. You can add more children after
-                                creating an account.
-                            </p>
-
-                            <ChildFormFields
-                                values={child}
-                                onChange={setChild}
-                                errors={childErrors}
-                                disabled={isLoading}
-                                idPrefix="register-child"
-                            />
-
-                        </div>
-                    )}
-
                     {message && (
                         <p
                             role="alert"
@@ -354,30 +283,12 @@ function Register() {
                         </p>
                     )}
 
-                    {step === 2 && (
-                        <button
-                            type="button"
-                            className="mb-3 w-full cursor-pointer rounded-full border btn-glass btn-white p-3 [font-family:inherit] text-[15px] font-bold text-ink enabled:hover:bg-hover"
-                            onClick={() => {
-                                setMessage('');
-                                setStep(1);
-                            }}
-                            disabled={isLoading}
-                        >
-                            Back
-                        </button>
-                    )}
-
                     <button
                         type="submit"
                         className={auth.registerButton}
                         disabled={isLoading}
                     >
-                        {isLoading
-                            ? 'Creating account...'
-                            : step === 1
-                            ? 'Next'
-                            : 'Create account'}
+                        {isLoading ? 'Creating account...' : 'Create account'}
                     </button>
                 </form>
 

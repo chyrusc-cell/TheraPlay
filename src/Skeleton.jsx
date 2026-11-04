@@ -1,5 +1,6 @@
 import * as admin from './adminClasses.js';
 import {
+    activityCardShell,
     activityGridClass,
     contactItemClass,
     detailsCardClass,
@@ -62,7 +63,7 @@ export function ActivityCardsSkeleton({ count = 6 }) {
 
             <div className={activityGridClass}>
                 {Array.from({ length: count }, (_, index) => (
-                    <div className={cardClass} key={index}>
+                    <div className={`${activityCardShell} pointer-events-none`} key={index}>
                         <SkeletonBlock className="mb-5 h-[180px] rounded-lg" />
                         <SkeletonBlock className="mb-3.5 h-[22px] w-[70%]" />
                         <SkeletonBlock className="mb-2.5 h-3.5" />

@@ -261,13 +261,13 @@ class UserManagementTest extends TestCase
 
         $this->patchJson("/api/admin/users/{$parent->id}", [
             'name' => 'Renamed',
-            'email' => 'renamed@example.com',
+            'email' => 'parent@example.com',
             'password' => 'hacked-pass-1',
             'contact_number' => '000',
         ])->assertOk()->assertJsonPath('data.name', 'Renamed');
 
         $fresh = $parent->fresh();
-        $this->assertSame('renamed@example.com', $fresh->email);
+        $this->assertSame('parent@example.com', $fresh->email);
         $this->assertSame('parent', $fresh->role);
         $this->assertSame($originalPassword, $fresh->password);
         $this->assertSame('09171234567', $fresh->contact_number);
@@ -279,7 +279,10 @@ class UserManagementTest extends TestCase
         $this->makeUser('taken@example.com');
         $parent = $this->makeUser('parent@example.com');
 
+        // A different address (taken or not) is refused: emails are fixed.
         $this->patchJson("/api/admin/users/{$parent->id}", ['email' => 'taken@example.com'])
+            ->assertStatus(422)->assertJsonValidationErrors('email');
+        $this->patchJson("/api/admin/users/{$parent->id}", ['email' => 'free@example.com'])
             ->assertStatus(422)->assertJsonValidationErrors('email');
 
         $this->patchJson("/api/admin/users/{$parent->id}", ['name' => ''])

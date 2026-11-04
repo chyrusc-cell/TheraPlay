@@ -1,5 +1,5 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from './authContext.js';
+import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { ONBOARDING_PATHS, useAuth } from './authContext.js';
 import EmailVerificationStatus from './EmailVerificationStatus.jsx';
 import { pageMainNarrow, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
 
@@ -14,6 +14,14 @@ import { pageMainNarrow, pageHeader, pageTitle, pageSubtitle } from './uiClasses
 function GatedOutlet() {
     const { user } = useAuth();
     const { pathname } = useLocation();
+
+    // A parent who has not finished signing up (email code, then the first child
+    // profile) cannot use the app yet: the server says which stage they are at.
+    const onboardingPath = user?.role === 'parent' ? ONBOARDING_PATHS[user.onboarding] : undefined;
+
+    if (onboardingPath) {
+        return <Navigate to={onboardingPath} replace />;
+    }
 
     const held = Boolean(user?.email_verification_required) && !pathname.startsWith('/profile');
 

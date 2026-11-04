@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 use Throwable;
 
@@ -84,33 +84,22 @@ class UserManagementController extends Controller
         ], 201);
     }
 
-    // Name and email only. Roles change through promote() / demote().
+    // Name only: the email address of an existing account is fixed. A request may
+    // send the current address back, but a different one is refused. Roles change
+    // through promote() / demote().
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255', 'regex:/\S/'],
-            'email' => [
-                'sometimes', 'required', 'string', 'email', 'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
+            'email' => ['sometimes', 'nullable', 'string'],
         ]);
 
-        $emailChanges = isset($validated['email'])
-            && mb_strtolower($validated['email']) !== mb_strtolower($user->email);
-
-        $user->fill(collect($validated)->only(['name', 'email'])->all());
-
-        if ($emailChanges) {
-            // The old address's verification does not carry over to the new one.
-            $user->email_verified_at = null;
+        if (isset($validated['email']) && trim($validated['email']) !== '' && mb_strtolower(trim($validated['email'])) !== mb_strtolower($user->email)) {
+            throw ValidationException::withMessages(['email' => 'The email address of an existing account cannot be changed.']);
         }
 
+        $user->fill(collect($validated)->only(['name'])->all());
         $user->save();
-
-        if ($emailChanges) {
-            $user->clearPendingEmail();
-            $this->sendVerification($user);
-        }
 
         return response()->json([
             'message' => 'Account updated.',

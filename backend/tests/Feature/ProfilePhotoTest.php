@@ -123,10 +123,22 @@ class ProfilePhotoTest extends TestCase
         $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->createWithContent('x.png', 'not an image')], self::JSON)
             ->assertStatus(422)->assertJsonValidationErrors('photo');
         $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->create('d.pdf', 10, 'application/pdf')], self::JSON)->assertStatus(422);
-        $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('big.png', 10, 10)->size(3000)], self::JSON)->assertStatus(422);
+        $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('big.png', 10, 10)->size(5121)], self::JSON)->assertStatus(422);
         $this->post('/api/profile/photo', [], self::JSON)->assertStatus(422);
 
         $this->assertNull($user->fresh()->photo_path);
+    }
+
+    public function test_a_picture_up_to_5_mb_is_accepted_and_one_byte_over_is_not(): void
+    {
+        Storage::fake('local');
+        $user = $this->makeUser('parent');
+        Sanctum::actingAs($user);
+
+        $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('four.png', 10, 10)->size(4000)], self::JSON)->assertSuccessful();
+        $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('five.png', 10, 10)->size(5120)], self::JSON)->assertSuccessful();
+        $this->post('/api/profile/photo', ['photo' => UploadedFile::fake()->image('over.png', 10, 10)->size(5121)], self::JSON)
+            ->assertStatus(422)->assertJsonPath('errors.photo.0', 'The picture must be 5 MB or smaller.');
     }
 
     public function test_uploading_never_changes_role_password_or_other_fields(): void

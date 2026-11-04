@@ -279,6 +279,119 @@
 }
 
 /*
+ * glass-stack: the same frosted glass as card-soft (same tokens: fill, blur,
+ * border, radius and the 80px shadow), built from two layers so containers that sit
+ * near each other never draw their shadow over one another. A normal card-soft
+ * paints its shadow together with its surface, so a LATER container's wide shadow
+ * lands on top of an EARLIER container. Here the shadow is a ::before at z-index -2
+ * and the glass a ::after at -1 (the wallpaper is at -3, see ui.css): all shadows
+ * sit behind all glass surfaces, and the container's content paints above both.
+ * A container that has its own transparent border (like the activity cards) sets
+ * --glass-stack-inset to that border width so the glass still covers the border box.
+ * The element itself has no background, border, blur or clipping, so put anything
+ * that must be clipped (a table with rounded corners) in an inner overflow-hidden
+ * wrapper. It is not a stacking context, so dropdowns, dialogs and the sidebar keep
+ * their own z-index values.
+ */
+@utility glass-stack {
+    position: relative;
+    border-radius: var(--glass-radius);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -2;
+        border-radius: inherit;
+        box-shadow: var(--glass-shadow);
+        pointer-events: none;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -1;
+        border-radius: inherit;
+        border: var(--glass-border);
+        background-color: var(--glass-bg);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        pointer-events: none;
+    }
+}
+
+/*
+ * glow-card: the activity card. Idle it is plain frosted glass (the glass-stack
+ * ::after surface: same fill, border and blur, but NO shadow). On hover (only on
+ * devices that really hover, so a tap never leaves it lit) or while the card
+ * contains a keyboard-focused control, the sidebar's ACTIVE-PAGE glow (the soft,
+ * muted one of nav-glow, not its vibrant hover) fades in behind the glass: the
+ * three-colour gradient (#E07082, #ECE280, #86CFCF, the same values nav-glow uses
+ * for the current page), the 30 s linear infinite `navigation-glowing`
+ * movement and the registered --glow-* colours are shared with nav-glow, 5px blur,
+ * a 0.5 s opacity fade in and out. The ring is 2px outside the glass with a radius
+ * 2px larger, so it follows the rounded corners; with the 24px card gap and 5px
+ * blur it stays inside the gap. The ring (::before, z -2) is behind the glass
+ * (::after, z -1) and the content paints above both; both are pointer-events: none.
+ * A container with its own transparent border sets --glass-stack-inset to that
+ * border width (see activityCardShell). Reduced motion: see ui.css.
+ */
+@utility glow-card {
+    position: relative;
+    border-radius: var(--glass-radius);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1 - 2px);
+        z-index: -2;
+        border-radius: calc(var(--glass-radius) + 2px);
+        /* The sidebar's ACTIVE-PAGE (muted) colours, not its vibrant hover ones. */
+        --glow-pink: #e07082;
+        --glow-yellow: #ece280;
+        --glow-cyan: #86cfcf;
+        background: linear-gradient(45deg, var(--glow-pink), var(--glow-yellow), var(--glow-cyan), var(--glow-pink));
+        background-size: 400%;
+        filter: blur(5px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        animation: navigation-glowing 30s linear infinite;
+        transition:
+            opacity 0.5s ease-in-out,
+            visibility 0s linear 0.5s;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -1;
+        border-radius: inherit;
+        border: var(--glass-border);
+        background-color: var(--glass-bg);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        pointer-events: none;
+    }
+
+    &:has(:focus-visible)::before {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    @media (hover: hover) {
+        &:hover::before {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease-in-out;
+        }
+    }
+}
+
+/*
  * Navigation items (sidebar). The link itself NEVER has a background, border
  * colour, shadow or blur: it is only its icon and label (plus a transparent 2px
  * border so the size is the same in every state). All the glass lives on ONE

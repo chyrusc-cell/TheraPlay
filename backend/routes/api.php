@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\EmailVerificationController;
+use App\Http\Controllers\Api\EmailCodeController;
 use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ActivityCompletionController;
 use App\Http\Controllers\Api\ActivityUndoController;
@@ -54,6 +55,15 @@ Route::post('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'v
 Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
     ->middleware(['auth:sanctum', 'throttle:email-resend']);
 
+// The six-digit email verification code (new parent accounts). Logged-in account
+// only, each route with its own rate limiter; the code is checked against the
+// token's own account.
+Route::prefix('email/code')->middleware('auth:sanctum')->group(function () {
+    Route::get('/status', [EmailCodeController::class, 'status']);
+    Route::post('/verify', [EmailCodeController::class, 'verify'])->middleware('throttle:email-code-verify');
+    Route::post('/resend', [EmailCodeController::class, 'resend'])->middleware('throttle:email-code-resend');
+});
+
 Route::get('/activities', [ActivityController::class, 'index']);
 
 Route::get('/activities/{id}', [ActivityController::class, 'show'])
@@ -65,6 +75,11 @@ Route::get('/activities/{activity}/image', [ActivityController::class, 'image'])
 
 // Download an uploaded file of a PUBLISHED activity (404 for drafts).
 Route::get('/activities/{activity}/resources/{resource}/download', [ActivityMaterialController::class, 'download'])
+    ->whereNumber(['activity', 'resource'])
+    ->scopeBindings();
+
+// The card picture (page 1) of a PDF attachment of a PUBLISHED activity.
+Route::get('/activities/{activity}/resources/{resource}/thumbnail', [ActivityMaterialController::class, 'thumbnail'])
     ->whereNumber(['activity', 'resource'])
     ->scopeBindings();
 

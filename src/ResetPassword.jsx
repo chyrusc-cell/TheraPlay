@@ -100,7 +100,7 @@ function ResetPassword() {
     };
 
     return (
-        <main className={auth.pageBg}>
+        <main className={auth.pageBgCentered}>
             <div className={auth.panel}>
 
                 <div className={auth.logoRow}>

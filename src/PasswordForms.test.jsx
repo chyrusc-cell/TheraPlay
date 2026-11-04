@@ -84,6 +84,13 @@ describe('Forgot password form', () => {
 })
 
 describe('Reset password form', () => {
+  it('centers the card in the page, horizontally and vertically', () => {
+    renderAt('/reset-password?token=t&email=me%40example.com')
+
+    expect(screen.getByRole('main')).toHaveClass('flex', 'items-center', 'justify-center', 'min-h-screen')
+    expect(screen.getByRole('main')).not.toHaveClass('px-[6vw]')
+  })
+
   const LINK = '/reset-password?token=tok123&email=me%40example.com'
   const fill = async (user, password = 'brand-new-pass-1', confirmation = password) => {
     await user.type(screen.getByLabelText('New password'), password)

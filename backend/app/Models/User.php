@@ -128,7 +128,24 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified' => $this->hasVerifiedEmail(),
             'pending_email' => $this->pendingEmail(),
             'email_verification_required' => $this->mustVerifyEmailNow(),
+            'onboarding' => $this->onboardingStep(),
         ];
+    }
+
+    // Where a new parent is in sign-up, decided here (never trusted from the app):
+    // verify_email -> create_child -> complete. Onboarding is complete only once the
+    // email is verified AND a child profile exists. Admins have no onboarding.
+    public function onboardingStep(): string
+    {
+        if ($this->role !== 'parent') {
+            return 'complete';
+        }
+
+        if (! $this->hasVerifiedEmail()) {
+            return 'verify_email';
+        }
+
+        return $this->children()->exists() ? 'complete' : 'create_child';
     }
 
     // The oldest child (a parent can have several: see children()). Kept for

@@ -82,3 +82,24 @@ describe('Dashboard: loading ends after a failure, and requests wait for verifie
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
   })
 })
+
+describe('Dashboard: a parent with no child profile', () => {
+  it('is told to verify their email first when it is not verified', async () => {
+    await setup({
+      'GET /user': { body: makeUser('parent', { email_verified: false }) },
+      'GET /children': { body: { data: [] } },
+    })
+
+    expect(await screen.findByRole('heading', { name: 'Verify your email first' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Add a child profile' })).not.toBeInTheDocument()
+  })
+
+  it('is invited to add a child profile once the email is verified', async () => {
+    await setup({
+      'GET /user': { body: makeUser('parent', { email_verified: true }) },
+      'GET /children': { body: { data: [] } },
+    })
+
+    expect(await screen.findByRole('link', { name: 'Add a child profile' })).toBeInTheDocument()
+  })
+})

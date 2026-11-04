@@ -119,154 +119,39 @@ describe('Profile: email verification status', () => {
   })
 })
 
-describe('Profile: changing the email address', () => {
-  it('asks for the current password only when the email is changed', async () => {
+describe('Profile: the email address is fixed', () => {
+  it('shows the address read-only, with no current-password field', async () => {
     const user = userEvent.setup()
     await setup()
     await startEditing(user)
 
-    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument()
-
     const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    expect(screen.getByLabelText('Current password')).toBeInTheDocument()
+    expect(email).toHaveAttribute('readonly')
+    expect(email).toBeDisabled()
+    // Visually darker than an editable field, with a not-allowed cursor.
+    expect(email.className).toContain('bg-black/10')
+    expect(email.className).toContain('cursor-not-allowed')
+    expect(email).toHaveValue('parent@example.com')
+    expect(screen.getByText("Your email address can't be changed.")).toBeInTheDocument()
 
-    // Typing the old address back removes the need.
-    await user.clear(email)
-    await user.type(email, 'PARENT@example.com')
+    await user.type(email, 'x')
+    expect(email).toHaveValue('parent@example.com')
     expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument()
   })
 
-  it('does not send the change without the current password', async () => {
-    const user = userEvent.setup()
-    const api = await setup()
-    await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'x')
-    await user.clear(screen.getByLabelText('Current password'))
-
-    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-
-    expect(api.callsTo('PUT', '/profile')).toHaveLength(0)
-  })
-
-  it('sends the password with the change and then shows the address as pending, not changed', async () => {
+  it('saves the name without sending an email or a password', async () => {
     const user = userEvent.setup()
     const api = await setup({
-      routes: {
-        'PUT /profile': {
-          body: {
-            message: 'Profile updated. We sent a verification link to new@example.com. Your email will change once you open it.',
-            email_delivered: true,
-            user: { ...account(), pending_email: 'new@example.com' },
-          },
-        },
-      },
+      routes: { 'PUT /profile': { body: { message: 'Profile updated successfully.', user: makeUser('parent') } } },
     })
     await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'my-password')
+
     await user.click(screen.getByRole('button', { name: 'Save Changes' }))
 
-    expect(await screen.findByText(/We sent a verification link to new@example.com/)).toBeInTheDocument()
-    expect(api.callsTo('PUT', '/profile')[0].body).toMatchObject({
-      email: 'new@example.com',
-      current_password: 'my-password',
-    })
-    // Back in view mode: the account email is still the old one, with a pending note.
-    expect(screen.getByTestId('email-status')).toHaveTextContent('Waiting for verification: new@example.com')
-    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument()
-  })
-
-  it('does not send a password when only other details change', async () => {
-    const user = userEvent.setup()
-    const api = await setup({
-      routes: { 'PUT /profile': { body: { message: 'Profile updated successfully.', email_delivered: null, user: account() } } },
-    })
-    await startEditing(user)
-    const phone = screen.getByLabelText('Phone Number')
-    await user.clear(phone)
-    await user.type(phone, '0999 111 2222')
-    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-
-    expect(await screen.findByText('Profile updated successfully.')).toBeInTheDocument()
-    expect(api.callsTo('PUT', '/profile')[0].body).not.toHaveProperty('current_password')
-  })
-
-  it('shows the server\'s message for a wrong password and keeps the form open', async () => {
-    const user = userEvent.setup()
-    await setup({
-      routes: { 'PUT /profile': { status: 422, body: { errors: { current_password: ['The password is incorrect.'] } } } },
-    })
-    await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'nope')
-    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('The password is incorrect.')
-    expect(screen.getByLabelText('Email Address')).toHaveValue('new@example.com')
-  })
-
-  it('shows the server\'s message for an address that is already in use', async () => {
-    const user = userEvent.setup()
-    await setup({
-      routes: { 'PUT /profile': { status: 422, body: { errors: { email: ['This email address is already in use.'] } } } },
-    })
-    await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'taken@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'pw')
-    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('This email address is already in use.')
-  })
-
-  it('warns (not "success") when the verification email could not be delivered', async () => {
-    const user = userEvent.setup()
-    await setup({
-      routes: {
-        'PUT /profile': {
-          body: {
-            message: 'Profile updated. Your new email address is waiting for verification, but email delivery is not set up on this server yet, so no email was delivered.',
-            email_delivered: false,
-            user: { ...account(), pending_email: 'new@example.com' },
-          },
-        },
-      },
-    })
-    await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'pw')
-    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
-
-    const note = await screen.findByText(/no email was delivered/)
-    expect(note.className).toMatch(/b26a00/)
-  })
-
-  it('Cancel forgets the typed password and the unsaved address', async () => {
-    const user = userEvent.setup()
-    await setup()
-    await startEditing(user)
-    const email = screen.getByLabelText('Email Address')
-    await user.clear(email)
-    await user.type(email, 'new@example.com')
-    await user.type(screen.getByLabelText('Current password'), 'secret')
-
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    await startEditing(user)
-
-    expect(screen.getByLabelText('Email Address')).toHaveValue('parent@example.com')
-    expect(screen.queryByLabelText('Current password')).not.toBeInTheDocument()
+    await waitFor(() => expect(api.callsTo('PUT', '/profile')).toHaveLength(1))
+    const body = api.callsTo('PUT', '/profile')[0].body
+    expect(body).not.toHaveProperty('email')
+    expect(body).not.toHaveProperty('current_password')
   })
 })
 

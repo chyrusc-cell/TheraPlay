@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\StreamsActivityMaterials;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
 use App\Models\ActivityResource;
+use App\Support\PdfThumbnail;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -112,6 +113,13 @@ class ActivityResourceController extends Controller
             throw $e;
         }
 
+        // A PDF gets its card thumbnail (page 1) right away. A failure never fails
+        // the upload: the card just keeps its placeholder (and
+        // "php artisan activities:generate-thumbnails" can retry later).
+        foreach ($resources as $created) {
+            PdfThumbnail::generate($created);
+        }
+
         return response()->json([
             'message' => count($resources) === 1 ? 'File uploaded.' : count($resources).' files uploaded.',
             'data' => [
@@ -123,6 +131,9 @@ class ActivityResourceController extends Controller
     public function destroy(Activity $activity, ActivityResource $resource): JsonResponse
     {
         $path = $resource->file_path;
+
+        // Its generated thumbnail goes with it.
+        PdfThumbnail::delete($resource);
 
         $resource->delete();
 

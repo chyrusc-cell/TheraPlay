@@ -35,63 +35,28 @@ class ProfileController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($user->id),
-            ],
+            'email' => ['sometimes', 'nullable', 'string'],
             'contact_number' => ['nullable', 'string', 'max:30'],
-            'current_password' => ['nullable', 'string'],
         ]);
 
-        $newEmail = trim($validated['email']);
-        $changesEmail = mb_strtolower($newEmail) !== mb_strtolower($user->email);
+        // An account's email address is fixed once the account exists: the form may
+        // send the current address back, but any different one is refused.
+        if (isset($validated['email']) && trim($validated['email']) !== '' && mb_strtolower(trim($validated['email'])) !== mb_strtolower($user->email)) {
+            throw ValidationException::withMessages(['email' => 'Your email address cannot be changed.']);
+        }
 
         $messages = ['Profile updated successfully.'];
         $delivered = null;
-
-        if ($changesEmail) {
-            // An email change is account-takeover material, so it needs the
-            // current password (a stolen login token alone is not enough).
-            $this->requirePassword($user, $validated['current_password'] ?? null);
-
-            // Case-insensitive duplicate check (the unique rule is not on every
-            // database).
-            if (User::whereRaw('LOWER(email) = ?', [mb_strtolower($newEmail)])->where('id', '!=', $user->id)->exists()) {
-                throw ValidationException::withMessages(['email' => 'This email address is already in use.']);
-            }
-        }
 
         $user->update([
             'name' => $validated['name'],
             'contact_number' => $validated['contact_number'] ?? null,
         ]);
 
-        if ($changesEmail) {
-            // The address does NOT change yet. It waits, unverified, until its
-            // owner opens the link sent to it; the current verified address keeps
-            // working meanwhile.
-            $user->setPendingEmail($newEmail);
-
-            try {
-                $user->sendPendingEmailVerification($newEmail);
-                $delivered = MailDelivery::isConfigured();
-                $messages = [$delivered
-                    ? 'Profile updated. We sent a verification link to '.$newEmail.'. Your email will change once you open it.'
-                    : 'Profile updated. Your new email address is waiting for verification, but email delivery is not set up on this server yet, so no email was delivered. Please contact the administrator.'];
-            } catch (Throwable $e) {
-                Log::warning('Email-change verification could not be sent.', [
-                    'user_id' => $user->id,
-                    'error' => class_basename($e),
-                ]);
-                $delivered = false;
-                $messages = ['Profile updated, but we could not send the verification email right now. Use "Resend verification email" to try again.'];
-            }
-        } elseif ($user->pendingEmail() !== null && mb_strtolower($newEmail) === mb_strtolower($user->email)) {
-            // Submitting the current address again cancels a pending change.
+        // Changing the address is no longer possible, so a change requested before
+        // that rule existed must not complete later.
+        if ($user->pendingEmail() !== null) {
             $user->clearPendingEmail();
-            $messages = ['Profile updated. The pending email change was cancelled.'];
         }
 
         return response()->json([

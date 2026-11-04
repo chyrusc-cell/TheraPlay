@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiRequest, getToken } from './api.js';
 import * as auth from './authClasses.js';
 import { logo } from './brand.js';
 import { useDocumentTitle } from './useDocumentTitle.js';
+
+const VERIFIED_LOGIN_MESSAGE = "Your email is verified. Log in to continue and create your child's profile.";
 
 // What each answer from the server means for the person.
 const outcomes = {
     verified: {
         tone: 'success',
         title: 'Email verified',
-        text: 'Your email address is verified. Thank you!',
+        text: "Your email address is verified. Thank you! Next, create your child's profile.",
     },
     email_changed: {
         tone: 'success',
@@ -25,12 +27,12 @@ const outcomes = {
     expired: {
         tone: 'error',
         title: 'This link has expired',
-        text: 'Verification links only work for a limited time. Request a new one and use it right away.',
+        text: 'Verification links only work for a limited time. Log in and open your Profile to request a new one.',
     },
     invalid: {
         tone: 'error',
         title: 'This link is not valid',
-        text: 'The link may be incomplete, may already have been replaced by a newer one, or may not be meant for this account. Request a new one.',
+        text: 'The link may be incomplete, may already have been replaced by a newer one, or may not be meant for this account. Log in and open your Profile to request a new one.',
     },
     email_taken: {
         tone: 'error',
@@ -64,8 +66,6 @@ function VerifyEmail() {
     const incomplete = !id || !hash || !expires || !signature;
 
     const [outcome, setOutcome] = useState(incomplete ? 'invalid' : 'verifying');
-    const [resend, setResend] = useState(null);
-    const [isSending, setIsSending] = useState(false);
 
     // The link must be used once. This guard makes sure the request is sent once
     // even where React runs effects twice in development.
@@ -110,40 +110,40 @@ function VerifyEmail() {
     }, [incomplete, id, hash, expires, signature]);
 
     const loggedIn = Boolean(getToken());
+    const navigate = useNavigate();
 
-    const handleResend = async () => {
-        if (isSending) {
-            return;
+    // After a successful verification, move on to the next onboarding step: a
+    // logged-in parent lands on the dashboard (which asks for the child profile when
+    // there is none), anyone else on the login page. The link below does the same
+    // at once.
+    useEffect(() => {
+        if (outcome !== 'verified' && outcome !== 'already_verified') {
+            return undefined;
         }
 
-        setIsSending(true);
-        setResend(null);
+        const timer = setTimeout(() => {
+            navigate(loggedIn ? '/dashboard' : '/login', {
+                replace: true,
+                state: loggedIn
+                    ? undefined
+                    : { message: VERIFIED_LOGIN_MESSAGE },
+            });
+        }, 3000);
 
-        try {
-            const result = await apiRequest('/email/verification-notification', { method: 'POST' });
+        return () => clearTimeout(timer);
+    }, [outcome, loggedIn, navigate]);
 
-            if (result.status === 429) {
-                setResend({ type: 'error', text: 'Please wait a minute before asking again.' });
-            } else if (result.status === 401) {
-                setResend({ type: 'error', text: 'Please log in first, then request a new link.' });
-            } else if (!result.ok) {
-                setResend({ type: 'error', text: result.data.message || 'Unable to send the email. Please try again.' });
-            } else {
-                setResend({ type: result.data.delivered || result.data.already_verified ? 'success' : 'warning', text: result.data.message });
-            }
-        } catch {
-            setResend({ type: 'error', text: 'Unable to connect to the server. Please try again.' });
-        } finally {
-            setIsSending(false);
-        }
-    };
 
     const shown = outcomes[outcome];
     const failed = shown?.tone === 'error';
-    const canAskForNewLink = outcome === 'expired' || outcome === 'invalid';
+    const succeeded = shown?.tone === 'success';
+    const nextPath = loggedIn ? '/dashboard' : '/login';
+    const nextState = loggedIn
+        ? undefined
+        : { message: VERIFIED_LOGIN_MESSAGE };
 
     return (
-        <main className={auth.pageBg}>
+        <main className={auth.pageBgCentered}>
             <div className={auth.panel}>
 
                 <div className={auth.logoRow}>
@@ -168,30 +168,11 @@ function VerifyEmail() {
                             {shown.text}
                         </p>
 
-                        {canAskForNewLink && loggedIn && (
-                            <button type="button" className={`${auth.submitButton} btn-white`} onClick={handleResend} disabled={isSending}>
-                                {isSending ? 'Sending...' : 'Send me a new link'}
-                            </button>
-                        )}
-
-                        {canAskForNewLink && !loggedIn && (
-                            <p className={auth.subtitle}>
-                                Log in, then open your Profile to request a new verification email.
-                            </p>
-                        )}
-
-                        {resend && (
-                            <p
-                                className={resend.type === 'success' ? auth.messageSuccess : resend.type === 'warning' ? auth.messageWarning : auth.messageError}
-                                role={resend.type === 'error' ? 'alert' : 'status'}
-                            >
-                                {resend.text}
-                            </p>
-                        )}
-
                         <p className={auth.switchLinkLogin}>
-                            <Link to={loggedIn ? '/profile' : '/login'} className={auth.switchLinkAnchor}>
-                                {loggedIn ? 'Go to my profile' : 'Go to login'}
+                            <Link to={succeeded ? nextPath : loggedIn ? '/profile' : '/login'} state={succeeded ? nextState : undefined} className={auth.switchLinkAnchor}>
+                                {succeeded
+                                    ? loggedIn ? 'Continue' : 'Log in to continue'
+                                    : loggedIn ? 'Go to my profile' : 'Go to login'}
                             </Link>
                         </p>
                     </>

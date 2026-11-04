@@ -112,3 +112,8 @@ export const termsLabel =
 export const termsCheckbox =
     'h-[18px] w-[18px] cursor-pointer rounded-[4px] border-2 border-accent';
 export const termsStrong = 'font-bold text-ink';
+
+// Reset Password and the "check your email" page: the same card, centered in the
+// page (horizontally and vertically) instead of floating on the left.
+export const pageBgCentered =
+    'flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat px-4 py-8 phone:py-6';

@@ -17,12 +17,15 @@ class ChildProfileTest extends TestCase
 
     private function makeUser(string $email): User
     {
-        return User::create([
+        $user = User::create([
             'name' => 'Test Parent',
             'email' => $email,
             'password' => 'password123',
             'role' => 'parent',
         ]);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
     }
 
     private function makeActivity(): Activity
