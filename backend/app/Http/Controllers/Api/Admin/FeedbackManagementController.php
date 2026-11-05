@@ -7,7 +7,7 @@ use App\Models\Feedback;
 use Illuminate\Http\JsonResponse;
 
 /**
- * Admin-only, read-only view of submitted feedback. Protected by
+ * Admin-only view and removal of submitted feedback. Protected by
  * ['auth:sanctum', 'role:admin'] in routes/api.php.
  */
 class FeedbackManagementController extends Controller
@@ -35,5 +35,12 @@ class FeedbackManagementController extends Controller
             ]);
 
         return response()->json(['data' => $feedback]);
+    }
+
+    public function destroy(Feedback $feedback): JsonResponse
+    {
+        $feedback->delete();
+
+        return response()->json(['message' => 'Feedback deleted.']);
     }
 }

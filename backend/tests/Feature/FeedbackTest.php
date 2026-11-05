@@ -167,6 +167,39 @@ class FeedbackTest extends TestCase
         $this->getJson('/api/admin/feedback')->assertForbidden();
     }
 
+    public function test_admin_can_delete_one_feedback_and_others_stay(): void
+    {
+        $parent = $this->makeUser('parent@example.com');
+        $gone = $this->makeFeedback($parent, 'Delete me');
+        $kept = $this->makeFeedback($parent, 'Keep me');
+        Sanctum::actingAs($this->makeUser('admin@example.com', 'admin', 'Admin'));
+
+        $this->deleteJson("/api/admin/feedback/{$gone->id}")->assertOk();
+
+        $this->assertDatabaseMissing('feedback', ['id' => $gone->id]);
+        $this->assertDatabaseHas('feedback', ['id' => $kept->id]);
+    }
+
+    public function test_guests_and_parents_cannot_delete_feedback(): void
+    {
+        $parent = $this->makeUser('parent@example.com');
+        $item = $this->makeFeedback($parent);
+
+        $this->deleteJson("/api/admin/feedback/{$item->id}")->assertUnauthorized();
+
+        Sanctum::actingAs($parent);
+        $this->deleteJson("/api/admin/feedback/{$item->id}")->assertForbidden();
+
+        $this->assertDatabaseHas('feedback', ['id' => $item->id]);
+    }
+
+    public function test_deleting_unknown_feedback_is_a_404(): void
+    {
+        Sanctum::actingAs($this->makeUser('admin@example.com', 'admin', 'Admin'));
+
+        $this->deleteJson('/api/admin/feedback/99999')->assertNotFound();
+    }
+
     public function test_admin_can_list_feedback_newest_first_with_submitter_details(): void
     {
         $parent = $this->makeUser('parent@example.com', 'parent', 'Pat Parent');

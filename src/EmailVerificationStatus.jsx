@@ -30,11 +30,8 @@ function EmailVerificationStatus({ user }) {
     const verified = Boolean(user.email_verified);
 
     if (verified && !pending) {
-        return (
-            <p className="mt-6 text-[13px] font-medium text-[#188038]" data-testid="email-status">
-                <span aria-hidden="true">✓ </span>Your email address is verified.
-            </p>
-        );
+        // Nothing to do: the "Verified ✓" badge next to the email says it.
+        return null;
     }
 
     const handleResend = async () => {

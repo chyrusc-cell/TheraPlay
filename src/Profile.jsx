@@ -8,8 +8,7 @@ import EmailVerificationStatus from './EmailVerificationStatus.jsx';
 import DeleteAccountCard from './DeleteAccountCard.jsx';
 import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { ProfileSkeleton } from './PageSkeletons.jsx';
-import { holdSkeleton } from './minLoading.js';
-import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
+import { holdSkeleton } from './minLoading.js';import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
 
 // The database stores one "name", while this page shows first and last name.
 const splitName = (fullName = '') => {
@@ -438,6 +437,16 @@ function Profile() {
         }
     };
 
+    // The "Easy" badge colours from Manage Activities, smaller, with a green outline.
+    const verifiedBadge = savedUser?.email_verified ? (
+        <span
+            className="inline-block rounded-md border border-[#188038] bg-success-bg px-2 py-0.5 text-[11px] font-bold leading-[1.3] text-success-text"
+            data-testid="email-verified-badge"
+        >
+            Verified <span aria-hidden="true">✓</span>
+        </span>
+    ) : null;
+
     const roleLabel = savedUser?.role
         ? savedUser.role.charAt(0).toUpperCase() + savedUser.role.slice(1)
         : '';
@@ -583,7 +592,10 @@ function Profile() {
 
                                 <div className="flex flex-col gap-1.5">
                                     <span className="text-[12px] font-medium text-faint">Email Address</span>
-                                    <span className="text-[15px] font-bold text-ink">{email}</span>
+                                    <span className="flex flex-wrap items-center gap-2 text-[15px] font-bold text-ink">
+                                        <span className="[word-break:break-word]">{email}</span>
+                                        {verifiedBadge}
+                                    </span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
@@ -617,7 +629,10 @@ function Profile() {
                                 </div>
 
                                 <div className={fieldClass}>
-                                    <label className={fieldLabelClass} htmlFor="email">Email Address</label>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <label className={fieldLabelClass} htmlFor="email">Email Address</label>
+                                        {verifiedBadge}
+                                    </div>
                                     <input className={`${fieldInputClass} ${readOnlyFieldClass}`}
                                         id="email"
                                         type="email"

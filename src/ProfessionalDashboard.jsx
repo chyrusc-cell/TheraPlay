@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
@@ -36,6 +38,9 @@ function ProfessionalDashboard() {
     const [feedbackLoading, setFeedbackLoading] = useState(true);
     const [feedbackError, setFeedbackError] = useState('');
     const [feedbackReloadKey, setFeedbackReloadKey] = useState(0);
+    const [deleting, setDeleting] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
 
     // Number of accounts, counted from the admin accounts list. null = unknown.
     const [userCount, setUserCount] = useState(null);
@@ -221,6 +226,45 @@ function ProfessionalDashboard() {
         setUsersLoading(true);
         setUsersError('');
         setUsersReloadKey((key) => key + 1);
+    };
+
+
+    const handleDeleteFeedback = async () => {
+        if (!deleting || isDeleting) {
+            return;
+        }
+
+        setIsDeleting(true);
+
+        try {
+            const result = await apiRequest(`/admin/feedback/${deleting.id}`, {
+                method: 'DELETE',
+            });
+
+            if (result.status === 401) {
+                clearSession();
+                navigate('/login', {
+                    replace: true,
+                    state: { message: 'Please log in to continue.' },
+                });
+                return;
+            }
+
+            // 404 means it is already gone, which is what the admin wanted.
+            if (!result.ok && result.status !== 404) {
+                throw new Error('Unable to delete this feedback.');
+            }
+
+            setFeedback((list) => list.filter((item) => item.id !== deleting.id));
+            setDeleting(null);
+        } catch (err) {
+            setDeleting(null);
+            setDeleteError(
+                err.message || 'Unable to connect to the server. Please try again.'
+            );
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
 
@@ -483,8 +527,20 @@ function ProfessionalDashboard() {
                                                 </div>
 
                                                 {item.rating && (
-                                                    <div className="mb-1.5 text-[12px] text-muted">
-                                                        Rating: {item.rating} / 5
+                                                    <div
+                                                        className="mb-1.5 flex items-center gap-0.5 text-[#b26a00]"
+                                                        role="img"
+                                                        aria-label={`Rating: ${item.rating} out of 5`}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                size={16}
+                                                                aria-hidden="true"
+                                                                fill={star <= item.rating ? 'currentColor' : 'none'}
+                                                                className={star <= item.rating ? '' : 'text-muted'}
+                                                            />
+                                                        ))}
                                                     </div>
                                                 )}
 
@@ -492,11 +548,30 @@ function ProfessionalDashboard() {
                                                     {item.message}
                                                 </p>
 
+                                                <div className="mt-2 flex justify-end">
+                                                    <button
+                                                        type="button"
+                                                        className="cursor-pointer rounded-full border btn-glass btn-red px-3 py-1 text-[12px]"
+                                                        onClick={() => {
+                                                            setDeleteError('');
+                                                            setDeleting(item);
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+
                                             </div>
 
                                         ))}
 
                                     </div>
+
+                                    {deleteError && (
+                                        <p className={`${noteErrorClass} mt-3 mb-0 shrink-0`} role="alert">
+                                            {deleteError}
+                                        </p>
+                                    )}
 
                                     {feedback.length > FEEDBACK_LIMIT && (
                                         <p className={`${noteClass} mt-3 shrink-0`}>
@@ -516,6 +591,18 @@ function ProfessionalDashboard() {
                 </div>
 
             </div>
+
+            <ConfirmDialog
+                open={deleting !== null}
+                title="Delete this feedback?"
+                message={deleting ? `The feedback from ${deleting.user ? deleting.user.name : 'a former user'} will be permanently deleted.` : ''}
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                busyLabel="Deleting..."
+                busy={isDeleting}
+                onConfirm={handleDeleteFeedback}
+                onCancel={() => setDeleting(null)}
+            />
 
         </div>
     );

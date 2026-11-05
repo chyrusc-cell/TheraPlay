@@ -51,7 +51,12 @@ describe('Profile: email verification status', () => {
   it('shows a verified address as verified, with nothing to do', async () => {
     await setup()
 
-    expect(await screen.findByText(/Your email address is verified/)).toBeInTheDocument()
+    const badge = await screen.findByTestId('email-verified-badge')
+    expect(badge).toHaveTextContent('Verified')
+    expect(badge.className).toContain('bg-success-bg')
+    expect(badge.className).toContain('text-success-text')
+    expect(badge.className).toContain('border-[#188038]')
+    expect(screen.queryByText(/Your email address is verified/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Resend verification email' })).not.toBeInTheDocument()
   })
 

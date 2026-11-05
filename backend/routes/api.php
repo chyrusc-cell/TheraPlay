@@ -244,7 +244,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::put('developer-team', [DeveloperTeamManagementController::class, 'update'])
             ->name('developer-team.update');
 
-        // Feedback: view only.
+        // Feedback: view and delete.
         Route::get('feedback', [FeedbackManagementController::class, 'index'])
             ->name('feedback.index');
+
+        Route::delete('feedback/{feedback}', [FeedbackManagementController::class, 'destroy'])
+            ->whereNumber('feedback')
+            ->name('feedback.destroy');
     });
