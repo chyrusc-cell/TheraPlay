@@ -52,11 +52,12 @@ describe('Activity card glow: stylesheet contract', () => {
     }
   })
 
-  it('idle: invisible glow, glass surface with no shadow at all', () => {
+  it('idle: invisible glow, glass surface with only a small, tight shadow', () => {
     expect(before).toContain('opacity: 0')
     expect(before).toContain('visibility: hidden')
-    expect(glow).not.toContain('box-shadow')
+    expect(before).not.toContain('box-shadow')
     expect(glow).not.toContain('--glass-shadow')
+    expect(after).toContain('box-shadow: 0 3px 10px -2px')
     expect(after).toContain('background-color: var(--glass-bg)')
     expect(after).toContain('border: var(--glass-border)')
     expect(after).toContain('backdrop-filter: blur(var(--glass-blur))')
