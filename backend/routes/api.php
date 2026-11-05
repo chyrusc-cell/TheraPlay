@@ -6,16 +6,273 @@ use App\Http\Controllers\Api\RegisterController;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\EmailVerificationController;
+use App\Http\Controllers\Api\EmailCodeController;
+use App\Http\Controllers\Api\ProgressController;
+use App\Http\Controllers\Api\ActivityCompletionController;
+use App\Http\Controllers\Api\ActivityUndoController;
+use App\Http\Controllers\Api\ChildController;
+use App\Http\Controllers\Api\ActivityJournalController;
+use App\Http\Controllers\Api\Admin\ActivityFeedbackController;
+use App\Http\Controllers\Api\LogoutController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\Admin\ActivityManagementController;
+use App\Http\Controllers\Api\Admin\ContactManagementController;
+use App\Http\Controllers\Api\Admin\FeedbackManagementController;
+use App\Http\Controllers\Api\Admin\UserManagementController;
+use App\Http\Controllers\Api\Admin\ActivityResourceController;
+use App\Http\Controllers\Api\Admin\ActivityImageController;
+use App\Http\Controllers\Api\ActivityMaterialController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfilePhotoController;
+use App\Http\Controllers\Api\ConditionController;
+use App\Http\Controllers\Api\Admin\ConditionManagementController;
+use App\Http\Controllers\Api\Admin\CategoryManagementController;
+use App\Http\Controllers\Api\DeveloperTeamController;
+use App\Http\Controllers\Api\Admin\DeveloperTeamManagementController;
 
-Route::post('/register', [RegisterController::class, 'store']);
+// Rate limited per client to slow down automated sign-ups.
+Route::post('/register', [RegisterController::class, 'store'])
+    ->middleware('throttle:register');
 
-Route::post('/login', [LoginController::class, 'store']);
+// Rate limited per client to slow down password guessing.
+Route::post('/login', [LoginController::class, 'store'])
+    ->middleware('throttle:login');
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+Route::post('/logout', [LogoutController::class, 'destroy'])
+    ->middleware('auth:sanctum');
+
+// The logged-in account (with its email verification status).
+Route::get('/user', [ProfileController::class, 'show'])
+    ->middleware('auth:sanctum');
+
+// Email verification. The link is opened from an inbox, so verifying is public
+// but needs the link's signature (and it expires). Resending needs a login.
+Route::post('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->whereNumber('id')
+    ->middleware('throttle:email-verify')
+    ->name('verification.verify');
+
+Route::post('/email/verification-notification', [EmailVerificationController::class, 'resend'])
+    ->middleware(['auth:sanctum', 'throttle:email-resend']);
+
+// The six-digit email verification code (new parent accounts). Logged-in account
+// only, each route with its own rate limiter; the code is checked against the
+// token's own account.
+Route::prefix('email/code')->middleware('auth:sanctum')->group(function () {
+    Route::get('/status', [EmailCodeController::class, 'status']);
+    Route::post('/verify', [EmailCodeController::class, 'verify'])->middleware('throttle:email-code-verify');
+    Route::post('/resend', [EmailCodeController::class, 'resend'])->middleware('throttle:email-code-resend');
+});
 
 Route::get('/activities', [ActivityController::class, 'index']);
 
+Route::get('/activities/{id}', [ActivityController::class, 'show'])
+    ->whereNumber('id');
+
+// The picture of a PUBLISHED activity (404 for drafts).
+Route::get('/activities/{activity}/image', [ActivityController::class, 'image'])
+    ->whereNumber('activity');
+
+// Download an uploaded file of a PUBLISHED activity (404 for drafts).
+Route::get('/activities/{activity}/resources/{resource}/download', [ActivityMaterialController::class, 'download'])
+    ->whereNumber(['activity', 'resource'])
+    ->scopeBindings();
+
+// The card picture (page 1) of a PDF attachment of a PUBLISHED activity.
+Route::get('/activities/{activity}/resources/{resource}/thumbnail', [ActivityMaterialController::class, 'thumbnail'])
+    ->whereNumber(['activity', 'resource'])
+    ->scopeBindings();
+
+// Progress belongs to a parent's own child, so only parents can record it.
+Route::post('/activities/{id}/complete', [ActivityCompletionController::class, 'store'])
+    ->whereNumber('id')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent']);
+
+// Undo an accidental completion: the record must belong to the parent's own child.
+Route::post('/progress/{progress}/undo', [ActivityUndoController::class, 'undo'])
+    ->whereNumber('progress')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent']);
+
+// The session journal (1-5 rating + observations) for one completed session of the
+// parent's own child. Saving needs a verified parent; reading is the parent's own.
+Route::post('/progress/{progress}/journal', [ActivityJournalController::class, 'store'])
+    ->whereNumber('progress')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::put('/journal/{entry}', [ActivityJournalController::class, 'update'])
+    ->whereNumber('entry')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::delete('/journal/{entry}', [ActivityJournalController::class, 'destroy'])
+    ->whereNumber('entry')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::get('/activities/{id}/journal', [ActivityJournalController::class, 'index'])
+    ->whereNumber('id')
+    ->middleware(['auth:sanctum', 'role:parent']);
+
+// A parent's own children (several per parent). Every route works only on the
+// logged-in parent's children; admins have none.
+Route::middleware(['auth:sanctum', 'role:parent'])->prefix('children')->group(function () {
+    Route::get('/', [ChildController::class, 'index']);
+    Route::post('/', [ChildController::class, 'store'])->middleware('verified.parent');
+    Route::put('/{child}', [ChildController::class, 'update'])->whereNumber('child')->middleware('verified.parent');
+    Route::delete('/{child}', [ChildController::class, 'destroy'])->whereNumber('child')->middleware('verified.parent');
+});
+
+// The conditions parents can choose from (active ones; public, read-only).
+Route::get('/conditions', [ConditionController::class, 'index']);
+
 Route::put('/profile', [ProfileController::class, 'update'])
+    ->middleware(['auth:sanctum', 'throttle:profile-update']);
+
+// Delete the logged-in user's OWN account (needs their password).
+Route::delete('/profile', [ProfileController::class, 'destroy'])
+    ->middleware(['auth:sanctum', 'throttle:account-delete']);
+
+// The logged-in user's own profile picture (no user id: it is always the token's account).
+Route::middleware('auth:sanctum')->prefix('profile/photo')->group(function () {
+    Route::get('/', [ProfilePhotoController::class, 'show']);
+    Route::post('/', [ProfilePhotoController::class, 'store'])->middleware('throttle:profile-photo');
+    Route::delete('/', [ProfilePhotoController::class, 'destroy'])->middleware('throttle:profile-photo');
+});
+
+// Password reset: the request is for the logged-in user's OWN email only;
+// completing it needs the emailed token and does not need a login.
+Route::post('/profile/password-reset', [PasswordResetController::class, 'request'])
+    ->middleware(['auth:sanctum', 'throttle:profile-password-reset']);
+
+// Forgot Password page (nobody is logged in). Rate limited per client; the
+// answer is identical for every email so accounts cannot be discovered.
+Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])
+    ->middleware('throttle:forgot-password');
+
+Route::post('/reset-password', [PasswordResetController::class, 'reset'])
+    ->middleware('throttle:reset-password');
+
+Route::get('/progress', [ProgressController::class, 'index'])
     ->middleware('auth:sanctum');
+
+// Public, read-only list of professional contacts (Contact Us page).
+Route::get('/contacts', [ContactController::class, 'index']);
+
+// The Developer Team card on the Contact Us page (edited by admins).
+Route::get('/developer-team', [DeveloperTeamController::class, 'show']);
+
+Route::get('/contacts/{contact}/photo', [ContactController::class, 'photo'])
+    ->whereNumber('contact');
+
+// Only logged-in parents can send feedback.
+Route::post('/feedback', [FeedbackController::class, 'store'])
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:feedback']);
+
+// Admin-only management API. Order matters: authenticate first, then check role.
+Route::middleware(['auth:sanctum', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // DELETE /activities/{activity} permanently deletes the activity AND the
+        // children's progress records, resources, files and condition links that
+        // belong to it (see ActivityManagementController::destroy).
+        Route::apiResource('activities', ActivityManagementController::class);
+
+        Route::post('activities/{activity}/publish', [ActivityManagementController::class, 'publish'])
+            ->name('activities.publish');
+
+        Route::post('activities/{activity}/unpublish', [ActivityManagementController::class, 'unpublish'])
+            ->name('activities.unpublish');
+
+        // Archive hides an activity (separately from unpublishing); restore brings
+        // it back with its previous publication state. Permanent deletion (the
+        // DELETE route above) is only allowed for an archived activity.
+        Route::post('activities/{activity}/archive', [ActivityManagementController::class, 'archive'])
+            ->whereNumber('activity')
+            ->name('activities.archive');
+
+        Route::post('activities/{activity}/restore', [ActivityManagementController::class, 'restore'])
+            ->whereNumber('activity')
+            ->name('activities.restore');
+
+        // The activity's picture (private storage; one per activity).
+        Route::get('activities/{activity}/image', [ActivityImageController::class, 'show'])
+            ->name('activities.image.show');
+
+        Route::post('activities/{activity}/image', [ActivityImageController::class, 'store'])
+            ->middleware('activity.live')
+            ->name('activities.image.store');
+
+        Route::delete('activities/{activity}/image', [ActivityImageController::class, 'destroy'])
+            ->middleware('activity.live')
+            ->name('activities.image.destroy');
+
+        // Uploaded file materials of an activity (private storage).
+        Route::post('activities/{activity}/resources', [ActivityResourceController::class, 'store'])
+            ->middleware('activity.live')
+            ->name('activities.resources.store');
+
+        Route::delete('activities/{activity}/resources/{resource}', [ActivityResourceController::class, 'destroy'])
+            ->middleware('activity.live')
+            ->scopeBindings()
+            ->name('activities.resources.destroy');
+
+        Route::get('activities/{activity}/resources/{resource}/download', [ActivityResourceController::class, 'download'])
+            ->scopeBindings()
+            ->name('activities.resources.download');
+
+        // Professional contacts: full management (they are standalone records).
+        Route::apiResource('contacts', ContactManagementController::class)
+            ->parameters(['contacts' => 'contact']);
+
+        Route::post('contacts/{contact}/photo', [ContactManagementController::class, 'storePhoto'])
+            ->name('contacts.photo.store');
+
+        Route::delete('contacts/{contact}/photo', [ContactManagementController::class, 'destroyPhoto'])
+            ->name('contacts.photo.destroy');
+
+        // Accounts: list, create an ADMINISTRATOR (the role is set by the server),
+        // update name/email, promote/demote, and guarded delete.
+        Route::apiResource('users', UserManagementController::class);
+
+        Route::post('users/{user}/promote', [UserManagementController::class, 'promote'])
+            ->whereNumber('user')
+            ->name('users.promote');
+
+        Route::post('users/{user}/demote', [UserManagementController::class, 'demote'])
+            ->whereNumber('user')
+            ->name('users.demote');
+
+        // Predefined conditions: list, add, edit, switch on/off (no delete on purpose).
+        Route::get('conditions', [ConditionManagementController::class, 'index'])
+            ->name('conditions.index');
+
+        Route::post('conditions', [ConditionManagementController::class, 'store'])
+            ->name('conditions.store');
+
+        Route::put('conditions/{condition}', [ConditionManagementController::class, 'update'])
+            ->name('conditions.update');
+
+        // Activity categories: list, add, rename; delete only while no activity uses it.
+        Route::apiResource('categories', CategoryManagementController::class)
+            ->except(['show']);
+
+        // The Developer Team card shown on the Contact Us page (one settings row).
+        Route::get('developer-team', [DeveloperTeamManagementController::class, 'show'])
+            ->name('developer-team.show');
+
+        Route::put('developer-team', [DeveloperTeamManagementController::class, 'update'])
+            ->name('developer-team.update');
+
+        // Parents' session ratings and journal notes (read-only, paginated).
+        Route::get('activity-feedback', [ActivityFeedbackController::class, 'index'])
+            ->name('activity-feedback.index');
+
+        // Feedback: view and delete.
+        Route::get('feedback', [FeedbackManagementController::class, 'index'])
+            ->name('feedback.index');
+
+        Route::delete('feedback/{feedback}', [FeedbackManagementController::class, 'destroy'])
+            ->whereNumber('feedback')
+            ->name('feedback.destroy');
+    });

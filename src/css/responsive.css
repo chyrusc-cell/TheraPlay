@@ -1,0 +1,31 @@
+/*
+ * Global safety rules (everything else that used to be here now lives in the
+ * components as Tailwind classes, with the breakpoints named in tailwind.css).
+ */
+
+/*
+ * The page never scrolls sideways.
+ * "clip" (not "hidden") on purpose: overflow-x: hidden on html AND body turns
+ * body into a scroll container, which stops the sticky header from sticking.
+ * "clip" hides the overflow without creating a scroll container.
+ */
+html,
+body {
+    overflow-x: clip;
+}
+
+img {
+    max-width: 100%;
+}
+
+/*
+ * Always reserve the space of the vertical scrollbar. Fixed elements (the
+ * profile shortcut, the search pill) are positioned against the viewport
+ * WITHOUT the scrollbar. Without this, a page that grows taller than the
+ * window (for example when a contact description is expanded) gets a scrollbar,
+ * the viewport becomes narrower, and everything fixed to the right edge jumps
+ * sideways by the scrollbar's width.
+ */
+html {
+    scrollbar-gutter: stable;
+}

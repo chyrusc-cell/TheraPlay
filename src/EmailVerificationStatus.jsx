@@ -1,0 +1,118 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { apiRequest, clearSession } from './api.js';
+
+const smallPillClass =
+    'cursor-pointer rounded-full border btn-glass btn-white px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+
+const noticeColors = {
+    success: 'text-[#188038]',
+    warning: 'text-[#b26a00]',
+    error: 'text-[#d93025]',
+};
+
+/*
+ * Whether the account's email address is verified, a waiting (pending) new
+ * address, and a way to ask for the verification email again. The status comes
+ * from the server (GET /api/user); nothing here can mark an address verified, only
+ * the emailed link can.
+ */
+function EmailVerificationStatus({ user }) {
+    const navigate = useNavigate();
+    const [isSending, setIsSending] = useState(false);
+    const [notice, setNotice] = useState(null);
+
+    if (!user) {
+        return null;
+    }
+
+    const pending = user.pending_email || null;
+    const verified = Boolean(user.email_verified);
+
+    if (verified && !pending) {
+        // Nothing to do: the "Verified ✓" badge next to the email says it.
+        return null;
+    }
+
+    const handleResend = async () => {
+        if (isSending) {
+            return;
+        }
+
+        setIsSending(true);
+        setNotice(null);
+
+        try {
+            const result = await apiRequest(pending ? '/email/verification-notification' : '/email/code/resend', { method: 'POST' });
+
+            if (result.status === 401) {
+                clearSession();
+                navigate('/login', { replace: true, state: { message: 'Please log in to continue.' } });
+                return;
+            }
+
+            if (result.status === 429) {
+                setNotice({ type: 'error', text: result.data?.message || 'Please wait a minute before asking for another email.' });
+                return;
+            }
+
+            if (!result.ok) {
+                setNotice({
+                    type: 'error',
+                    text: result.data.message || 'Unable to send the verification email. Please try again.',
+                });
+                return;
+            }
+
+            // Success only when the server says the email was really delivered.
+            setNotice({
+                type: result.data.delivered || result.data.already_verified ? 'success' : 'warning',
+                text: result.data.message,
+            });
+        } catch {
+            setNotice({ type: 'error', text: 'Unable to connect to the server. Please try again.' });
+        } finally {
+            setIsSending(false);
+        }
+    };
+
+    return (
+        <div className="mt-6 rounded-lg border border-edge card-soft p-4" data-testid="email-status">
+
+            {pending ? (
+                <p className="mb-3 text-[14px] leading-[1.5] text-ink">
+                    <strong>Waiting for verification:</strong> {pending}. Your account email stays{' '}
+                    <strong>{user.email}</strong> until you open the link we sent to the new address.
+                </p>
+            ) : (
+                <p className="mb-3 text-[14px] leading-[1.5] text-ink">
+                    <strong>Your email address is not verified.</strong> Enter the six-digit code we
+                    emailed to {user.email}. Until then you can browse, but adding children, completing
+                    activities and saving notes are locked.
+                </p>
+            )}
+
+            <button type="button" className={smallPillClass} onClick={handleResend} disabled={isSending}>
+                {isSending ? 'Sending...' : pending ? 'Resend verification email' : 'Resend code'}
+            </button>
+
+            {!pending && (
+                <Link to="/verify-code" className={`${smallPillClass} ml-2 inline-block no-underline`}>
+                    Enter code
+                </Link>
+            )}
+
+            {notice && (
+                <p
+                    className={`mt-3 text-[13px] font-medium ${noticeColors[notice.type]}`}
+                    role={notice.type === 'error' ? 'alert' : 'status'}
+                >
+                    {notice.text}
+                </p>
+            )}
+
+        </div>
+    );
+}
+
+export default EmailVerificationStatus;

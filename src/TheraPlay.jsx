@@ -16,12 +16,28 @@ import ProfessionalDashboard from './ProfessionalDashboard.jsx';
 import ManageActivities from './ManageActivities.jsx';
 import Profile from './Profile.jsx';
 import Layout from './Layout.jsx';
+import RequireRole from './RequireRole.jsx';
+import Contact from './Contact.jsx';
+import ManageContacts from './ManageContacts.jsx';
+import ManageAccounts from './ManageAccounts.jsx';
+import ResetPassword from './ResetPassword.jsx';
+import VerifyCode from './VerifyCode.jsx';
+import CreateChild from './CreateChild.jsx';
+import OnboardingGate from './OnboardingGate.jsx';
+import NotFound from './NotFound.jsx';
+import VerifyEmail from './VerifyEmail.jsx';
+import GuestOnly from './GuestOnly.jsx';
 
-function TheraPlay() {
+// Shared look and responsive rules. Keep these LAST so they win over the
+// older page stylesheets imported above.
+import './css/ui.css';
+import './css/responsive.css';
+
+// The route table on its own (no router), so tests can render it inside a
+// MemoryRouter. TheraPlay below is what the app mounts.
+export function AppRoutes() {
 
     return (
-        <BrowserRouter>
-
             <Routes>
 
                 {/* Pages without sidebar */}
@@ -31,19 +47,46 @@ function TheraPlay() {
                     element={<Navigate to="/login" replace />}
                 />
 
+                {/* Only for logged-out visitors: a logged-in person is sent to their dashboard */}
+                <Route element={<GuestOnly />}>
+
+                    <Route
+                        path="/login"
+                        element={<Login />}
+                    />
+
+                    <Route
+                        path="/register"
+                        element={<Register />}
+                    />
+
+                    <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
+
+                </Route>
+
+                {/* Sign-up stages after the account exists: email code, then child profile */}
                 <Route
-                    path="/login"
-                    element={<Login />}
+                    path="/verify-code"
+                    element={<OnboardingGate step="verify_email"><VerifyCode /></OnboardingGate>}
+                />
+                <Route
+                    path="/create-child"
+                    element={<OnboardingGate step="create_child"><CreateChild /></OnboardingGate>}
                 />
 
+                {/* Opened from the link in the email verification email */}
                 <Route
-                    path="/register"
-                    element={<Register />}
+                    path="/verify-email"
+                    element={<VerifyEmail />}
                 />
 
+                {/* Opened from the link in the password reset email */}
                 <Route
-                    path="/forgot-password"
-                    element={<ForgotPassword />}
+                    path="/reset-password"
+                    element={<ResetPassword />}
                 />
 
 
@@ -76,20 +119,54 @@ function TheraPlay() {
                         element={<Profile />}
                     />
 
+                    {/* Contact list is public; only the feedback form needs a parent login */}
                     <Route
-                        path="/professional-dashboard"
-                        element={<ProfessionalDashboard />}
+                        path="/contact"
+                        element={<Contact />}
                     />
 
+                    {/* Admin-only pages */}
+                    <Route element={<RequireRole role="admin" />}>
+
+                        <Route
+                            path="/professional-dashboard"
+                            element={<ProfessionalDashboard />}
+                        />
+
+                        <Route
+                            path="/manage-activities"
+                            element={<ManageActivities />}
+                        />
+
+                        <Route
+                            path="/manage-contacts"
+                            element={<ManageContacts />}
+                        />
+
+                        <Route
+                            path="/manage-accounts"
+                            element={<ManageAccounts />}
+                        />
+
+                    </Route>
+
+                    {/* Any other address */}
                     <Route
-                        path="/manage-activities"
-                        element={<ManageActivities />}
+                        path="*"
+                        element={<NotFound />}
                     />
 
                 </Route>
 
             </Routes>
+    );
+}
 
+function TheraPlay() {
+
+    return (
+        <BrowserRouter>
+            <AppRoutes />
         </BrowserRouter>
     );
 }

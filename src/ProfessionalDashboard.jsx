@@ -1,237 +1,611 @@
-import { Link } from 'react-router-dom';
-import './css/ProfessionalDashboard.css';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog.jsx';
+import ActivityFeedbackSection from './ActivityFeedbackSection.jsx';
+import { API_URL, apiRequest, clearSession, getToken } from './api.js';
+import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
+import { holdSkeleton } from './minLoading.js';
+import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
+
+// The API returns every feedback entry (there is no pagination yet), so the
+// dashboard only shows the newest few. Nothing is hidden on the server.
+const FEEDBACK_LIMIT = 5;
+
+// Class strings used more than once on this page. Colors and breakpoints come
+// from css/tailwind.css; the focus ring is the global one in css/ui.css.
+const cardClass = 'rounded-[10px] border border-edge bg-white card-soft p-[25px]';
+const noteClass = 'text-[13px] text-faint';
+const noteErrorClass = 'mb-5 text-[13px] text-[#d93025]';
+
+const formatDate = (value) =>
+    value
+        ? new Date(value).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+          })
+        : '';
 
 function ProfessionalDashboard() {
 
-    const recentUploads = [
-        {
-            id: 1,
-            title: 'Color Matching',
-            category: 'Visual Skills',
-            date: 'Sept 1, 2026'
-        },
-        {
-            id: 2,
-            title: 'Hand Strength',
-            category: 'Fine Motor Skills',
-            date: 'Aug 31, 2026'
-        },
-        {
-            id: 3,
-            title: 'Daily Routine',
-            category: 'Functional Skills',
-            date: 'Aug 29, 2026'
-        },
-        {
-            id: 4,
-            title: 'Memory Match',
-            category: 'Executive Functioning',
-            date: 'Aug 27, 2026'
+    const navigate = useNavigate();
+
+    const [activities, setActivities] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    const [feedback, setFeedback] = useState([]);
+    const [feedbackLoading, setFeedbackLoading] = useState(true);
+    const [feedbackError, setFeedbackError] = useState('');
+    const [feedbackReloadKey, setFeedbackReloadKey] = useState(0);
+    const [deleting, setDeleting] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+
+    // Number of accounts, counted from the admin accounts list. null = unknown.
+    const [userCount, setUserCount] = useState(null);
+    const [usersLoading, setUsersLoading] = useState(true);
+    const [usersError, setUsersError] = useState('');
+    const [usersReloadKey, setUsersReloadKey] = useState(0);
+
+    useEffect(() => {
+        const redirectToLogin = () => {
+            ['theraplay_token', 'theraplay_user'].forEach((key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+
+            navigate('/login', {
+                replace: true,
+                state: { message: 'Please log in to continue.' },
+            });
+        };
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin();
+            return;
         }
-    ];
+
+        const controller = new AbortController();
+
+        const startedAt = performance.now();
+
+        const loadActivities = async () => {
+            try {
+                const response = await fetch(`${API_URL}/admin/activities`, {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    signal: controller.signal,
+                });
+
+                if (response.status === 401) {
+                    redirectToLogin();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Unable to load dashboard data.');
+                }
+
+                const result = await response.json();
+
+                setActivities(Array.isArray(result.data) ? result.data : []);
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadActivities();
+
+        return () => controller.abort();
+    }, [navigate]);
 
 
-    const weeklyProgress = [
-        {
-            day: 'Mon',
-            completed: 25
-        },
-        {
-            day: 'Tue',
-            completed: 40
-        },
-        {
-            day: 'Wed',
-            completed: 35
-        },
-        {
-            day: 'Thu',
-            completed: 55
-        },
-        {
-            day: 'Fri',
-            completed: 45
-        },
-        {
-            day: 'Sat',
-            completed: 65
-        },
-        {
-            day: 'Sun',
-            completed: 75
+    // Submitted feedback (newest first, as returned by the API).
+    useEffect(() => {
+        const controller = new AbortController();
+        const startedAt = performance.now();
+
+        const loadFeedback = async () => {
+            try {
+                const result = await apiRequest('/admin/feedback', {
+                    signal: controller.signal,
+                });
+
+                if (result.status === 401) {
+                    clearSession();
+                    navigate('/login', {
+                        replace: true,
+                        state: { message: 'Please log in to continue.' },
+                    });
+                    return;
+                }
+
+                if (!result.ok) {
+                    throw new Error('Unable to load feedback.');
+                }
+
+                setFeedback(
+                    Array.isArray(result.data.data) ? result.data.data : []
+                );
+                setFeedbackError('');
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setFeedbackError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                if (!controller.signal.aborted) {
+                    setFeedbackLoading(false);
+                }
+            }
+        };
+
+        loadFeedback();
+
+        return () => controller.abort();
+    }, [feedbackReloadKey, navigate]);
+
+
+    // The accounts list (admin only) is the source of truth for the user count.
+    // There is no status or soft-delete column, so every account record counts.
+    useEffect(() => {
+        const controller = new AbortController();
+        const startedAt = performance.now();
+
+        const loadUsers = async () => {
+            try {
+                const result = await apiRequest('/admin/users', {
+                    signal: controller.signal,
+                });
+
+                if (result.status === 401) {
+                    clearSession();
+                    navigate('/login', {
+                        replace: true,
+                        state: { message: 'Please log in to continue.' },
+                    });
+                    return;
+                }
+
+                if (!result.ok || !Array.isArray(result.data?.data)) {
+                    throw new Error('Unable to load the account count.');
+                }
+
+                setUserCount(result.data.data.length);
+                setUsersError('');
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setUserCount(null);
+                setUsersError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                if (!controller.signal.aborted) {
+                    setUsersLoading(false);
+                }
+            }
+        };
+
+        loadUsers();
+
+        return () => controller.abort();
+    }, [usersReloadKey, navigate]);
+
+
+    const retryUsers = () => {
+        setUsersLoading(true);
+        setUsersError('');
+        setUsersReloadKey((key) => key + 1);
+    };
+
+
+    const handleDeleteFeedback = async () => {
+        if (!deleting || isDeleting) {
+            return;
         }
-    ];
+
+        setIsDeleting(true);
+
+        try {
+            const result = await apiRequest(`/admin/feedback/${deleting.id}`, {
+                method: 'DELETE',
+            });
+
+            if (result.status === 401) {
+                clearSession();
+                navigate('/login', {
+                    replace: true,
+                    state: { message: 'Please log in to continue.' },
+                });
+                return;
+            }
+
+            // 404 means it is already gone, which is what the admin wanted.
+            if (!result.ok && result.status !== 404) {
+                throw new Error('Unable to delete this feedback.');
+            }
+
+            setFeedback((list) => list.filter((item) => item.id !== deleting.id));
+            setDeleting(null);
+        } catch (err) {
+            setDeleting(null);
+            setDeleteError(
+                err.message || 'Unable to connect to the server. Please try again.'
+            );
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+
+    const retryFeedback = () => {
+        setFeedbackLoading(true);
+        setFeedbackError('');
+        setFeedbackReloadKey((key) => key + 1);
+    };
+
+
+    // The API returns newest first. Only the activity list is available to
+    // the dashboard, so only figures calculated from it are shown.
+    const recentUploads = activities.slice(0, 4);
 
 
     return (
-        <div className="professional-dashboard-page">
+        <div className="min-h-page">
 
             {/* Main Content */}
 
-            <main className="professional-dashboard-content">
+            <div className={pageMain}>
 
-                <div className="dashboard-header">
+                <div className={pageHeader}>
 
-                    <h1>
+                    <h1 className={pageTitle}>
                         Dashboard
                     </h1>
 
-                    <p>
+                    <p className={pageSubtitle}>
                         Overview of your TheraPlay activities and users.
                     </p>
 
                 </div>
 
 
-                {/* Statistics */}
+                {error && (
+                    <p className={noteErrorClass} role="alert">
+                        {error}
+                    </p>
+                )}
 
-                <section className="statistics-grid">
 
-                    <div className="stat-card">
+                {/*
+                  Two columns: the statistics and the recent uploads on the left,
+                  the parent feedback on the right, as tall as the left column
+                  (the right column adds no height of its own on desktop: the
+                  card fills it and its list scrolls). Stacked on tablets and
+                  phones.
+                */}
 
-                        <div className="stat-number">
-                            48
+                <div className="grid grid-cols-2 items-stretch gap-5 tablet:grid-cols-1">
+
+                    {/* Left column */}
+
+                    <div className="flex min-w-0 flex-col gap-5">
+
+                        {/* Statistics */}
+
+                        <section className="grid grid-cols-2 gap-5 phone:grid-cols-1">
+
+                        <div className={cardClass}>
+
+                            <div className="mb-[5px] text-[30px] font-bold">
+                                {isLoading ? (
+                                    <>
+                                        <SkeletonBlock
+                                            style={{ width: 56, height: 32, margin: '0 auto' }}
+                                        />
+                                        <span className="sr-only">
+                                            Loading total activities
+                                        </span>
+                                    </>
+                                ) : error ? '—' : activities.length}
+                            </div>
+
+                            <div className="text-[14px] text-muted">
+                                Total Activities
+                            </div>
+
                         </div>
 
-                        <div className="stat-label">
-                            Total Activities
+
+                        <div className={cardClass}>
+
+                            <div className="mb-[5px] text-[30px] font-bold">
+                                {usersLoading ? (
+                                    <>
+                                        <SkeletonBlock
+                                            style={{ width: 56, height: 32, margin: '0 auto' }}
+                                        />
+                                        <span className="sr-only">
+                                            Loading total users
+                                        </span>
+                                    </>
+                                ) : usersError ? '—' : userCount}
+                            </div>
+
+                            <div className="text-[14px] text-muted">
+                                Total Users
+                            </div>
+
+                            {usersError && !usersLoading && (
+                                <div className="mt-1 text-[13px] text-[#d93025]" role="alert">
+                                    {usersError}{' '}
+                                    <button
+                                        type="button"
+                                        onClick={retryUsers}
+                                        className="cursor-pointer border-0 bg-transparent p-0 [font-family:inherit] text-[13px] font-bold text-ink underline"
+                                    >
+                                        Try again
+                                    </button>
+                                </div>
+                            )}
+
                         </div>
 
-                    </div>
+                        </section>
 
 
-                    <div className="stat-card">
+                        {/* Recent Uploads */}
 
-                        <div className="stat-number">
-                            128
-                        </div>
+    <div className={`${cardClass} min-w-0 flex-1`}>
 
-                        <div className="stat-label">
-                            Total Users
-                        </div>
+                            <div className="mb-5 flex items-center justify-between">
 
-                    </div>
+                                <h2 className="text-[18px] font-bold">
+                                    Recent Activity Uploads
+                                </h2>
 
-
-                    <div className="stat-card">
-
-                        <div className="stat-number">
-                            342
-                        </div>
-
-                        <div className="stat-label">
-                            Completed Activities
-                        </div>
-
-                    </div>
-
-                </section>
-
-
-                {/* Dashboard Sections */}
-
-                <section className="dashboard-sections">
-
-                    {/* Activity Progress */}
-
-                    <div className="dashboard-panel">
-
-                        <h2>
-                            Activity Progress Overview
-                        </h2>
-
-
-                        <div className="bar-chart">
-
-                            {weeklyProgress.map((item) => (
-
-                                <div
-                                    className="chart-item"
-                                    key={item.day}
+                                <Link
+                                    to="/manage-activities"
+                                    className="text-[13px] font-bold text-ink no-underline"
                                 >
+                                    View All
+                                </Link>
 
-                                    <div className="chart-value">
-                                        {item.completed}
-                                    </div>
+                            </div>
+
+
+                            <div className="flex flex-col">
+
+                                {isLoading && (
+                                    <LinesSkeleton
+                                        label="Loading recent activities..."
+                                        lines={4}
+                                    />
+                                )}
+
+                                {!isLoading && !error && recentUploads.length === 0 && (
+                                    <p className={noteClass}>
+                                        No activities yet.
+                                    </p>
+                                )}
+
+                                {recentUploads.map((item) => (
 
                                     <div
-                                        className="chart-bar"
-                                        style={{
-                                            height: `${item.completed}%`
-                                        }}
+                                        className="grid grid-cols-[50px_1fr_auto] items-center gap-3 border-t border-edge py-3 first:border-t-0 phone:grid-cols-[50px_1fr]"
+                                        key={item.id}
                                     >
+
+                                        <div className="flex h-10 w-[50px] items-center justify-center rounded-[5px] bg-white text-[10px] text-faint">
+                                            Image
+                                        </div>
+
+                                        <div>
+
+                                            <h3 className="mb-1 text-[14px] font-bold">
+                                                {item.title}
+                                            </h3>
+
+                                            <p className="text-[12px] text-muted">
+                                                {item.category || 'No category'}
+                                                {' • '}
+                                                {item.is_published
+                                                    ? 'Published'
+                                                    : 'Draft'}
+                                            </p>
+
+                                        </div>
+
+                                        <div className="text-[11px] text-faint phone:col-start-2">
+                                            {formatDate(item.created_at)}
+                                        </div>
+
                                     </div>
 
-                                    <div className="chart-label">
-                                        {item.day}
-                                    </div>
+                                ))}
 
-                                </div>
-
-                            ))}
+                            </div>
 
                         </div>
 
                     </div>
 
 
-                    {/* Recent Uploads */}
+                    {/* Right column: feedback from parents */}
 
-                    <div className="dashboard-panel">
+                    <section className="relative min-h-[320px] min-w-0 tablet:static tablet:min-h-0">
 
-                        <div className="panel-header">
+    <div className={`${cardClass} absolute inset-0 flex flex-col tablet:relative tablet:max-h-[520px]`}>
 
-                            <h2>
-                                Recent Activity Uploads
+                            <h2 className="mb-[25px] shrink-0 text-[18px] font-bold">
+                                Parent Feedback
                             </h2>
 
-                            <Link to="/manage-activities">
-                                View All
-                            </Link>
+                            {feedbackLoading ? (
 
-                        </div>
+                                <LinesSkeleton label="Loading feedback..." lines={5} />
 
+                            ) : feedbackError ? (
 
-                        <div className="recent-uploads">
+                                <div role="alert">
 
-                            {recentUploads.map((item) => (
+                                    <p className={noteErrorClass}>
+                                        {feedbackError}
+                                    </p>
 
-                                <div
-                                    className="upload-item"
-                                    key={item.id}
-                                >
-
-                                    <div className="upload-image">
-                                        Image
-                                    </div>
-
-                                    <div className="upload-info">
-
-                                        <h3>
-                                            {item.title}
-                                        </h3>
-
-                                        <p>
-                                            {item.category}
-                                        </p>
-
-                                    </div>
-
-                                    <div className="upload-date">
-                                        {item.date}
-                                    </div>
+                                    <button
+                                        type="button"
+                                        className="cursor-pointer rounded-full border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
+                                        onClick={retryFeedback}
+                                    >
+                                        Try again
+                                    </button>
 
                                 </div>
 
-                            ))}
+                            ) : feedback.length === 0 ? (
+
+                                <p className={noteClass}>
+                                    No feedback has been submitted yet.
+                                </p>
+
+                            ) : (
+
+                                <div className="flex min-h-0 flex-1 flex-col">
+
+                                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+
+                                        {feedback.slice(0, FEEDBACK_LIMIT).map((item) => (
+
+                                            <div
+                                                className="border-b border-edge py-3.5 first:pt-0 last:border-b-0"
+                                                key={item.id}
+                                            >
+
+                                                <div className="mb-1.5 flex justify-between gap-3 phone:flex-col phone:gap-0.5">
+
+                                                    <span className="text-[13px] font-bold [word-break:break-word]">
+                                                        {item.user
+                                                            ? `${item.user.name} (${item.user.email})`
+                                                            : 'Former user'}
+                                                    </span>
+
+                                                    <span className="shrink-0 text-[12px] text-faint">
+                                                        {formatDate(item.created_at)}
+                                                    </span>
+
+                                                </div>
+
+                                                {item.rating && (
+                                                    <div
+                                                        className="mb-1.5 flex items-center gap-0.5 text-[#b26a00]"
+                                                        role="img"
+                                                        aria-label={`Rating: ${item.rating} out of 5`}
+                                                    >
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <Star
+                                                                key={star}
+                                                                size={16}
+                                                                aria-hidden="true"
+                                                                fill={star <= item.rating ? 'currentColor' : 'none'}
+                                                                className={star <= item.rating ? '' : 'text-muted'}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <p className="text-[14px] leading-[1.5] whitespace-pre-wrap text-body [word-break:break-word]">
+                                                    {item.message}
+                                                </p>
+
+                                                <div className="mt-2 flex justify-end">
+                                                    <button
+                                                        type="button"
+                                                        className="cursor-pointer rounded-full border btn-glass btn-red px-3 py-1 text-[12px]"
+                                                        onClick={() => {
+                                                            setDeleteError('');
+                                                            setDeleting(item);
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+
+                                            </div>
+
+                                        ))}
+
+                                    </div>
+
+                                    {deleteError && (
+                                        <p className={`${noteErrorClass} mt-3 mb-0 shrink-0`} role="alert">
+                                            {deleteError}
+                                        </p>
+                                    )}
+
+                                    {feedback.length > FEEDBACK_LIMIT && (
+                                        <p className={`${noteClass} mt-3 shrink-0`}>
+                                            Showing the latest {FEEDBACK_LIMIT} of{' '}
+                                            {feedback.length} feedback entries.
+                                        </p>
+                                    )}
+
+                                </div>
+
+                            )}
 
                         </div>
 
-                    </div>
+                    </section>
 
-                </section>
+                </div>
 
-            </main>
+                <ActivityFeedbackSection />
+
+            </div>
+
+            <ConfirmDialog
+                open={deleting !== null}
+                title="Delete this feedback?"
+                message={deleting ? `The feedback from ${deleting.user ? deleting.user.name : 'a former user'} will be permanently deleted.` : ''}
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                busyLabel="Deleting..."
+                busy={isDeleting}
+                onConfirm={handleDeleteFeedback}
+                onCancel={() => setDeleting(null)}
+            />
 
         </div>
     );

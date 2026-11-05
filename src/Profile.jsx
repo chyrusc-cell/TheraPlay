@@ -1,115 +1,624 @@
-import { useState } from 'react';
-import './css/Profile.css';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { API_URL, apiRequest, getToken } from './api.js';
+import { useAuth } from './authContext.js';
+import { ProfileAvatar } from './ProfileAvatar.jsx';
+import ChildrenSection from './ChildrenSection.jsx';
+import EmailVerificationStatus from './EmailVerificationStatus.jsx';
+import DeleteAccountCard from './DeleteAccountCard.jsx';
+import SectionErrorBoundary from './SectionErrorBoundary.jsx';
+import { ProfileSkeleton } from './PageSkeletons.jsx';
+import { holdSkeleton } from './minLoading.js';import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
+
+// The database stores one "name", while this page shows first and last name.
+const splitName = (fullName = '') => {
+    const trimmed = fullName.trim();
+    const lastSpace = trimmed.lastIndexOf(' ');
+
+    if (lastSpace === -1) {
+        return { firstName: trimmed, lastName: '' };
+    }
+
+    return {
+        firstName: trimmed.slice(0, lastSpace),
+        lastName: trimmed.slice(lastSpace + 1),
+    };
+};
+
+const toFormValues = (user) => ({
+    ...splitName(user.name),
+    email: user.email || '',
+    phone: user.contact_number || '',
+});
+
+// Card look as currently rendered (the old global .card rule was merged from the
+// Dashboard, Progress and Profile stylesheets).
+const cardClass =
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
+
+// Form fields: a floating label on the top border of each input.
+const fieldClass = 'relative mb-[30px] flex flex-col gap-2';
+const fieldLabelClass =
+    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-faint';
+const fieldInputClass =
+    'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
+
+const pillButtonClass =
+    'cursor-pointer rounded-full border btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
+
+const smallPillClass =
+    'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+
+// Picture rules (the server checks again, from the file's real content).
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+
+// Colors for the password-reset notice, by type.
+const noticeColors = {
+    success: 'text-[#188038]',
+    warning: 'text-[#b26a00]',
+    error: 'text-[#d93025]',
+};
 
 function Profile() {
+    const navigate = useNavigate();
+
     const [isEditing, setIsEditing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [message, setMessage] = useState('');
+    const [isError, setIsError] = useState(false);
+    // "Saved, but ..." (for example the verification email was not delivered).
+    const [isWarning, setIsWarning] = useState(false);
 
-    const [firstName, setFirstName] = useState('Frent Yvan');
-    const [lastName, setLastName] = useState('Raz');
-    const [email, setEmail] = useState('thegreatharold@gmail.com');
-    const [phone, setPhone] = useState('+63 976 003 3605');
-    const [address, setAddress] = useState('Perla, Montreal');
-    const [gender, setGender] = useState('Male');
+    // Password reset request (separate from saving the profile).
+    const [isSendingReset, setIsSendingReset] = useState(false);
+    const [resetNotice, setResetNotice] = useState(null);
 
-    const handleSave = (event) => {
+    // Profile picture (saved on its own, separately from the personal details).
+    const { user: authUser, updateUser } = useAuth();
+    const photoInputRef = useRef(null);
+    const [photoFile, setPhotoFile] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(null);
+    const [photoBusy, setPhotoBusy] = useState(false);
+    const [photoNotice, setPhotoNotice] = useState(null);
+
+    // Last profile that came from the server (used by Cancel).
+    const [savedUser, setSavedUser] = useState(null);
+
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+
+    const fillForm = (user) => {
+        const values = toFormValues(user);
+        setFirstName(values.firstName);
+        setLastName(values.lastName);
+        setEmail(values.email);
+        setPhone(values.phone);
+    };
+
+    const showMessage = (text, error, warning = false) => {
+        setMessage(text);
+        setIsError(error);
+        setIsWarning(warning);
+    };
+
+    // Token missing or rejected: clear it and send the user to the login page.
+    const redirectToLogin = () => {
+        ['theraplay_token', 'theraplay_user'].forEach((key) => {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
+
+        navigate('/login', {
+            replace: true,
+            state: { message: 'Please log in to view your profile.' },
+        });
+    };
+
+    useEffect(() => {
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin();
+            return;
+        }
+
+        const controller = new AbortController();
+
+        const startedAt = performance.now();
+
+        const loadProfile = async () => {
+            try {
+                const response = await fetch(`${API_URL}/user`, {
+                    headers: {
+                        Accept: 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    signal: controller.signal,
+                });
+
+                if (response.status === 401) {
+                    redirectToLogin();
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error('Unable to load your profile.');
+                }
+
+                const user = await response.json();
+                setSavedUser(user);
+                fillForm(user);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                showMessage(
+                    error.message ||
+                    'Unable to connect to the server. Please try again.',
+                    true
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                if (!controller.signal.aborted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadProfile();
+
+        return () => controller.abort();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleSave = async (event) => {
         event.preventDefault();
-        setIsEditing(false);
+
+        if (isSaving) {
+            return;
+        }
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin();
+            return;
+        }
+
+        const name = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+        if (!name) {
+            showMessage('Please enter your name.', true);
+            return;
+        }
+
+        setIsSaving(true);
+        showMessage('', false);
+
+        try {
+            const response = await fetch(`${API_URL}/profile`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    name,
+                    contact_number: phone.trim() || null,
+                    // An email can be corrected only while it is unverified; a
+                    // verified address is fixed, so it is not sent.
+                    ...(emailEditable && email.trim() !== (savedUser?.email || '')
+                        ? { email: email.trim() }
+                        : {}),
+                }),
+            });
+
+            if (response.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                // Laravel validation errors come back as { errors: { field: [..] } }.
+                const firstError = data.errors
+                    ? Object.values(data.errors)[0]?.[0]
+                    : null;
+
+                throw new Error(
+                    firstError ||
+                    data.message ||
+                    'Unable to save your profile. Please try again.'
+                );
+            }
+
+            setSavedUser(data.user);
+            updateUser({ name: data.user.name, email: data.user.email, email_verified: data.user.email_verified });
+            fillForm(data.user);
+
+            // Keep the user copy saved at login in sync.
+            [localStorage, sessionStorage].forEach((storage) => {
+                if (storage.getItem('theraplay_user')) {
+                    storage.setItem('theraplay_user', JSON.stringify(data.user));
+                }
+            });
+
+            // The email address is fixed; only name and phone are saved.
+            // "email_delivered: false" means the verification email did not go out.
+            showMessage(
+                data.message || 'Profile updated successfully.',
+                false,
+                data.email_delivered === false
+            );
+            setIsEditing(false);
+        } catch (error) {
+            showMessage(
+                error.message ||
+                'Unable to connect to the server. Please try again.',
+                true
+            );
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleCancel = () => {
+        if (savedUser) {
+            fillForm(savedUser);
+        }
+
+        showMessage('', false);
         setIsEditing(false);
     };
 
-    return (
-        <div className="profile-page">
-            <main className="profile-content">
-                <div className="profile-header">
-                    <h1>My Profile</h1>
+    // Asks the server to email a reset link to this account's own address.
+    // No email or id is sent: the server uses the logged-in user.
+    const handleRequestReset = async () => {
+        if (isSendingReset) {
+            return;
+        }
 
-                    {!isEditing && (
-                        <button
-                            className="btn-edit-pill"
-                            type="button"
-                            onClick={() => setIsEditing(true)}
-                        >
-                            Edit
-                        </button>
-                    )}
+        setIsSendingReset(true);
+        setResetNotice(null);
+
+        try {
+            const result = await apiRequest('/profile/password-reset', {
+                method: 'POST',
+            });
+
+            if (result.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            // Success is shown only when the server says the email was really
+            // delivered. Otherwise its explanation is shown as a warning.
+            if (result.ok) {
+                setResetNotice({
+                    type: result.data.delivered ? 'success' : 'warning',
+                    text: result.data.message,
+                });
+                return;
+            }
+
+            setResetNotice({
+                type: 'error',
+                text:
+                    result.data.message ||
+                    'Unable to request a password reset. Please try again.',
+            });
+        } catch {
+            setResetNotice({
+                type: 'error',
+                text: 'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setIsSendingReset(false);
+        }
+    };
+
+    // Free the temporary preview when it is replaced or discarded.
+    useEffect(() => {
+        if (!photoPreview) {
+            return undefined;
+        }
+
+        return () => URL.revokeObjectURL(photoPreview);
+    }, [photoPreview]);
+
+    const handlePhotoSelected = (event) => {
+        const file = event.target.files?.[0];
+
+        // Let the same file be chosen again later.
+        event.target.value = '';
+
+        if (!file) {
+            return;
+        }
+
+        if (!PHOTO_TYPES.includes(file.type)) {
+            setPhotoNotice({ type: 'error', text: 'Choose a JPG, PNG or WebP image.' });
+            return;
+        }
+
+        if (file.size > PHOTO_MAX_BYTES) {
+            setPhotoNotice({ type: 'error', text: 'The picture must be 5 MB or smaller.' });
+            return;
+        }
+
+        setPhotoNotice(null);
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+    };
+
+    const discardPhoto = () => {
+        setPhotoFile(null);
+        setPhotoPreview(null);
+        setPhotoNotice(null);
+    };
+
+    const handleSavePhoto = async () => {
+        if (!photoFile || photoBusy) {
+            return;
+        }
+
+        setPhotoBusy(true);
+        setPhotoNotice(null);
+
+        try {
+            const body = new FormData();
+
+            body.append('photo', photoFile);
+
+            const result = await apiRequest('/profile/photo', { method: 'POST', body });
+
+            if (result.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            if (!result.ok) {
+                setPhotoNotice({
+                    type: 'error',
+                    text:
+                        result.data.errors?.photo?.[0] ||
+                        result.data.message ||
+                        `The picture could not be saved (server error ${result.status}).`,
+                });
+                return;
+            }
+
+            updateUser({ photo_url: result.data.data.photo_url });
+            setPhotoFile(null);
+            setPhotoPreview(null);
+            setPhotoNotice({ type: 'success', text: 'Profile picture saved.' });
+        } catch {
+            setPhotoNotice({
+                type: 'error',
+                text: 'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setPhotoBusy(false);
+        }
+    };
+
+    const handleRemovePhoto = async () => {
+        if (photoBusy) {
+            return;
+        }
+
+        setPhotoBusy(true);
+        setPhotoNotice(null);
+
+        try {
+            const result = await apiRequest('/profile/photo', { method: 'DELETE' });
+
+            if (result.status === 401) {
+                redirectToLogin();
+                return;
+            }
+
+            if (!result.ok) {
+                throw new Error('The picture could not be removed.');
+            }
+
+            updateUser({ photo_url: null });
+            setPhotoNotice({ type: 'success', text: 'Profile picture removed.' });
+        } catch (error) {
+            setPhotoNotice({
+                type: 'error',
+                text: error.message || 'Unable to connect to the server. Please try again.',
+            });
+        } finally {
+            setPhotoBusy(false);
+        }
+    };
+
+    // An unverified address may still be corrected; a verified one is fixed.
+    const emailEditable = savedUser?.email_verified === false;
+
+    // The "Easy" badge colours from Manage Activities, smaller, with a green outline.
+    const verifiedBadge = savedUser?.email_verified ? (
+        <span
+            className="inline-block rounded-md border border-[#188038] bg-success-bg px-2 py-0.5 text-[11px] font-bold leading-[1.3] text-success-text"
+            data-testid="email-verified-badge"
+        >
+            Verified <span aria-hidden="true">✓</span>
+        </span>
+    ) : null;
+
+    const roleLabel = savedUser?.role
+        ? savedUser.role.charAt(0).toUpperCase() + savedUser.role.slice(1)
+        : '';
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <div className={pageMainNarrow}>
+                    <ProfileSkeleton />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex min-h-page flex-col">
+            <div className={pageMainNarrow}>
+                <div className={pageHeader}>
+                    <h1 className={pageTitle}>My Profile</h1>
                 </div>
 
                 {/* Profile Avatar Card */}
-                <div className="card top-profile-card">
-                    <div className="avatar-wrapper">
-                        <div className="profile-avatar-large"></div>
-
-                        {isEditing && (
-                            <button
-                                className="avatar-edit-icon"
-                                type="button"
-                                aria-label="Edit avatar"
-                            >
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    width="12"
-                                    height="12"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    fill="none"
-                                >
-                                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-                                </svg>
-                            </button>
-                        )}
+                <div className={`${cardClass} flex items-center gap-6 phone:flex-col phone:items-start`}>
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-full border border-edge-strong bg-white text-faint">
+                        <ProfileAvatar
+                            photoUrl={authUser?.photo_url}
+                            previewSrc={photoPreview}
+                            iconSize={32}
+                        />
                     </div>
 
-                    <div className="profile-titles">
-                        <h2>{firstName} {lastName}</h2>
-                        <p>Client</p>
+                    <div className="min-w-0 flex-1">
+                        <h2 className="mb-1 text-[24px] font-bold text-ink">{firstName} {lastName}</h2>
+                        <p className="text-[14px] font-medium text-muted">{roleLabel}</p>
+
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {photoFile ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        className={`${smallPillClass} btn-green`}
+                                        onClick={handleSavePhoto}
+                                        disabled={photoBusy}
+                                    >
+                                        {photoBusy ? 'Saving...' : 'Save picture'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`${smallPillClass} btn-white`}
+                                        onClick={discardPhoto}
+                                        disabled={photoBusy}
+                                    >
+                                        Cancel
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <button
+                                        type="button"
+                                        className={`${smallPillClass} btn-white`}
+                                        onClick={() => photoInputRef.current?.click()}
+                                        disabled={photoBusy}
+                                    >
+                                        {authUser?.photo_url ? 'Replace picture' : 'Add picture'}
+                                    </button>
+                                    {authUser?.photo_url && (
+                                        <button
+                                            type="button"
+                                            className={`${smallPillClass} btn-red`}
+                                            onClick={handleRemovePhoto}
+                                            disabled={photoBusy}
+                                        >
+                                            {photoBusy ? 'Removing...' : 'Remove picture'}
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
+
+                        <input
+                            ref={photoInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="sr-only"
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            onChange={handlePhotoSelected}
+                            disabled={photoBusy}
+                        />
+
+                        <p className="mt-2 text-[12px] text-faint">JPG, PNG or WebP, up to 5 MB.</p>
+
+                        {photoNotice && (
+                            <p
+                                className={`mt-2 text-[13px] font-medium ${
+                                    photoNotice.type === 'error' ? 'text-[#d93025]' : 'text-[#188038]'
+                                }`}
+                                role={photoNotice.type === 'error' ? 'alert' : 'status'}
+                            >
+                                {photoNotice.text}
+                            </p>
+                        )}
                     </div>
                 </div>
 
+                {message && (
+                    <p
+                        role="alert"
+                        className={`mb-4 text-[14px] font-medium ${
+                            isError ? 'text-[#d93025]' : isWarning ? 'text-[#b26a00]' : 'text-[#188038]'
+                        }`}
+                    >
+                        {message}
+                    </p>
+                )}
+
                 {/* Personal Information Card */}
                 <form onSubmit={handleSave}>
-                    <div className="card bottom-profile-card">
-                        <h3>Personal Information</h3>
+                    <div className={cardClass}>
+                        <div className="mb-[30px] flex items-center justify-between gap-3">
+                            <h2 className="text-[18px] font-bold text-ink">Personal Information</h2>
+
+                            {!isEditing && savedUser && (
+                                <button
+                                    className={`${pillButtonClass} btn-yellow`}
+                                    type="button"
+                                    onClick={() => setIsEditing(true)}
+                                >
+                                    Edit
+                                </button>
+                            )}
+                        </div>
 
                         {!isEditing ? (
-                            <div className="info-grid">
-                                <div className="info-item">
-                                    <span className="info-label">First Name</span>
-                                    <span className="info-value">{firstName}</span>
+                            <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-faint">First Name</span>
+                                    <span className="text-[15px] font-bold text-ink">{firstName}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Last Name</span>
-                                    <span className="info-value">{lastName}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-faint">Last Name</span>
+                                    <span className="text-[15px] font-bold text-ink">{lastName}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Email Address</span>
-                                    <span className="info-value">{email}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-faint">Email Address</span>
+                                    <span className="flex flex-wrap items-center gap-2 text-[15px] font-bold text-ink">
+                                        <span className="[word-break:break-word]">{email}</span>
+                                        {verifiedBadge}
+                                    </span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Phone Number</span>
-                                    <span className="info-value">{phone}</span>
+                                <div className="flex flex-col gap-1.5">
+                                    <span className="text-[12px] font-medium text-faint">Phone Number</span>
+                                    <span className="text-[15px] font-bold text-ink">{phone}</span>
                                 </div>
 
-                                <div className="info-item">
-                                    <span className="info-label">Home Address</span>
-                                    <span className="info-value">{address}</span>
-                                </div>
-
-                                <div className="info-item">
-                                    <span className="info-label">Gender</span>
-                                    <span className="info-value">{gender}</span>
-                                </div>
                             </div>
                         ) : (
-                            <div className="info-grid">
-                                <div className="input-group">
-                                    <label htmlFor="firstName">First Name</label>
-                                    <input
+                            <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="firstName">First Name</label>
+                                    <input className={fieldInputClass}
                                         id="firstName"
                                         type="text"
                                         value={firstName}
@@ -118,9 +627,9 @@ function Profile() {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="lastName">Last Name</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="lastName">Last Name</label>
+                                    <input className={fieldInputClass}
                                         id="lastName"
                                         type="text"
                                         value={lastName}
@@ -129,74 +638,100 @@ function Profile() {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="email">Email Address</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="email">Email Address</label>
+                                    <input className={emailEditable ? fieldInputClass : `${fieldInputClass} ${readOnlyFieldClass}`}
                                         id="email"
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
-                                        required
+                                        disabled={!emailEditable}
+                                        readOnly={!emailEditable}
+                                        aria-describedby="email-fixed-hint"
                                     />
+                                    <p id="email-fixed-hint" className="text-[12px] leading-[1.5] text-faint">
+                                        {emailEditable
+                                            ? 'Your email is not verified yet, so you can correct it. We will send a new verification code to the new address.'
+                                            : "Your verified email address can't be changed."}
+                                    </p>
                                 </div>
 
-                                <div className="input-group">
-                                    <label htmlFor="phone">Phone Number</label>
-                                    <input
+                                <div className={fieldClass}>
+                                    <label className={fieldLabelClass} htmlFor="phone">Phone Number</label>
+                                    <input className={fieldInputClass}
                                         id="phone"
                                         type="tel"
                                         value={phone}
                                         onChange={(e) => setPhone(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="input-group">
-                                    <label htmlFor="address">Home Address</label>
-                                    <input
-                                        id="address"
-                                        type="text"
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="input-group">
-                                    <label htmlFor="gender">Gender</label>
-                                    <input
-                                        id="gender"
-                                        type="text"
-                                        value={gender}
-                                        onChange={(e) => setGender(e.target.value)}
-                                        required
                                     />
                                 </div>
                             </div>
                         )}
+
+                        {!isEditing && <EmailVerificationStatus user={savedUser} />}
                     </div>
 
                     {/* Edit Action Buttons */}
                     {isEditing && (
-                        <div className="form-actions-row">
+                        <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
                             <button
                                 type="button"
-                                className="btn-cancel"
+                                className="cursor-pointer rounded-full border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
                                 onClick={handleCancel}
+                                disabled={isSaving}
                             >
                                 Cancel
                             </button>
 
                             <button
                                 type="submit"
-                                className="btn-save"
+                                className="cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green"
+                                disabled={isSaving}
                             >
-                                Save Changes
+                                {isSaving ? 'Saving...' : 'Save Changes'}
                             </button>
                         </div>
                     )}
                 </form>
-            </main>
+
+                {/* The parent's children (parents only; shows nothing for admins) */}
+                <SectionErrorBoundary label="The children section">
+                    <ChildrenSection />
+                </SectionErrorBoundary>
+
+                {/* Password reset request */}
+                <div className={cardClass}>
+                    <h2 className="mb-3 text-[18px] font-bold text-ink">Password</h2>
+
+                    <p className="mb-4 text-[14px] leading-[1.5] text-muted">
+                        We can send a password reset link to your registered
+                        email address{savedUser?.email ? ` (${savedUser.email})` : ''}.
+                        Your password only changes after you open the link and
+                        choose a new one.
+                    </p>
+
+                    <button
+                        className={`${pillButtonClass} btn-red`}
+                        type="button"
+                        onClick={handleRequestReset}
+                        disabled={isSendingReset || !savedUser}
+                    >
+                        {isSendingReset ? 'Sending...' : 'Reset Password'}
+                    </button>
+
+                    {resetNotice && (
+                        <p
+                            className={`mt-4 text-[14px] font-medium ${noticeColors[resetNotice.type]}`}
+                            role={resetNotice.type === 'error' ? 'alert' : 'status'}
+                        >
+                            {resetNotice.text}
+                        </p>
+                    )}
+                </div>
+
+                {/* Self-service deletion (parents; administrator accounts are not deleted here) */}
+                {savedUser && savedUser.role !== 'admin' && <DeleteAccountCard cardClass={cardClass} />}
+            </div>
         </div>
     );
 }

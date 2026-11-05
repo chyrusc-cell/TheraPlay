@@ -1,0 +1,536 @@
+{
+  "_comment": "Metadata for the TheraPlay activity library import (php artisan activities:import-library). Every entry was written after looking at the actual file. difficulty_basis is 'source' when the material itself says Beginner/Intermediate, otherwise 'assessed' from the task. review=true marks a judgement the owner may want to check. Files come from TheraPlay_Activities_Organized.zip (not committed).",
+  "activities": [
+    {
+      "category": "Executive Function", "title": "Shadow Matching Pets", "file": "Shadow_Matching_Pets.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A one-page worksheet with four pets (dog, cat, rabbit and fish) and four black shadows. The child connects each pet to its shadow.",
+      "instructions": ["Draw a line from each animal to its shadow."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Executive Function", "title": "Shadow Matching Body Parts", "file": "Shadow_Matching_Body_Parts.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A one-page worksheet with six body parts and bones (hand, foot, finger, ear, tooth and bone) and their shadows. The child connects each picture to its shadow.",
+      "instructions": ["Draw a line from each body part to its shadow."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Executive Function", "title": "Shadow Matching Vehicles", "file": "Shadow_Matching_Vehicles.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A one-page worksheet with six vehicles (bicycle, plane, school bus, sailboat, helicopter and tractor) and their shadows. The child connects each vehicle to its shadow.",
+      "instructions": ["Draw a line from each vehicle to its shadow."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Executive Function", "title": "Turn Taking Visual Games", "file": "Turn_Taking_Visual_Games.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A short guide to using a visual turn-taking board, with printable \"My turn\" and \"Your turn\" cards. The sheet suggests using names, photos, favourite characters or shapes to show who goes next.",
+      "instructions": ["Print the \"My turn\" and \"Your turn\" cards.", "Use the cards to show whose turn it is during a game or activity.", "Names, photos, favourite characters or shapes can be used to show who has the next turn."],
+      "materials": ["Printed turn-taking cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Scavenger Hunt Indoor Outdoor", "file": "Scavenger_Hunt_Indoor_Outdoor.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A picture checklist scavenger hunt. The garden page lists a bee, bird, daisy, stones, ladybird, leaves, feathers and butterfly, each with a box to tick when it is found. The document has three pages.",
+      "instructions": ["Look for each item shown on the checklist.", "Tick the box when you find it."],
+      "materials": ["Printed checklist", "Pencil"]
+    },
+    {
+      "category": "Executive Function", "title": "Bored Choice Boards", "file": "Bored_Choice_Boards.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A \"Bored Board\" with an \"I pick...\" box and eight picture choices: make slime, make a straw rocket, make a paper snowflake, scavenger hunt, pick a Lego challenge, pick from the bored jar, make your own playdoh and paint a picture.",
+      "instructions": ["Look at the picture choices on the board.", "Pick one choice and place it in the \"I pick...\" box."],
+      "materials": ["Printed board and picture cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Conversation Chain Activity", "file": "Conversation_Chain_Activity.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "A conversation game using chain links. Each person who stays on the topic adds a green chain link. A red broken link is added when someone goes off topic.",
+      "instructions": ["Pick a topic of conversation as a starter.", "Each time a person stays on the topic, add a green chain link.", "If someone goes off topic, add a red broken chain and talk about what this means.", "You can keep a tally of how many green chains you got in each conversation."],
+      "materials": ["Printed chain links and topic cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Emotion Recognition Game", "file": "Emotion_Recognition_Game.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "Three card games for practising facial expressions: a game of snap, copying an expression, and picking the card that matches an expression.",
+      "instructions": ["Game one: play a game of snap with the cards.", "Game two: pick one card and ask the child to copy the facial expression shown. You can ask when they have felt that way.", "Game three: make a facial expression and see if the child can pick up the matching card."],
+      "materials": ["Printed expression cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Conversation Starter Game", "file": "Conversation_Starter_Game.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "Conversation cards with five questions each on topics such as food, the beach, movies and school.",
+      "instructions": ["Pick a card.", "Take turns asking and answering the questions on the card."],
+      "materials": ["Printed conversation cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Flower Number Sequencing 1 to 10", "file": "Flower_Number_Sequencing_1_to_10.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "Number cards showing flowers beside three number choices (the first page shows one flower and two flowers). Review: the title mentions sequencing, but the first page is a count-and-choose-the-number card.",
+      "instructions": ["Look at the flowers on each card.", "Choose the number that matches how many flowers there are."],
+      "materials": ["Printed cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Cookie Number Sequencing 1 to 10", "file": "Cookie_Number_Sequencing_1_to_10.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "Number cards showing cookies with chocolate chips beside three number choices (the first page shows one chip and two chips). Review: the title mentions sequencing, but the first page is a count-and-choose-the-number card.",
+      "instructions": ["Count the chips on each cookie.", "Choose the number that matches."],
+      "materials": ["Printed cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Skip Counting by 2s Ocean", "file": "Skip_Counting_by_2s_Ocean.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "Ocean-animal cards with a number pattern that has one missing number (for example 2, __, 6, 8), and three numbers to choose from.",
+      "instructions": ["Read the number pattern on the card.", "Choose the number that fits in the blank."],
+      "materials": ["Printed cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Skip Counting by 5s Farm", "file": "Skip_Counting_by_5s_Farm.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "Farm-animal cards with a number pattern that has one missing number (for example 5, __, 15, 20), and three numbers to choose from.",
+      "instructions": ["Read the number pattern on the card.", "Choose the number that fits in the blank."],
+      "materials": ["Printed cards"]
+    },
+    {
+      "category": "Executive Function", "title": "Fruits and Vegetables Alphabet Activity", "file": "Fruits_and_Vegetables_Alphabet_Activity.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A small alphabet book of fruits and vegetables with a cover that has a line for the child's name. Each page shows a letter with a picture (for example Aa avocado, Bb blueberries, Cc carrot).",
+      "instructions": ["Print the pages and put them together as a book.", "Look at each letter and its picture together."],
+      "materials": ["Printed pages"]
+    },
+    {
+      "category": "Executive Function", "title": "Winter Scavenger Hunt", "file": "Winter_Scavenger_Hunt.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An outdoor picture checklist with ten items to find: robin, bare tree, leaves, stones, fence, clouds, puddles, berries, footprint and twig.",
+      "instructions": ["Go outdoors and look for each item on the checklist.", "Tick the box when you find it."],
+      "materials": ["Printed checklist", "Pencil"]
+    },
+
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Colors", "file": "Color_Matching_Colors.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity. One set of colours goes on a folder and the matching set is cut out to attach with Velcro.",
+      "instructions": ["Attach one set of colors to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout color to the same color on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Ice Cream", "file": "Color_Matching_Ice_Cream.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity using ice creams.",
+      "instructions": ["Attach one set to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout ice cream to the same colored ice cream on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Cupcakes", "file": "Color_Matching_Cupcakes.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity using cupcakes.",
+      "instructions": ["Cut out one set of cupcakes and attach the other set to a folder.", "Attach Velcro to both the folder and the cutouts.", "Match the cutout cupcakes to the cupcakes with the corresponding color on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Trains", "file": "Color_Matching_Trains.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity using trains.",
+      "instructions": ["Attach one set to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout train to the same colored train on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Whales", "file": "Color_Matching_Whales.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity using whales.",
+      "instructions": ["Attach one set of whales to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match the cutout whales to the same colored whales on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Crayons", "file": "Color_Matching_Crayons.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity where coloured crayons are matched to crayon boxes.",
+      "instructions": ["Mount the coloring boxes to a folder and cut out the crayons.", "Match the colored crayons to the same colored crayon box."],
+      "materials": ["Printed pages", "Folder", "Scissors"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Matching Rocketships", "file": "Color_Matching_Rocketships.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A cut-and-stick colour matching activity using rocket ships.",
+      "instructions": ["Attach one set of rockets to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout rocket to the same colored rocket on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Color Word and Icon Matching", "file": "Color_Word_and_Icon_Matching.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick matching activity with colours, colour words and icons. The sheet says it includes activities with and without words.",
+      "instructions": ["Attach the set of colors or words to a folder and cut out the other set.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout to the corresponding color or word on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Flower Pattern Matching", "file": "Flower_Pattern_Matching.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick matching activity using flowers with different patterns.",
+      "instructions": ["Attach one set of flowers to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout flower to the flower with the same pattern on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Matching Cookies", "file": "Number_Matching_Cookies.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick number matching activity. Cookies with a number of chips are matched to cookies with the matching number.",
+      "instructions": ["Color both sets of cookies.", "Attach one set (either the chip set or the number set) to a folder and cut out the other.", "Attach Velcro to both the folder and the cutouts.", "Match the cutout cookies to the cookies with the corresponding number or number of chips on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro", "Crayons or markers"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Matching Pizza", "file": "Number_Matching_Pizza.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick number matching activity. Pizza slices with pepperoni are matched to numbered slices.",
+      "instructions": ["Attach the pepperoni pizza slices to a folder and cut out the numbered pizza slices.", "Attach Velcro to both the folder and the cutouts.", "Match the numbered pizza slices to the slices with the corresponding number of pepperoni."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Matching Ice Cream", "file": "Number_Matching_Ice_Cream.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick number matching activity with numbered ice cream cones and ice cream scoops.",
+      "instructions": ["Attach the ice cream cone set to a folder and cut out the ice cream scoops.", "Attach Velcro to both the folder and the cutouts.", "Match each cutout ice cream scoop to the corresponding numbered ice cream cone on the folder."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Matching Gumballs", "file": "Number_Matching_Gumballs.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A cut-and-stick number matching activity with gumball machines. Numbered machines are matched to machines with that many gumballs inside.",
+      "instructions": ["Attach the gumball machines to a folder and cut out the numbered machines.", "Attach Velcro to both the folder and the cutouts.", "Match the numbered gumball machines to the gumball machines with the corresponding number of gumballs inside."],
+      "materials": ["Printed pages", "Folder", "Scissors", "Velcro"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Lacing 1 to 10", "file": "Number_Lacing_1_to_10.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "Printable number cards from 1 to 10. Each large coloured number has white circles on it (one on the 1, two on the 2). The sheet has no written instructions.",
+      "instructions": ["Print the number cards and use them with the child as the sheet shows."],
+      "materials": ["Printed number cards"]
+    },
+    {
+      "category": "Fine Motor Skills", "title": "Number Dot to Dot 1 to 10", "file": "Number_Dot_to_Dot_1_to_10.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "Ten pages, each with a large outlined number from 1 to 10 and circles marked on it. The sheet has no written instructions.",
+      "instructions": ["Print the pages and use them with the child as the sheet shows, one number at a time."],
+      "materials": ["Printed pages", "Pencil or crayon"]
+    },
+
+    {
+      "category": "Functioning Skills", "title": "Brushing Teeth Beginner", "file": "Brushing_Teeth_Beginner.pdf",
+      "difficulty": "Easy", "difficulty_basis": "source", "review": false,
+      "description": "A beginner visual sequence strip with real photos for brushing teeth. The page also has tips for using sequence strips: personalize the visuals, place them where the task happens, use them consistently and fade prompts gradually.",
+      "instructions": ["Get toothbrush.", "Get toothpaste.", "Put toothpaste on toothbrush.", "Turn on water.", "Wet toothbrush.", "Brush upper teeth.", "Brush lower teeth.", "Spit out toothpaste.", "Rinse mouth.", "Dry mouth."],
+      "materials": ["Printed sequence strip", "Toothbrush", "Toothpaste", "Sink and towel"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Washing Face Beginner", "file": "Washing_Face_Beginner.pdf",
+      "difficulty": "Easy", "difficulty_basis": "source", "review": false,
+      "description": "A beginner visual sequence strip with real photos for washing the face, with tips for using sequence strips.",
+      "instructions": ["Get washcloth and face soap.", "Turn water on.", "Splash water on face.", "Put face soap on washcloth.", "Rub face with washcloth.", "Rinse face.", "Turn water off.", "Dry face with a clean towel.", "Put washcloth and face soap away."],
+      "materials": ["Printed sequence strip", "Washcloth", "Face soap", "Sink and clean towel"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Washing Hands Beginner", "file": "Washing_Hands_Beginner.pdf",
+      "difficulty": "Easy", "difficulty_basis": "source", "review": true,
+      "description": "A beginner visual sequence strip with six real photos for washing hands (the photos have no captions), with tips for using sequence strips.",
+      "instructions": ["Follow the photos on the strip in order, from the running water to drying the hands."],
+      "materials": ["Printed sequence strip", "Soap", "Sink and towel"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Brushing Teeth Intermediate", "file": "Brushing_Teeth_Intermediate.pdf",
+      "difficulty": "Medium", "difficulty_basis": "source", "review": false,
+      "description": "An intermediate visual sequence strip with line drawings for brushing teeth, with the same tips for using sequence strips as the beginner version.",
+      "instructions": ["Get toothbrush.", "Get toothpaste.", "Put toothpaste on toothbrush.", "Turn water on.", "Brush teeth.", "Rinse mouth.", "Rinse toothbrush.", "Turn water off."],
+      "materials": ["Printed sequence strip", "Toothbrush", "Toothpaste", "Sink"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Washing Face Intermediate", "file": "Washing_Face_Intermediate.pdf",
+      "difficulty": "Medium", "difficulty_basis": "source", "review": false,
+      "description": "An intermediate visual sequence strip with line drawings for washing the face, with the same tips for using sequence strips as the beginner version.",
+      "instructions": ["Get washcloth.", "Get face soap.", "Turn water on.", "Wash face.", "Turn water off.", "Dry face."],
+      "materials": ["Printed sequence strip", "Washcloth", "Face soap", "Sink and towel"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Washing Hands Intermediate", "file": "Washing_Hands_Intermediate.pdf",
+      "difficulty": "Medium", "difficulty_basis": "source", "review": false,
+      "description": "An intermediate visual sequence strip with line drawings for washing hands, with the same tips for using sequence strips as the beginner version.",
+      "instructions": ["Turn water on.", "Get soap.", "Rub hands.", "Turn water off.", "Dry hands."],
+      "materials": ["Printed sequence strip", "Soap", "Sink and towel"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Visual Schedule Beginner", "file": "Visual_Schedule_Beginner.pdf",
+      "difficulty": "Easy", "difficulty_basis": "source", "review": false,
+      "description": "Version 1 (beginner) of a visual schedule that uses real-life images. It includes a guide called \"How to Implement a Visual Schedule\" and picture cards. Seven pages.",
+      "instructions": ["Read the guide on how to implement a visual schedule.", "Place the symbols in the order the activities will happen.", "At the start of the day, review the symbols with the child by pointing to each one and naming the activity."],
+      "materials": ["Printed schedule pages and picture cards"]
+    },
+    {
+      "category": "Functioning Skills", "title": "Visual Schedule Intermediate", "file": "Visual_Schedule_Intermediate.pdf",
+      "difficulty": "Medium", "difficulty_basis": "source", "review": false,
+      "description": "Version 2 (intermediate) of a visual schedule that uses animated photos. It has the same \"How to Implement a Visual Schedule\" guide and picture cards. Seven pages.",
+      "instructions": ["Read the guide on how to implement a visual schedule.", "Place the symbols in the order the activities will happen.", "At the start of the day, review the symbols with the child by pointing to each one and naming the activity."],
+      "materials": ["Printed schedule pages and picture cards"]
+    },
+
+    {
+      "category": "Handwriting", "title": "Maze and Path Tracing", "file": "Maze_and_Path_Tracing.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A worksheet called \"Shapes and mazes for tracing\" with a cross, circle, square, star and triangle path. Each path has a start arrow and an end square. The document has four pages.",
+      "instructions": ["Start at the arrow.", "Trace along the dashed line to the end square."],
+      "materials": ["Printed worksheet", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Word Spacing Practice", "file": "Word_Spacing_Practice.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "Cut-out \"Spacekid\" figures to use as a spacer between words when writing.",
+      "instructions": ["Print the page on heavy paper.", "Let the child choose a favorite spacekid and decorate it with crayons, markers and other art supplies.", "Cut it out and glue it to a pencil, a craft stick or the handle of a plastic spoon.", "While writing, have the child place the spacekid between words to leave enough space."],
+      "materials": ["Printed page (heavy paper)", "Scissors", "Glue", "Art supplies", "Pencil, craft stick or plastic spoon"]
+    },
+    {
+      "category": "Handwriting", "title": "Writing Between Bold Lines", "file": "Writing_Between_Bold_Lines.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "Bold line paper: bold solid lines with a dashed line in each row. The sheet has no written instructions.",
+      "instructions": ["Print the bold line paper and use it for writing practice."],
+      "materials": ["Printed bold line paper", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Name Tracing and Writing", "file": "Name_Tracing_and_Writing.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A name tracing worksheet. The example name (Emma) is shown in light letters, then dotted letters, then blank lines to write on. There are lines for name and date.",
+      "instructions": ["Trace the name, then try it on your own."],
+      "materials": ["Printed worksheet", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Shape Tracing", "file": "Shape_Tracing.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A tracing worksheet with seven shapes: circle, square, triangle, rectangle, star, heart and diamond. Each row has one model shape and five dashed shapes to trace.",
+      "instructions": ["Start at the green dot.", "Trace each dashed shape."],
+      "materials": ["Printed worksheet", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Straight Line Tracing", "file": "Straight_Line_Tracing.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A pre-writing tracing worksheet with straight down, straight across, slanted lines, zigzags, waves, bumps and loops.",
+      "instructions": ["Start at the green dot.", "Trace each dashed line."],
+      "materials": ["Printed worksheet", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Uppercase and Lowercase Letter Tracing", "file": "Uppercase_and_Lowercase_Letter_Tracing.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "A 52-page set of letter practice pages (one page for each uppercase and lowercase letter). Each page has five steps, for example \"Capital A practice\".",
+      "instructions": ["Trace the letter. Follow the dashed letter.", "Start at the dot and write the letter.", "Copy the letter beside the model.", "Write the letter from memory.", "Trace the example word and say the word as you write."],
+      "materials": ["Printed pages", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Word and Sentence Copying", "file": "Word_and_Sentence_Copying.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A 12-page handwriting practice booklet. Pages include \"Write on the Line\" (sun, moon, star, tree) and \"Copy the Words\" (sun, cat, dog, ball). Review: the pages checked contain single words; the other pages were not checked in detail.",
+      "instructions": ["Trace the gray model first.", "Write the word again on your own with neat, even letters.", "Keep every letter sitting on the line."],
+      "materials": ["Printed pages", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Basic Pre Writing Strokes", "file": "Basic_Pre_Writing_Strokes.pdf",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A 12-page pre-writing tracing booklet marked for ages 2 to 5. Each page practises one stroke, for example \"Horizontal Lines\" (age 2-3).",
+      "instructions": ["Start on the green dot.", "Trace the dotted lines, copying the colored model."],
+      "materials": ["Printed pages", "Pencil"]
+    },
+    {
+      "category": "Handwriting", "title": "Pre Writing and Handwriting Checklist", "file": "Pre_Writing_and_Handwriting_Checklist.pdf",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A checklist and note sheet for adults. It lists pre-writing strokes by age (for example imitating lines and a circle, copying a cross, square and triangle) and has a note sheet with boxes for a child's drawings. Review: this is an observation sheet, not a worksheet for the child.",
+      "instructions": ["Use the checklist to note which pre-writing strokes the child can imitate or copy.", "Record what you see on the note sheet."],
+      "materials": ["Printed checklist and note sheet", "Pencil"]
+    },
+
+    {
+      "category": "Sensory", "title": "Homemade Play Dough", "file": "Homemade_Play_Dough.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for making play dough from flour, salt, water and oil, then squeezing, flattening, rolling and shaping it.",
+      "objective": "The card lists: tactile exploration and hand strength.",
+      "instructions": ["Mix the flour and salt in a bowl.", "Gradually add water and a little oil until the mixture forms dough.", "Let the child squeeze, flatten, roll and shape the dough."],
+      "materials": ["1 cup flour", "1/4 cup salt", "Water", "A little cooking oil", "Bowl"]
+    },
+    {
+      "category": "Sensory", "title": "Rice Scooping Bin", "file": "Rice_Scooping_Bin.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for scooping and moving uncooked rice between cups with a spoon.",
+      "objective": "The card lists: tactile exploration and hand-eye coordination.",
+      "instructions": ["Place a small amount of rice in a basin.", "Give the child a spoon and two cups.", "Let them scoop and transfer the rice between the cups."],
+      "materials": ["Uncooked rice", "Shallow basin", "Spoon", "Plastic cups"]
+    },
+    {
+      "category": "Sensory", "title": "Texture Matching", "file": "Texture_Matching.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for touching different household materials and matching the ones that feel similar. The card shows the words soft, rough, bumpy and smooth.",
+      "objective": "The card lists: tactile discrimination and describing textures.",
+      "instructions": ["Place the materials on a table.", "Let the child touch each material and find the ones that feel similar, such as two soft fabrics.", "Ask the child to match the materials."],
+      "materials": ["Clean towel", "Cotton fabric", "Denim", "Tissue", "Other safe household materials"]
+    },
+    {
+      "category": "Sensory", "title": "Laundry Basket Push", "file": "Laundry_Basket_Push.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where the child pushes an empty laundry basket across the floor.",
+      "objective": "The card lists: body awareness and gross motor coordination.",
+      "instructions": ["Place the basket on a flat, nonslip floor.", "Ask the child to push it from one point to another.", "Repeat a few times, allowing breaks when needed."],
+      "materials": ["Empty laundry basket", "Clear floor space"]
+    },
+    {
+      "category": "Sensory", "title": "Towel Delivery", "file": "Towel_Delivery.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where the child carries towels in a basket to a table and stacks them.",
+      "objective": "The card lists: body awareness and participation in household tasks.",
+      "instructions": ["Place a few lightweight towels in the basket.", "Ask the child to carry the basket or individual towels to a nearby table.", "Let them stack the towels neatly."],
+      "materials": ["Clean towels", "Laundry basket"]
+    },
+    {
+      "category": "Sensory", "title": "Dough Squeeze and Roll", "file": "Dough_Squeeze_and_Roll.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for squeezing, rolling and flattening play dough and making small balls or simple shapes.",
+      "objective": "The card lists: hand strength and body awareness.",
+      "instructions": ["Give the child a ball of dough.", "Ask them to squeeze, roll and flatten it.", "Have them make several small balls or simple shapes."],
+      "materials": ["Homemade or child-safe play dough", "Clean table"]
+    },
+    {
+      "category": "Sensory", "title": "Cushion Step Over", "file": "Cushion_Step_Over.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where the child steps over low, firm cushions on the floor with an adult nearby.",
+      "objective": "The card lists: balance and movement planning.",
+      "instructions": ["Place the cushions securely on the floor.", "Ask the child to step over each cushion slowly.", "Offer support if needed and remove the cushions if they are unstable."],
+      "materials": ["One or two low, firm cushions", "Clear floor space"]
+    },
+    {
+      "category": "Sensory", "title": "Follow the Line", "file": "Follow_the_Line.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where the child walks along a taped line on the floor.",
+      "objective": "The card lists: balance and motor coordination.",
+      "instructions": ["Make a short line on a clear floor.", "Ask the child to walk along the line at a comfortable pace.", "Repeat if they are comfortable and able to do so safely."],
+      "materials": ["Painter's tape or a straight line marked on the floor"]
+    },
+    {
+      "category": "Sensory", "title": "Gentle Weight Shifting", "file": "Gentle_Weight_Shifting.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where the child stands holding a chair or counter and slowly shifts their weight from one foot to the other.",
+      "objective": "The card lists: balance and body awareness.",
+      "instructions": ["Ask the child to stand with feet comfortably apart.", "Have them slowly shift their weight from one foot to the other.", "Repeat a few times while holding the support if necessary."],
+      "materials": ["Stable chair or counter for support"]
+    },
+    {
+      "category": "Sensory", "title": "Copy My Rhythm", "file": "Copy_My_Rhythm.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where an adult taps a simple pattern and the child copies it.",
+      "objective": "The card lists: auditory memory, attention, and imitation.",
+      "instructions": ["Tap a simple pattern, such as two slow taps.", "Ask the child to copy the pattern.", "Gradually introduce different patterns depending on their ability."],
+      "materials": ["Hands or a tabletop"]
+    },
+    {
+      "category": "Sensory", "title": "Household Sound Hunt", "file": "Household_Sound_Hunt.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for listening to familiar household sounds, such as a fan or clock, and naming or pointing to them.",
+      "objective": "The card lists: auditory attention and sound identification.",
+      "instructions": ["Sit with the child in a quiet area.", "Listen for nearby sounds.", "Ask the child to identify the sound or point toward where it comes from."],
+      "materials": ["A quiet room", "Familiar household sounds, such as a fan or clock"]
+    },
+    {
+      "category": "Sensory", "title": "Copy the Pattern", "file": "Copy_the_Pattern.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for copying a colour pattern made with large blocks, such as red, blue, red.",
+      "objective": "The card lists: visual discrimination, sequencing, and problem-solving.",
+      "instructions": ["Arrange three objects in a pattern, such as red, blue, red.", "Ask the child to create the same pattern.", "Add more objects as the child becomes comfortable."],
+      "materials": ["Large colored blocks, crayons, or colored paper"]
+    },
+    {
+      "category": "Sensory", "title": "Find the Hidden Object", "file": "Find_the_Hidden_Object.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card where a toy is partly hidden behind another object and the child finds it.",
+      "objective": "The card lists: visual scanning, attention, and problem-solving.",
+      "instructions": ["Partly hide a toy behind another object while keeping it visible and reachable.", "Ask the child to find the toy.", "Give simple clues if needed."],
+      "materials": ["Familiar toys", "Table or clear play area"]
+    },
+    {
+      "category": "Sensory", "title": "Water Pouring Station", "file": "Water_Pouring_Station.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": false,
+      "description": "An activity card for pouring a small amount of water between cups on a tray, with a towel for spills.",
+      "objective": "The card lists: visual-motor coordination and tactile exploration.",
+      "instructions": ["Place the cups on the tray with a small amount of water in one cup.", "Show the child how to pour water into another cup.", "Encourage slow pouring and wiping any spills."],
+      "materials": ["Shallow tray", "Plastic cups", "Small amount of water", "Towel"]
+    },
+    {
+      "category": "Sensory", "title": "Food Texture Exploration", "file": "Food_Texture_Exploration.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "An activity card for looking at, smelling or touching two familiar foods with different textures, without having to taste them.",
+      "objective": "The card lists: food-related sensory exploration and expressing preferences.",
+      "instructions": ["Offer two familiar foods that differ in texture.", "Let the child look at, smell, or touch the food without requiring them to taste it.", "Encourage them to communicate which texture they prefer."],
+      "materials": ["Small portions of familiar foods with different textures", "Plates"]
+    },
+
+    {
+      "category": "Visual", "title": "Arrow Direction Matching", "file": "Arrow_Direction_Matching.jpg",
+      "difficulty": "Hard", "difficulty_basis": "assessed", "review": true,
+      "description": "A worksheet called \"Match the directions!\" with five rows of black shapes. The first shape in each row has to be found again among shapes turned in different directions.",
+      "instructions": ["Look at the first shape in each row.", "Circle the matching shape in each row."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Find the Differences Superhero A", "file": "Find_the_Differences_Superhero_A.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": true,
+      "description": "A find-the-differences worksheet with two pictures of a superhero boy (one with the letter B and one with the letter A on the shirt).",
+      "instructions": ["Circle the FOUR differences between the pictures."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Find the Differences Superhero B", "file": "Find_the_Differences_Superhero_B.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A find-the-differences worksheet with two pictures of a superhero girl. The differences are small, such as the shape and colour of the symbol, the stripe and the trousers.",
+      "instructions": ["Circle the FOUR differences between the pictures."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Letter M Visual Scanning", "file": "Letter_M_Visual_Scanning.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A visual perception worksheet with rows of the letter M and a few letter Ns mixed in. Review: the file name says M, but the sheet asks the child to find the letter N.",
+      "instructions": ["Find the letter N and color it."],
+      "materials": ["Printed worksheet", "Crayon or colored pencil"]
+    },
+    {
+      "category": "Visual", "title": "Letter Combination Search", "file": "Letter_Combination_Search.jpg",
+      "difficulty": "Hard", "difficulty_basis": "assessed", "review": true,
+      "description": "A worksheet with many three-letter combinations made from w, n and m in different orders. The child finds the ones that match the combination in the top box (wnm).",
+      "instructions": ["Find 10 letter combinations that look the same as the one in the top box.", "Circle them."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Letter Matching Grid A", "file": "Letter_Matching_Grid_A.jpg",
+      "difficulty": "Medium", "difficulty_basis": "assessed", "review": true,
+      "description": "A worksheet with the letters A to F. In each row the first letter must be matched to the choices, which are turned or flipped.",
+      "instructions": ["In each row, circle the letter that is the same as the first letter."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Letter Matching Grid B", "file": "Letter_Matching_Grid_B.jpg",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A worksheet with six rows of capital letters (G, J, F, D, S, C). In each row the child finds the letters that match the first one.",
+      "instructions": ["In each row, circle the letters that are the same as the first letter."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Letter Search Grid", "file": "Letter_Search_Grid.jpg",
+      "difficulty": "Hard", "difficulty_basis": "assessed", "review": true,
+      "description": "A worksheet of small letters (a, b, c, d, p and q) that are turned or flipped in many directions. The child finds the letter d.",
+      "instructions": ["Draw a diagonal line in each d."],
+      "materials": ["Printed worksheet", "Pencil"]
+    },
+    {
+      "category": "Visual", "title": "Letter H Visual Scanning", "file": "Letter_H_Visual_Scanning.png",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A worksheet with a grid of capital letters. The child finds every letter H.",
+      "instructions": ["Find all the H's."],
+      "materials": ["Printed worksheet", "Pencil or crayon"]
+    },
+    {
+      "category": "Visual", "title": "Number Three Visual Scanning", "file": "Number_Three_Visual_Scanning.png",
+      "difficulty": "Easy", "difficulty_basis": "assessed", "review": false,
+      "description": "A worksheet called \"Find 3\" with numbers scattered in a box. The child counts how many 3s there are and writes the answer.",
+      "instructions": ["Find the number 3 in the box.", "Count how many 3s there are and write the answer on the answer line."],
+      "materials": ["Printed worksheet", "Pencil"]
+    }
+  ]
+}

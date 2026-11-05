@@ -4,10 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Support\PdfThumbnail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class Activity extends Model
 {
+    // Pictures live in this folder of the private disk. image_path is never
+    // mass-assignable: only ActivityImageController sets it.
+    public const IMAGE_DIRECTORY = 'activity-images';
+
     protected $fillable = [
         'category_id',
         'created_by',
@@ -17,8 +25,8 @@ class Activity extends Model
         'instructions',
         'materials',
         'difficulty',
-        'image_path',
         'is_published',
+        'is_for_all_conditions',
     ];
 
     protected function casts(): array
@@ -27,7 +35,67 @@ class Activity extends Model
             'instructions' => 'array',
             'materials' => 'array',
             'is_published' => 'boolean',
+            'archived_at' => 'datetime',
+            'archived_was_published' => 'boolean',
+            'is_for_all_conditions' => 'boolean',
         ];
+    }
+
+    // Only paths made by the upload code count (older placeholder values in the
+    // column are ignored).
+    public function hasPicture(): bool
+    {
+        return is_string($this->image_path)
+            && str_starts_with($this->image_path, self::IMAGE_DIRECTORY.'/');
+    }
+
+    // The public picture URL (the route only serves published activities), or
+    // null. The stored path itself is never returned.
+    public function imageUrl(): ?string
+    {
+        return $this->hasPicture()
+            ? url("/api/activities/{$this->id}/image").'?v='.substr(md5($this->image_path), 0, 8)
+            : null;
+    }
+
+    /**
+     * The card picture to use when there is no dedicated one: the first attached
+     * file (lowest id) that is a supported image type. PDFs and other documents
+     * never count. Needs the resources relation (load it to avoid extra queries).
+     * The URL is the public download route, which only serves published,
+     * non-archived activities.
+     */
+    public function attachmentImageUrl(): ?string
+    {
+        $resource = $this->resources
+            ->sortBy('id')
+            ->first(fn (ActivityResource $r) => in_array($r->file_type, ActivityResource::IMAGE_TYPES, true));
+
+        return $resource
+            ? url("/api/activities/{$this->id}/resources/{$resource->id}/download")
+            : null;
+    }
+
+    /**
+     * The picture for the activity CARD made from the attachments: the first
+     * attachment (lowest id) that is an image (its original file is used as it is)
+     * or a PDF that has a generated thumbnail (page 1). The original attachment is
+     * never replaced: viewing and downloading still serve the real file. Both URLs
+     * are public routes that only serve published, non-archived activities.
+     */
+    public function thumbnailUrl(): ?string
+    {
+        foreach ($this->resources->sortBy('id') as $resource) {
+            if (in_array($resource->file_type, ActivityResource::IMAGE_TYPES, true)) {
+                return url("/api/activities/{$this->id}/resources/{$resource->id}/download");
+            }
+
+            if ($resource->file_type === 'application/pdf' && PdfThumbnail::exists($resource)) {
+                return url("/api/activities/{$this->id}/resources/{$resource->id}/thumbnail");
+            }
+        }
+
+        return null;
     }
 
     public function category(): BelongsTo
@@ -40,6 +108,13 @@ class Activity extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    // The conditions this activity is relevant to (see is_for_all_conditions too).
+    public function conditions(): BelongsToMany
+    {
+        return $this->belongsToMany(Condition::class, 'activity_condition')
+            ->withTimestamps();
+    }
+
     public function resources(): HasMany
     {
         return $this->hasMany(ActivityResource::class);
@@ -48,5 +123,46 @@ class Activity extends Model
     public function progressRecords(): HasMany
     {
         return $this->hasMany(ActivityProgress::class);
+    }
+
+    /**
+     * Permanently deletes this activity and everything that belongs to it: the
+     * children's progress records for THIS activity, its resources (rows and
+     * uploaded files), its picture and its condition links. The database rows go
+     * in one transaction (any failure rolls all of it back); the files are removed
+     * only after it commits, so a rollback never loses a file. Other activities,
+     * children and their other progress are not touched.
+     */
+    public function purge(): void
+    {
+        $disk = Storage::disk(config('filesystems.activity_materials.disk'));
+        $imagePath = $this->image_path;
+        $filePaths = $this->resources()->pluck('file_path')->unique()->all();
+        $thumbnails = $this->resources()->get()->map(fn (ActivityResource $r) => PdfThumbnail::path($r))->all();
+
+        DB::transaction(function () {
+            $this->progressRecords()->delete();
+            $this->resources()->delete();
+            $this->conditions()->detach();
+            $this->delete();
+        });
+
+        if ($imagePath !== null
+            && str_starts_with($imagePath, self::IMAGE_DIRECTORY.'/')
+            && ! self::where('image_path', $imagePath)->exists()) {
+            $disk->delete($imagePath);
+        }
+
+        // Generated thumbnails belong to the resource that is gone.
+        foreach ($thumbnails as $thumbnail) {
+            $disk->delete($thumbnail);
+        }
+
+        foreach ($filePaths as $path) {
+            // A file is only removed when no other resource still points at it.
+            if (! ActivityResource::where('file_path', $path)->exists()) {
+                $disk->delete($path);
+            }
+        }
     }
 }

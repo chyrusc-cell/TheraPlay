@@ -1,79 +1,393 @@
-import { Link } from 'react-router-dom';
-import './css/Dashboard.css';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { DashboardSkeleton } from './PageSkeletons.jsx';
+import { useAuth } from './authContext.js';
+import { useChildGate } from './useChildGate.jsx';
+import { holdSkeleton } from './minLoading.js';
+import { pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
+import { API_URL, getToken } from './api.js';
+
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+// "2026-10-21" in the viewer's local time (same convention as Progress.jsx).
+const dayKey = (date) => {
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${date.getFullYear()}-${month}-${day}`;
+};
+
+// Monday of the current week, at midnight local time.
+const getWeekStart = () => {
+    const today = new Date();
+    const start = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+    );
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    return start;
+};
+
+const formatWeekRange = (weekStart) => {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    const startText = weekStart.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+    });
+    const endText =
+        weekStart.getMonth() === weekEnd.getMonth()
+            ? String(weekEnd.getDate())
+            : weekEnd.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+              });
+
+    return `${startText}-${endText}, ${weekEnd.getFullYear()}`;
+};
+
+const formatDate = (value) => {
+    const date = new Date(value);
+    const text = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+    });
+
+    return `${text} • ${date.getFullYear()}`;
+};
+
+// Streak rule: consecutive days with at least one completed activity,
+// counting back from today. If nothing was completed today yet, the streak
+// can still continue from yesterday.
+const getCurrentStreak = (completedDayKeys) => {
+    const cursor = new Date();
+    cursor.setHours(0, 0, 0, 0);
+
+    if (!completedDayKeys.has(dayKey(cursor))) {
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    let streak = 0;
+
+    while (completedDayKeys.has(dayKey(cursor))) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
+    return streak;
+};
+
+// Card look as currently rendered (the old global .card rule was merged from the
+// Dashboard, Progress and Profile stylesheets).
+const cardClass =
+    'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
+const cardHeaderClass = 'border-b border-edge px-6 py-4';
+const cardHeaderFlexClass =
+    'flex items-center justify-between border-b border-edge px-6 py-4';
+const cardTitleClass = 'text-[15px] font-bold text-ink';
+const cardBodyClass = 'px-6 pt-5 pb-6';
+const statusClass = 'text-[14px] font-medium text-muted';
+const iconCircleClass =
+    'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-edge-strong bg-white text-ink';
 
 function Dashboard() {
-    return (
-        <div className="dashboard-page">
+    const navigate = useNavigate();
+    // Everything here is for the globally selected child.
+    const { selectedChildId, selectedChild, childStatus, waiting, blocked } = useChildGate();
+    // The child whose load has FINISHED, whether it worked or failed.
+    const [settledChildId, setSettledChildId] = useState(undefined);
 
-            <main className="dashboard-content">
-                
-                <header className="dashboard-header">
-                    <h1>Hello, Frent Yvan!</h1>
-                    <p>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
-                    <span className="date-subtitle">Sample data • Week of Oct 19-25, 2026</span>
+    // The verified account comes from the session check (AuthProvider), so the
+    // dashboard does not ask the server for it a second time.
+    const { user } = useAuth();
+    const [records, setRecords] = useState([]);
+    const [activities, setActivities] = useState([]);
+    const [isLoadingNow, setIsLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // The selection changed but its load has not finished: show the skeleton, not
+    // the previous child's numbers.
+    const isLoading =
+        isLoadingNow || (childStatus === 'ready' && settledChildId !== selectedChildId);
+
+    useEffect(() => {
+        if (waiting || childStatus === 'error' || (childStatus === 'ready' && !selectedChildId)) {
+            return;
+        }
+
+        // Token missing or rejected: clear it and send the user to login.
+        const redirectToLogin = () => {
+            ['theraplay_token', 'theraplay_user'].forEach((key) => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+
+            navigate('/login', {
+                replace: true,
+                state: { message: 'Please log in to view your dashboard.' },
+            });
+        };
+
+        const token = getToken();
+
+        if (!token) {
+            redirectToLogin();
+            return;
+        }
+
+        const controller = new AbortController();
+
+        const startedAt = performance.now();
+
+        const authHeaders = {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`,
+        };
+
+        const loadDashboard = async () => {
+            try {
+                setIsLoading(true);
+                setError('');
+
+                const [progressResponse, activitiesResponse] =
+                    await Promise.all([
+                        fetch(`${API_URL}/progress${selectedChildId ? `?child_id=${selectedChildId}` : ""}`, {
+                            headers: authHeaders,
+                            signal: controller.signal,
+                        }),
+                        fetch(`${API_URL}/activities`, {
+                            headers: { Accept: 'application/json' },
+                            signal: controller.signal,
+                        }),
+                    ]);
+
+                if (progressResponse.status === 401) {
+                    redirectToLogin();
+                    return;
+                }
+
+                if (!progressResponse.ok || !activitiesResponse.ok) {
+                    throw new Error('Unable to load your dashboard.');
+                }
+
+                const progressData = await progressResponse.json();
+                const activitiesData = await activitiesResponse.json();
+
+                // A newer load (another child) has taken over: drop this answer.
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                setRecords(
+                    Array.isArray(progressData.data?.records)
+                        ? progressData.data.records
+                        : []
+                );
+                setActivities(
+                    Array.isArray(activitiesData.data)
+                        ? activitiesData.data
+                        : []
+                );
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    return;
+                }
+
+                setError(
+                    err.message ||
+                    'Unable to connect to the server. Please try again.'
+                );
+            } finally {
+                await holdSkeleton(startedAt, controller.signal);
+
+                // The load is over (worked or failed): show the result or the error.
+                if (!controller.signal.aborted) {
+                    setSettledChildId(selectedChildId);
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadDashboard();
+
+        return () => controller.abort();
+    }, [navigate, waiting, childStatus, selectedChildId]);
+
+    if (blocked) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <div className={pageMain}>{blocked}</div>
+            </div>
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <div className={pageMain}>
+                    <DashboardSkeleton />
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex min-h-page flex-col">
+                <div className={pageMain}>
+                    <p className="text-[14px] font-medium text-[#d93025]" role="alert">
+                        {error}
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // --- Values calculated from the stored records ---
+    const completed = records.filter(
+        (r) => r.status === 'completed' && r.completed_at
+    );
+    const completedDayKeys = new Set(
+        completed.map((r) => dayKey(new Date(r.completed_at)))
+    );
+
+    const weekStart = getWeekStart();
+    const weekKeys = DAY_LETTERS.map((_, index) => {
+        const day = new Date(weekStart);
+        day.setDate(day.getDate() + index);
+        return dayKey(day);
+    });
+
+    const completedThisWeek = completed.filter((r) =>
+        weekKeys.includes(dayKey(new Date(r.completed_at)))
+    ).length;
+
+    const streak = getCurrentStreak(completedDayKeys);
+
+    const skills = [
+        ...new Set(completed.map((r) => r.category).filter(Boolean)),
+    ];
+
+    // Continue: an in-progress activity if there is one, otherwise suggest
+    // the first published activity that has not been completed yet.
+    const publishedById = new Map(activities.map((a) => [a.id, a]));
+    const completedIds = new Set(completed.map((r) => r.activity_id));
+
+    const inProgressRecord = records.find(
+        (r) => r.status === 'in_progress' && publishedById.has(r.activity_id)
+    );
+
+    const featured = inProgressRecord
+        ? publishedById.get(inProgressRecord.activity_id)
+        : activities.find((a) => !completedIds.has(a.id)) || activities[0];
+
+    // A completion that was undone (not_started) is not recent activity.
+    const recent = records.filter((r) => r.status !== 'not_started').slice(0, 3);
+
+    return (
+        <div className="flex min-h-page flex-col">
+
+            <div className={pageMain}>
+
+                <header className={pageHeader}>
+                    <h1 className={pageTitle}>Hello, {user?.name}!</h1>
+                    <p className={`${pageSubtitle} mb-4`}>We provide a range of resources and guidance to support their physical, cognitive, emotional, and social growth.</p>
+                    <span className="text-[12px] font-medium text-faint">{selectedChild ? `${selectedChild.name} · ` : ''}Week of {formatWeekRange(weekStart)}</span>
                 </header>
 
-                <div className="dashboard-top-grid">
-                    <div className="card">
-                        <div className="card-header-border">
-                            <h3>Continue / Recommended Activity</h3>
+                <div className="mb-6 grid grid-cols-2 gap-6 tablet-sm:grid-cols-1">
+                    <div className={cardClass}>
+                        <div className={cardHeaderClass}>
+                            <h2 className={cardTitleClass}>Continue / Recommended Activity</h2>
                         </div>
-                        <div className="card-body">
-                            <div className="activity-title-row">
-                                <h2>Fine Motor Play</h2>
-                                <span className="time-tag">15 min</span>
-                            </div>
-                            <p className="card-desc">Pick up where you left off with a short hands-on activity. Practice at your own pace.</p>
-                            <button className="btn-primary">Continue activity</button>
+                        <div className={cardBodyClass}>
+                            {featured ? (
+                                <>
+                                    <div className="mb-3 flex items-center justify-between">
+                                        <h3 className="text-[20px] font-bold text-ink">{featured.title}</h3>
+                                    </div>
+                                    <p className="mb-5 text-[14px] leading-[1.5] text-muted">
+                                        {featured.description ||
+                                            'Explore this activity and its learning objectives.'}
+                                    </p>
+                                    <button
+                                        className="cursor-pointer rounded-full px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white"
+                                        type="button"
+                                        onClick={() =>
+                                            navigate(`/activities/${featured.id}`)
+                                        }
+                                    >
+                                        {inProgressRecord
+                                            ? 'Continue activity'
+                                            : 'Start activity'}
+                                    </button>
+                                </>
+                            ) : (
+                                <p className="mb-5 text-[14px] leading-[1.5] text-muted">
+                                    No activities are available right now.
+                                </p>
+                            )}
                         </div>
                     </div>
 
-                    <div className="card">
-                        <div className="card-header-border">
-                            <h3>Streak</h3>
+                    <div className={cardClass}>
+                        <div className={cardHeaderClass}>
+                            <h2 className={cardTitleClass}>Streak</h2>
                         </div>
-                        <div className="card-body">
-                            <div className="streak-header">
-                                <div className="streak-count">
-                                    <h2>5</h2>
-                                    <span>Day practice streak</span>
+                        <div className={cardBodyClass}>
+                            <div className="mb-4 flex items-start justify-between">
+                                <div>
+                                    <p className="text-[28px] leading-none font-bold text-ink">{streak}</p>
+                                    <span className="text-[13px] font-medium text-muted">Day practice streak</span>
                                 </div>
-                                <span className="status-tag monochrome-tag">ON TRACK</span>
                             </div>
-                            <p className="streak-date">This week • Oct 19-25, 2026</p>
-                            
-                            <div className="streak-days">
-                                <div className="day active">M</div>
-                                <div className="day active">T</div>
-                                <div className="day active">W</div>
-                                <div className="day active">T</div>
-                                <div className="day active">F</div>
-                                <div className="day">S</div>
-                                <div className="day">S</div>
+                            <p className="mb-3 text-[12px] font-medium text-faint">This week • {formatWeekRange(weekStart)}</p>
+
+                            <div className="flex gap-2">
+                                {DAY_LETTERS.map((letter, index) => (
+                                    <div
+                                        className={`flex-1 rounded-md py-2 text-center text-[13px] font-bold ${
+                                            completedDayKeys.has(weekKeys[index])
+                                                ? 'bg-accent text-white'
+                                                : 'bg-white text-faint'
+                                        }`}
+                                        key={weekKeys[index]}
+                                    >
+                                        {letter}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="card full-width-card">
-                    <div className="card-header-border">
-                        <h3>Summary of Progress</h3>
+                {/* Side by side on desktop; stacked once the width gets tight (laptop = 1100px and below). */}
+                <div className="grid grid-cols-2 gap-6 laptop:grid-cols-1" data-testid="dashboard-lower-cards">
+                <div className={`${cardClass} min-w-0`}>
+                    <div className={cardHeaderClass}>
+                        <h2 className={cardTitleClass}>Summary of Progress</h2>
                     </div>
-                    <div className="card-body progress-body">
-                        <div className="progress-stats">
-                            <div className="stat-box">
-                                <span className="stat-label">Activities this week</span>
-                                <h2>18 / 20</h2>
-                                <span className="stat-sub">90% of weekly goal</span>
+                    <div className={cardBodyClass}>
+                        <div className="mb-5 flex gap-4 tablet-sm:flex-col">
+                            <div className="flex-1 rounded-lg border card-soft p-5">
+                                <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
+                                <p className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</p>
+                                <span className="text-[12px] text-faint">completed this week</span>
                             </div>
-                            <div className="stat-box">
-                                <span className="stat-label">Skills practiced</span>
-                                <h2>4</h2>
-                                <span className="stat-sub">Fine motor, Social, Emotional, Cognitive</span>
+                            <div className="flex-1 rounded-lg border card-soft p-5">
+                                <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
+                                <p className="mb-1 text-[24px] font-bold text-ink">{skills.length}</p>
+                                <span className="text-[12px] text-faint">
+                                    {skills.length > 0
+                                        ? skills.join(', ')
+                                        : 'No completed activities yet'}
+                                </span>
                             </div>
                         </div>
-                        <div className="progress-footer">
-                            <Link to="/progress-report" className="view-report-link">
+                        <div className="border-t border-edge pt-4">
+                            <Link to="/progress" className="flex items-center justify-between gap-3 pr-1 text-[13px] font-bold text-ink no-underline">
                                 View detailed progress report
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -84,56 +398,64 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="card full-width-card">
-                    <div className="card-header-flex">
-                        <h3>Recent Activities</h3>
-                        <Link to="/activities/all" className="view-all-link">View all</Link>
+                <div className={`${cardClass} min-w-0`}>
+                    <div className={cardHeaderFlexClass}>
+                        <h2 className={cardTitleClass}>Recent Activities</h2>
+                        <Link to="/activities" className="text-[13px] font-bold text-muted no-underline">View all</Link>
                     </div>
-                    <div className="recent-list">
-                        
-                        <div className="recent-item">
-                            <div className="item-left">
-                                <div className="icon-circle completed">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </div>
-                                <div className="item-text">
-                                    <h4>Handwriting Lines</h4>
-                                    <span>Fri, Oct 23 • 2026</span>
-                                </div>
-                            </div>
-                            <span className="list-tag tag-completed">Completed</span>
-                        </div>
+                    <div className="p-5">
 
-                        <div className="recent-item">
-                            <div className="item-left">
-                                <div className="icon-circle completed">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                </div>
-                                <div className="item-text">
-                                    <h4>Memory Match</h4>
-                                    <span>Thu, Oct 22 • 2026</span>
-                                </div>
-                            </div>
-                            <span className="list-tag tag-completed">Completed</span>
-                        </div>
+                        {recent.length === 0 ? (
+                            <p className={statusClass}>
+                                No activity yet. Completed activities will appear here.
+                            </p>
+                        ) : (
+                            recent.map((record) => {
+                                const isDone = record.status === 'completed';
+                                const when = isDone
+                                    ? record.completed_at
+                                    : record.started_at;
 
-                        <div className="recent-item">
-                            <div className="item-left">
-                                <div className="icon-circle in-progress">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                </div>
-                                <div className="item-text">
-                                    <h4>Button Practice</h4>
-                                    <span>Wed, Oct 21 • 2026</span>
-                                </div>
-                            </div>
-                            <span className="list-tag tag-progress">In Progress</span>
-                        </div>
+                                return (
+                                    <div className="mb-3 flex items-center justify-between rounded-lg border card-soft p-4 last:mb-0" key={record.id}>
+                                        <div className="flex items-center gap-4">
+                                            {isDone ? (
+                                                <div className={iconCircleClass}>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                                </div>
+                                            ) : (
+                                                <div className={iconCircleClass}>
+                                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <h3 className="mb-1 text-[14px] font-bold text-ink">{record.activity_title || 'Activity'}</h3>
+                                                {when && <span className="text-[12px] text-faint">{formatDate(when)}</span>}
+                                            </div>
+                                        </div>
+                                        <span
+                                            className={`rounded-xl px-2.5 py-1 text-[11px] font-bold ${
+                                                isDone
+                                                    ? 'bg-white text-ink'
+                                                    : 'border border-edge-strong bg-white text-muted'
+                                            }`}
+                                        >
+                                            {isDone
+                                                ? 'Completed'
+                                                : record.status === 'in_progress'
+                                                    ? 'In Progress'
+                                                    : 'Not Started'}
+                                        </span>
+                                    </div>
+                                );
+                            })
+                        )}
 
                     </div>
                 </div>
+                </div>
 
-            </main>
+            </div>
         </div>
     );
 }

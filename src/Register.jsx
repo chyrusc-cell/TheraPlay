@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './css/Register.css';
+import * as auth from './authClasses.js';
+import { logo } from './brand.js';
+import { API_URL } from './api.js';
 
 function Register() {
     const navigate = useNavigate();
@@ -35,7 +37,7 @@ function Register() {
 
         try {
             const response = await fetch(
-                'http://127.0.0.1:8000/api/register',
+                `${API_URL}/register`,
                 {
                     method: 'POST',
                     headers: {
@@ -67,11 +69,18 @@ function Register() {
                 );
             }
 
-            // Redirect to Login after successful registration
-            navigate('/login', {
-                state: {
-                    message: 'Registration successful! Please log in.',
-                },
+            // The account exists but is NOT usable yet. Stay signed in (so the next
+            // stages need no login page) and continue to the email code screen. Only say
+            // a message is on its way when the server really sent one.
+            localStorage.setItem('theraplay_token', data.token);
+            sessionStorage.removeItem('theraplay_token');
+            localStorage.setItem('theraplay_user', JSON.stringify(data.user));
+            sessionStorage.removeItem('theraplay_user');
+
+            const verification = data.email_verification;
+
+            navigate('/verify-code', {
+                state: { sent: Boolean(verification?.sent && verification?.delivery_available) },
                 replace: true,
             });
         } catch (error) {
@@ -86,32 +95,25 @@ function Register() {
     };
 
     return (
-        <div className="register-page">
-            <div className="register-container">
+        <main className={auth.registerPage}>
+            <div className={auth.registerContainer}>
 
-                {/* Updated Header Logo Block */}
-                <div className="header-logo">
-                    <Link to="/home" className="logo-link">
-                        <img 
-                            src="./img/theraplaylogo2.png" 
-                            alt="TheraPlay Logo" 
-                            className="register-logo-image" 
-                        />
-                    </Link>
+                <div className={auth.logoRow}>
+                    <img src={logo} alt="TheraPlay" className={auth.logoImage} />
                 </div>
 
-                <div className="header-text">
-                    <h1>Sign up</h1>
-                    <p className="subtitle">
+                <div className={auth.headerText}>
+                    <h1 className={auth.headerTitle}>Sign up</h1>
+                    <p className={auth.subtitle}>
                         Let's get you all set up to access your personal account.
                     </p>
                 </div>
 
                 <form onSubmit={handleRegister}>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <input
+                    <div className={auth.inputRow}>
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="text"
                                 id="firstName"
                                 placeholder=" "
@@ -121,11 +123,11 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="firstName">First Name</label>
+                            <label className={auth.label} htmlFor="firstName">First Name</label>
                         </div>
 
-                        <div className="input-group">
-                            <input
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="text"
                                 id="lastName"
                                 placeholder=" "
@@ -135,13 +137,13 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="lastName">Last Name</label>
+                            <label className={auth.label} htmlFor="lastName">Last Name</label>
                         </div>
                     </div>
 
-                    <div className="input-row">
-                        <div className="input-group">
-                            <input
+                    <div className={auth.inputRow}>
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="email"
                                 id="email"
                                 placeholder=" "
@@ -151,11 +153,11 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="email">Email</label>
+                            <label className={auth.label} htmlFor="email">Email</label>
                         </div>
 
-                        <div className="input-group">
-                            <input
+                        <div className={auth.fieldInRow}>
+                            <input className={auth.input}
                                 type="tel"
                                 id="phone"
                                 placeholder=" "
@@ -165,12 +167,12 @@ function Register() {
                                 }
                                 required
                             />
-                            <label htmlFor="phone">Phone Number</label>
+                            <label className={auth.label} htmlFor="phone">Phone Number</label>
                         </div>
                     </div>
 
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type={showPassword ? 'text' : 'password'}
                             id="password"
                             placeholder=" "
@@ -180,11 +182,11 @@ function Register() {
                             }
                             required
                         />
-                        <label htmlFor="password">Password</label>
+                        <label className={auth.label} htmlFor="password">Password</label>
 
                         <button
                             type="button"
-                            className="show-password-icon"
+                            className={auth.showPassword}
                             onClick={() =>
                                 setShowPassword(!showPassword)
                             }
@@ -215,8 +217,8 @@ function Register() {
                         </button>
                     </div>
 
-                    <div className="input-group">
-                        <input
+                    <div className={auth.field}>
+                        <input className={auth.input}
                             type={showConfirmPassword ? 'text' : 'password'}
                             id="confirmPassword"
                             placeholder=" "
@@ -226,13 +228,13 @@ function Register() {
                             }
                             required
                         />
-                        <label htmlFor="confirmPassword">
+                        <label className={auth.label} htmlFor="confirmPassword">
                             Confirm Password
                         </label>
 
                         <button
                             type="button"
-                            className="show-password-icon"
+                            className={auth.showPassword}
                             onClick={() =>
                                 setShowConfirmPassword(!showConfirmPassword)
                             }
@@ -263,24 +265,19 @@ function Register() {
                         </button>
                     </div>
 
-                    <div className="terms-group">
-                        <label className="terms-label">
-                            <input type="checkbox" required />
+                    <div className={auth.termsGroup}>
+                        <label className={auth.termsLabel}>
+                            <input type="checkbox" required className={auth.termsCheckbox} />
                             <span>
-                                I agree to all the <strong>Terms</strong> and{' '}
-                                <strong>Privacy Policies</strong>
+                                I agree to all the <strong className={auth.termsStrong}>Terms</strong> and{' '}
+                                <strong className={auth.termsStrong}>Privacy Policies</strong>
                             </span>
                         </label>
                     </div>
-
                     {message && (
                         <p
                             role="alert"
-                            style={{
-                                color: isError ? '#d93025' : '#188038',
-                                margin: '12px 0',
-                                fontSize: '14px',
-                            }}
+                            className={isError ? auth.registerMessageError : auth.registerMessageSuccess}
                         >
                             {message}
                         </p>
@@ -288,56 +285,21 @@ function Register() {
 
                     <button
                         type="submit"
-                        className="register-button"
+                        className={auth.registerButton}
                         disabled={isLoading}
                     >
-                        {isLoading
-                            ? 'Creating account...'
-                            : 'Create account'}
+                        {isLoading ? 'Creating account...' : 'Create account'}
                     </button>
                 </form>
 
-                <p className="login-link">
+                <p className={auth.switchLinkRegister}>
                     Already have an account?{' '}
-                    <Link to="/login">Login</Link>
+                    <Link to="/login" className={auth.switchLinkAnchor}>Login</Link>
                 </p>
 
-                <div className="divider">
-                    <span>Or Sign up with</span>
-                </div>
-
-                <div className="social-login">
-                    <button
-                        type="button"
-                        className="social-btn"
-                        aria-label="Sign up with Facebook"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="20"
-                            height="20"
-                            fill="#1877F2"
-                        >
-                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                        </svg>
-                    </button>
-
-                    <button
-                        type="button"
-                        className="social-btn"
-                        aria-label="Sign up with Google"
-                    >
-                        <svg viewBox="0 0 24 24" width="20" height="20">
-                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                        </svg>
-                    </button>
-                </div>
 
             </div>
-        </div>
+        </main>
     );
 }
 

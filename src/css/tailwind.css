@@ -1,0 +1,626 @@
+/*
+ * Tailwind CSS v4 entry.
+ *
+ *  - Tailwind's own global reset ("preflight") is deliberately NOT imported.
+ *    The components rely on a few browser defaults (for example the size of
+ *    unstyled headings), so adopting preflight is a separate step that needs a
+ *    visual check. Only the small reset in the base layer below is applied.
+ *  - Tailwind's layers are declared first. CSS inside a layer always loses to
+ *    UNLAYERED css, so the few unlayered rules in ui.css (focus ring, disabled
+ *    state, reduced motion) intentionally win over utilities.
+ *
+ * Design tokens: the values live ONCE, in the :root variables of ui.css
+ * (--ui-*). The @theme block below only exposes them as Tailwind colors, so
+ * `bg-primary` and the CSS variable can never drift apart.
+ */
+
+/* The app font, declared once. */
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap');
+
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+/*
+ * source("../") limits class scanning to src/. Without it Tailwind scans the
+ * whole repository, including the Laravel backend/ folder, and generates
+ * hundreds of unused utilities.
+ */
+@import "tailwindcss/utilities.css" layer(utilities) source("../");
+
+@theme inline {
+    --color-primary: var(--ui-primary);
+    --color-primary-hover: var(--ui-primary-hover);
+    --color-ink: var(--ui-text);
+    --color-muted: var(--ui-muted);
+    --color-line: var(--ui-border);
+    --color-hover: var(--ui-surface-hover);
+
+    --color-page: var(--ui-page);
+    --color-warm: var(--ui-surface-warm);
+    --color-sunken: var(--ui-sunken);
+    --color-edge: var(--ui-edge);
+    --color-edge-strong: var(--ui-edge-strong);
+    --color-accent: var(--ui-accent);
+    --color-accent-hover: var(--ui-accent-hover);
+    --color-accent-2: var(--ui-accent-2);
+    --color-accent-soft: var(--ui-accent-soft);
+    --color-body: var(--ui-body);
+    --color-faint: var(--ui-faint);
+
+    --color-success: var(--ui-success);
+    --color-success-bg: var(--ui-success-bg);
+    --color-success-bg-hover: var(--ui-success-bg-hover);
+    --color-success-text: var(--ui-success-text);
+
+    --color-warning-bg: var(--ui-warning-bg);
+    --color-warning-bg-hover: var(--ui-warning-bg-hover);
+    --color-warning-border: var(--ui-warning-border);
+    --color-warning-text: var(--ui-warning-text);
+
+    --color-danger: var(--ui-danger);
+    --color-danger-bg: var(--ui-danger-bg);
+    --color-danger-bg-hover: var(--ui-danger-bg-hover);
+    --color-danger-text: var(--ui-danger-text);
+
+    --color-hard-bg: var(--ui-hard-bg);
+    --color-hard-text: var(--ui-hard-text);
+
+    --color-focus: var(--ui-focus);
+
+    /* Layout widths shared with the sidebar and the page offset. */
+    --spacing-sidebar: var(--sidebar-width);
+    --spacing-sidebar-rail: var(--sidebar-width-collapsed);
+    --spacing-sidebar-offset: var(--sidebar-offset);
+    --spacing-sidebar-offset-rail: var(--sidebar-offset-collapsed);
+    --spacing-sidebar-gap: var(--sidebar-gap);
+    --spacing-topbar: var(--topbar-height);
+}
+
+/*
+ * Shared surfaces, used by adding the class name:
+ *   btn-glass  EVERY button: the one neutral glass 3D button (below).
+ *   glass-panel  floating surfaces (dropdowns, popovers).
+ *   card-soft  panels, cards and dialogs.
+ * Their fill, blur and border are in ui.css. Browsers without backdrop-filter get
+ * an opaque surface instead, and reduced-motion users get no movement (rules in
+ * ui.css).
+ */
+
+/*
+ * The button: the supplied "button-wrap" glass design applied to the <button> (or
+ * link) element itself, with no wrapper, no all:unset and no global "button"
+ * selector, so native behavior, keyboard use and the focus ring are untouched:
+ *   - a thin conic-gradient ring around the edge that turns on hover (::after),
+ *   - a soft diagonal sheen that glides across on hover and press (::before,
+ *     painted BEHIND the label, so text stays readable),
+ *   - an inner light and shadow (box-shadow insets) and a soft drop shadow,
+ *   - the button settles inward on hover and presses further on click.
+ * It is one neutral look for every action (no colors per action). The surface is
+ * 80% white (a background COLOR alpha, never opacity on the element, so labels and
+ * icons stay fully opaque); the palette is in the --btn-* tokens in ui.css.
+ * Disabled buttons lose the effects, touch screens get no hover motion.
+ */
+@property --tp-angle-1 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: -75deg;
+}
+
+@property --tp-angle-2 {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: -45deg;
+}
+
+/* The pseudo-elements need a positioned parent. This is in the base layer so any
+   utility such as fixed or absolute on the element still wins. */
+@layer base {
+    .btn-glass {
+        position: relative;
+        isolation: isolate;
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@layer components {
+    .btn-glass {
+        --tp-time: 400ms;
+        --tp-ease: cubic-bezier(0.25, 1, 0.5, 1);
+        --tp-border-width: clamp(1px, 0.0625em, 3px);
+    }
+
+    /* The sheen. */
+    .btn-glass::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border-radius: inherit;
+        pointer-events: none;
+        background: linear-gradient(
+            var(--tp-angle-2),
+            transparent 0%,
+            var(--tp-sheen, rgba(255, 255, 255, 0.7)) 40% 50%,
+            transparent 55%
+        );
+        background-size: 200% 200%;
+        background-position: 0% 50%;
+        background-repeat: no-repeat;
+        transition:
+            background-position calc(var(--tp-time) * 1.25) var(--tp-ease),
+            --tp-angle-2 calc(var(--tp-time) * 1.25) var(--tp-ease);
+    }
+
+    /* The edge ring (a masked conic gradient). */
+    .btn-glass::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        z-index: 1;
+        border-radius: inherit;
+        padding: var(--tp-border-width);
+        pointer-events: none;
+        background: conic-gradient(
+            from var(--tp-angle-1),
+            var(--tp-ring),
+            transparent 5% 40%,
+            var(--tp-ring) 50%,
+            transparent 60% 95%,
+            var(--tp-ring)
+        );
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        transition:
+            --tp-angle-1 500ms ease,
+            opacity var(--tp-time) var(--tp-ease);
+    }
+
+    /* Hover and press move the sheen and the ring, like the reference. */
+    .btn-glass:is(button, [role='button']):enabled:hover::before,
+    a.btn-glass:hover::before {
+        background-position: 25% 50%;
+    }
+
+    .btn-glass:is(button, [role='button']):enabled:hover::after,
+    a.btn-glass:hover::after {
+        --tp-angle-1: -125deg;
+    }
+
+    .btn-glass:is(button, [role='button']):enabled:active::before,
+    a.btn-glass:active::before {
+        background-position: 50% 15%;
+        --tp-angle-2: -15deg;
+    }
+
+    .btn-glass:is(button, [role='button']):enabled:active::after,
+    a.btn-glass:active::after {
+        --tp-angle-1: -75deg;
+    }
+
+    /* Disabled: flat and clearly inactive. */
+    .btn-glass:disabled::before,
+    .btn-glass:disabled::after,
+    .btn-glass[aria-disabled='true']::before,
+    .btn-glass[aria-disabled='true']::after {
+        opacity: 0;
+    }
+}
+
+@utility btn-glass {
+    --tp-ring: rgba(70, 70, 70, 0.45);
+    --tp-sheen: rgba(255, 255, 255, 0.7);
+    box-shadow:
+        0 0.25em 0.125em -0.125em rgba(60, 60, 60, 0.28),
+        inset 0 0.125em 0.125em rgba(60, 60, 60, 0.07),
+        inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.9);
+    transition:
+        transform var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        box-shadow var(--tp-time, 400ms) var(--tp-ease, cubic-bezier(0.25, 1, 0.5, 1)),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+
+    &:is(button, [role='button']):enabled:hover,
+    a&:hover {
+        transform: scale(0.975);
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+        box-shadow:
+            0 0.2em 0.1em -0.1em rgba(60, 60, 60, 0.3),
+            inset 0 0.125em 0.125em rgba(60, 60, 60, 0.07),
+            inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.95);
+    }
+
+    &:is(button, [role='button']):enabled:active,
+    a&:active {
+        transform: scale(0.96);
+        box-shadow:
+            0 0.1em 0.1em -0.1em rgba(60, 60, 60, 0.28),
+            inset 0 0.125em 0.2em rgba(60, 60, 60, 0.2);
+    }
+
+    &:disabled {
+        box-shadow: none;
+        transform: none;
+        filter: grayscale(0.35);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        &:is(button, [role='button']):enabled:hover,
+        a&:hover {
+            transform: none;
+        }
+
+        &:is(button, [role='button']):enabled:active,
+        a&:active {
+            transform: scale(0.97);
+        }
+    }
+
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        background-color: #ffffff;
+    }
+}
+
+@utility glass-panel {
+    /* Floating surfaces (dropdowns, popovers): the same glass as card-soft. */
+    box-shadow: var(--glass-shadow);
+}
+
+@utility card-soft {
+    /* The shared frosted-glass container. Fill, blur, border and radius: ui.css. */
+    box-shadow: var(--glass-shadow);
+}
+
+/*
+ * glass-stack: the same frosted glass as card-soft (same tokens: fill, blur,
+ * border, radius and the 80px shadow), built from two layers so containers that sit
+ * near each other never draw their shadow over one another. A normal card-soft
+ * paints its shadow together with its surface, so a LATER container's wide shadow
+ * lands on top of an EARLIER container. Here the shadow is a ::before at z-index -2
+ * and the glass a ::after at -1 (the wallpaper is at -3, see ui.css): all shadows
+ * sit behind all glass surfaces, and the container's content paints above both.
+ * A container that has its own transparent border (like the activity cards) sets
+ * --glass-stack-inset to that border width so the glass still covers the border box.
+ * The element itself has no background, border, blur or clipping, so put anything
+ * that must be clipped (a table with rounded corners) in an inner overflow-hidden
+ * wrapper. It is not a stacking context, so dropdowns, dialogs and the sidebar keep
+ * their own z-index values.
+ */
+@utility glass-stack {
+    position: relative;
+    border-radius: var(--glass-radius);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -2;
+        border-radius: inherit;
+        box-shadow: var(--glass-shadow);
+        pointer-events: none;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -1;
+        border-radius: inherit;
+        border: var(--glass-border);
+        background-color: var(--glass-bg);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        pointer-events: none;
+    }
+}
+
+/*
+ * glow-card: the activity card. Idle it is plain frosted glass (the glass-stack
+ * ::after surface: same fill, border and blur, but NO shadow). On hover (only on
+ * devices that really hover, so a tap never leaves it lit) or while the card
+ * contains a keyboard-focused control, the sidebar's ACTIVE-PAGE glow (the soft,
+ * muted one of nav-glow, not its vibrant hover) fades in behind the glass: the
+ * three-colour gradient (#E07082, #ECE280, #86CFCF, the same values nav-glow uses
+ * for the current page), the 30 s linear infinite `navigation-glowing`
+ * movement and the registered --glow-* colours are shared with nav-glow, 5px blur,
+ * a 0.5 s opacity fade in and out. The ring is 2px outside the glass with a radius
+ * 2px larger, so it follows the rounded corners; with the 24px card gap and 5px
+ * blur it stays inside the gap. The ring (::before, z -2) is behind the glass
+ * (::after, z -1) and the content paints above both; both are pointer-events: none.
+ * A container with its own transparent border sets --glass-stack-inset to that
+ * border width (see activityCardShell). Reduced motion: see ui.css.
+ */
+@utility glow-card {
+    position: relative;
+    border-radius: var(--glass-radius);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1 - 2px);
+        z-index: -2;
+        border-radius: calc(var(--glass-radius) + 2px);
+        /* The sidebar's ACTIVE-PAGE (muted) colours, not its vibrant hover ones. */
+        --glow-pink: #e07082;
+        --glow-yellow: #ece280;
+        --glow-cyan: #86cfcf;
+        background: linear-gradient(45deg, var(--glow-pink), var(--glow-yellow), var(--glow-cyan), var(--glow-pink));
+        background-size: 400%;
+        filter: blur(5px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        animation: navigation-glowing 30s linear infinite;
+        transition:
+            opacity 0.5s ease-in-out,
+            visibility 0s linear 0.5s;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: calc(var(--glass-stack-inset, 0px) * -1);
+        z-index: -1;
+        border-radius: inherit;
+        border: var(--glass-border);
+        background-color: var(--glass-bg);
+        /* Small, tight shadow for a little depth; far narrower than the 24px card gap, so it never reaches a neighbour. */
+        box-shadow: 0 3px 10px -2px rgba(120, 80, 30, 0.16);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        pointer-events: none;
+    }
+
+    &:has(:focus-visible)::before {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    @media (hover: hover) {
+        &:hover::before {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.5s ease-in-out;
+        }
+    }
+}
+
+/*
+ * Navigation items (sidebar). The link itself NEVER has a background, border
+ * colour, shadow or blur: it is only its icon and label (plus a transparent 2px
+ * border so the size is the same in every state). All the glass lives on ONE
+ * layer, the ::after of nav-glow (below), and appears and disappears by fading
+ * that layer's opacity alone, so the glass, its border, shadow and backdrop blur
+ * go 100% -> 0% together (fading blur/shadow/colour as separate properties
+ * looked like a drop to ~70% and then a jump). The glow ring (::before) fades
+ * on the same curve. nav-item-active is the CURRENT page (NavLink isActive): the
+ * same layers, held on, with a bold dark-brown label. A link has nav-item OR
+ * nav-item-active, plus nav-glow.
+ */
+@utility nav-item {
+    position: relative;
+    background: none;
+    border: 2px solid transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    transition: color 0.6s ease-in-out;
+
+    &:hover,
+    &:focus-visible {
+        color: var(--ui-text);
+        transition: color 0.5s ease;
+    }
+
+    &:focus-visible {
+        outline: 2px solid rgba(90, 90, 90, 0.55);
+        outline-offset: 2px;
+    }
+}
+
+@utility nav-item-active {
+    position: relative;
+    color: #6f4304;
+    background: none;
+    border: 2px solid transparent;
+
+    &:focus-visible {
+        outline: 2px solid rgba(90, 90, 90, 0.55);
+        outline-offset: 2px;
+    }
+}
+
+/*
+ * The glass and the glow of the sidebar links ONLY (added in Sidebar.jsx next to
+ * nav-item / nav-item-active; no other control uses it).
+ *  - ::after = the glass surface: the TheraPlay glass tokens (--glass-*), drawn as
+ *    before (a 50% white fill, a second 50% fill inside the border, the 2px glass
+ *    border, the glass shadow, the backdrop blur), at opacity 0 until the link is
+ *    hovered, keyboard-focused or the current page.
+ *  - ::before = the glow: a blurred (5px), slowly moving (30s) ring in exactly
+ *    #FF0055, #FFFF69 and #00FFFF, 2px outside the link, behind the glass.
+ * Both sit behind the icon and label, ignore the pointer, fade IN over 0.5s and
+ * OUT over 0.6s on the same ease-in-out curve, and are then hidden (the hide waits
+ * for the fade, so it can never cut it short; showing is immediate). The current
+ * page holds both at opacity 1; its ring is in muted colours until it is hovered
+ * or focused (the three colours are registered custom properties and cross-fade).
+ * Reduced motion: no gradient movement, 0.2s fades (ui.css).
+ */
+@utility nav-glow {
+    z-index: 0;
+    isolation: isolate;
+    overflow: visible;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        width: calc(100% + 4px);
+        height: calc(100% + 4px);
+        --glow-pink: #ff0055;
+        --glow-yellow: #ffff69;
+        --glow-cyan: #00ffff;
+        background: linear-gradient(45deg, var(--glow-pink), var(--glow-yellow), var(--glow-cyan), var(--glow-pink));
+        background-size: 400%;
+        z-index: -1;
+        filter: blur(5px);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        animation: navigation-glowing 30s linear infinite;
+        transition:
+            opacity 0.6s ease-in-out,
+            visibility 0s linear 0.6s;
+        border-radius: inherit;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        z-index: -1;
+        border-radius: inherit;
+        background:
+            linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+            var(--glass-bg) border-box;
+        border: var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        backdrop-filter: blur(var(--glass-blur));
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+            opacity 0.6s ease-in-out,
+            visibility 0s linear 0.6s;
+    }
+
+    &:hover::before,
+    &:focus-visible::before,
+    &.nav-item-active::before {
+        opacity: 1;
+        visibility: visible;
+        transition:
+            opacity 0.5s ease-in-out,
+            --glow-pink 0.5s ease-in-out,
+            --glow-yellow 0.5s ease-in-out,
+            --glow-cyan 0.5s ease-in-out;
+    }
+
+    &:hover::after,
+    &:focus-visible::after,
+    &.nav-item-active::after {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.5s ease-in-out;
+    }
+
+    /* The current page at rest: the same ring in muted versions of the three hues.
+       Hovering or focusing it brings back the vibrant colors (the vars transition). */
+    &.nav-item-active:not(:hover):not(:focus-visible)::before {
+        --glow-pink: #e07082;
+        --glow-yellow: #ece280;
+        --glow-cyan: #86cfcf;
+        transition:
+            opacity 0.6s ease-in-out,
+            --glow-pink 0.6s ease-in-out,
+            --glow-yellow 0.6s ease-in-out,
+            --glow-cyan 0.6s ease-in-out;
+    }
+}
+
+@property --glow-pink {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #ff0055;
+}
+
+@property --glow-yellow {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #ffff69;
+}
+
+@property --glow-cyan {
+    syntax: "<color>";
+    inherits: false;
+    initial-value: #00ffff;
+}
+
+@keyframes navigation-glowing {
+    0% {
+        background-position: 0 0;
+    }
+
+    50% {
+        background-position: 400% 0;
+    }
+
+    100% {
+        background-position: 0 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-glow::before {
+        animation: none;
+    }
+}
+
+/*
+ * A page inside the shared layout: at least the visible height BELOW the top
+ * bar, so a short page does not scroll just because the bar takes space.
+ * (Login, Register and the password pages have no top bar and use
+ * min-h-screen.)
+ */
+@utility min-h-page {
+    min-height: calc(100vh - var(--topbar-height));
+}
+
+/*
+ * Breakpoints. These are the same inclusive "max-width" values the project's
+ * CSS has always used (Tailwind's own max-[900px] is exclusive), defined once
+ * so a breakpoint is never repeated as a magic number in class strings.
+ *   laptop  <= 1100px   tablet <= 900px (the sidebar becomes an icon rail)
+ *   tablet-sm <= 800px  phone-lg <= 720px   phone <= 560px
+ * Keep them in this order (largest first): when two apply, the later one wins.
+ */
+@custom-variant laptop (@media (max-width: 1100px));
+@custom-variant tablet (@media (max-width: 900px));
+@custom-variant tablet-sm (@media (max-width: 800px));
+@custom-variant phone-lg (@media (max-width: 720px));
+@custom-variant phone (@media (max-width: 560px));
+
+/*
+ * The universal reset lives here, once, in the base layer. (If it were
+ * unlayered it would beat Tailwind utilities and cancel classes such as p-4
+ * and mb-6.)
+ */
+@layer base {
+    *,
+    ::before,
+    ::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Quicksand is what every page has always ended up with, because each old
+       page stylesheet set it on body. */
+    body {
+        font-family: 'Quicksand', sans-serif;
+    }
+
+    a {
+        color: inherit;
+    }
+}

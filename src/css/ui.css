@@ -1,0 +1,442 @@
+/*
+ * Shared design tokens and global behavior.
+ *
+ * Component styling is done with Tailwind classes in the components. What stays
+ * here is what utilities cannot express well:
+ *   - the design tokens (:root variables), which tailwind.css exposes as
+ *     Tailwind colors (bg-primary, text-success-text, ...)
+ *   - the global keyboard focus ring and the disabled-button state
+ *   - keyframes (dialog fade-in, skeleton shimmer)
+ *   - the prefers-reduced-motion rules
+ *
+ * These rules are not in a Tailwind layer, so they intentionally win over
+ * utilities (for example the focus ring always shows).
+ */
+
+:root {
+    /*
+     * Warm Neutral theme. Every neutral color in the app comes from these
+     * variables (exposed as Tailwind colors in tailwind.css): change them here
+     * to re-theme the whole site.
+     */
+    --ui-page: #faf8f5;            /* page background */
+    --ui-surface-warm: #f5f0e9;    /* secondary warm surface (inner cards, list rows) */
+    --ui-sunken: #f0ece6;          /* muted / disabled surface, tracks, avatar fill */
+    --ui-edge: #e7ded3;            /* borders and dividers */
+    --ui-edge-strong: #d6c9ba;     /* input and button borders */
+    --ui-accent: #935b07;        /* primary accent (buttons, active links) */
+    --ui-accent-hover: #854d0e;
+    --ui-accent-2: #d97706;        /* secondary accent (highlights, chart series) */
+    --ui-accent-soft: #fef3e7;     /* soft accent background */
+
+    --ui-text: #292524;            /* primary text */
+    --ui-body: #57534e;            /* body copy */
+    --ui-muted: #655d57;           /* secondary text (5.4:1+ on the page and card surfaces) */
+    --ui-faint: #706760;           /* hints and placeholders (4.7:1+ on the page and card surfaces) */
+
+    --ui-primary: var(--ui-accent);
+    --ui-primary-hover: var(--ui-accent-hover);
+    --ui-border: var(--ui-edge-strong);
+    --ui-surface-hover: #f3eee7;
+
+    --ui-success: #15732f;
+    --ui-success-bg: #e6f4ea;
+    --ui-success-bg-hover: #d3ecd9;
+    --ui-success-text: #0d5c26;
+
+    --ui-warning-bg: #fff1c2;
+    --ui-warning-bg-hover: #ffe89c;
+    --ui-warning-border: #d9a400;
+    --ui-warning-text: #7a4b00;
+
+    --ui-danger: #c5221f;
+    --ui-danger-bg: #fce8e6;
+    --ui-danger-bg-hover: #f8d3cf;
+    --ui-danger-text: #a50e0e;
+
+    --ui-hard-bg: #7f1d1d;
+    --ui-hard-text: #fff;
+
+    --ui-focus: #a16207;
+
+    --ui-transition: 0.15s ease;
+
+    /*
+     * The one button palette (neutral), changed here for every button. The SURFACE
+     * is --btn-bg at --btn-alpha (80% white): a background color alpha, never
+     * opacity on the element, so labels and icons stay fully opaque.
+     */
+    --btn-alpha: 0.8;
+    --btn-bg: 255 255 255;
+    --btn-bg-hover: 243 243 243;
+    --btn-text: #323232;
+    --btn-border: rgba(90, 90, 90, 0.35);
+    --btn-blur: 4px;
+
+    /*
+     * Frosted glass, the one container design of the whole site (the supplied
+     * "glass-card"): every card, panel, table, form, dialog, the sidebar and the
+     * dropdowns get it through the card-soft and glass-panel classes. Only the
+     * SURFACE is 50% white; text, icons and controls inside stay fully opaque.
+     * Width, height and padding are never part of it: each container keeps its own.
+     */
+    --glass-bg: rgba(255, 255, 255, 0.5);
+    --glass-blur: 35px;
+    --glass-border: 2px solid rgba(255, 255, 255, 0.15);
+    --glass-shadow: 0 0 80px rgba(0, 0, 0, 0.25);
+    --glass-radius: 20px;
+
+    /* Layout widths (used by Tailwind utilities such as ml-sidebar). */
+    --sidebar-width: 240px;
+    --sidebar-width-collapsed: 72px;
+    --topbar-height: 56px;
+
+    /* The sidebar floats this far from the viewport edges; the page and the
+       search pill start after the sidebar plus the gap on both sides. */
+    --sidebar-gap: 12px;
+    --sidebar-offset: calc(var(--sidebar-width) + var(--sidebar-gap) * 2);
+    --sidebar-offset-collapsed: calc(var(--sidebar-width-collapsed) + var(--sidebar-gap) * 2);
+}
+
+@media (max-width: 560px) {
+    :root {
+        --sidebar-gap: 8px;
+    }
+}
+
+
+/* --- Buttons: one neutral glass look ---
+   Unlayered, so the neutral surface, text and border win over any utility left on
+   an element. The ring, sheen and shadows are in tailwind.css (btn-glass). */
+
+.btn-glass {
+    background-color: rgb(var(--btn-bg) / var(--btn-alpha));
+    background-image: none;
+    color: var(--btn-text);
+    border: 1px solid var(--btn-border);
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    -webkit-backdrop-filter: blur(var(--btn-blur));
+    backdrop-filter: blur(var(--btn-blur));
+}
+
+.btn-glass:is(button, [role='button']):enabled:hover,
+a.btn-glass:hover {
+    background-color: rgb(var(--btn-bg-hover) / var(--btn-alpha));
+}
+
+
+/* --- White frosted-glass containers ---
+   The fill, blur, border and radius are unlayered so they win over the bg-white,
+   border-edge and rounded-* left on the elements; the shadow is in the card-soft / glass-panel
+   utilities (tailwind.css) so a hover shadow on a card can still replace it. */
+
+.card-soft,
+.glass-panel {
+    background-color: var(--glass-bg);
+    border: var(--glass-border);
+    border-radius: var(--glass-radius);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+}
+
+/* Popup dialogs (Modal, ConfirmDialog): the glass panel is 80% opaque instead of the
+   usual 50%. Declared after .card-soft so it wins; only the background changes. */
+.modal-surface {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .card-soft,
+    .glass-panel {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
+}
+
+
+/* --- Keyboard focus: always visible, one consistent ring --- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--ui-focus);
+    outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    box-shadow: 0 0 0 3px rgba(161, 98, 7, 0.25);
+}
+
+
+/* --- Buttons: short transitions and a clear disabled state --- */
+
+button {
+    transition:
+        background-color var(--ui-transition),
+        border-color var(--ui-transition),
+        color var(--ui-transition),
+        box-shadow var(--ui-transition),
+        opacity var(--ui-transition);
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+}
+
+button:disabled {
+    opacity: 0.55;
+}
+
+
+/* --- Form fields --- */
+
+input,
+select,
+textarea {
+    transition:
+        border-color var(--ui-transition),
+        box-shadow var(--ui-transition);
+}
+
+
+/*
+ * --- Motion system ---
+ * One set of timings, used through Tailwind (animate-[...] / duration-*):
+ *   hover / focus ........ 150 ms   (--ui-transition above)
+ *   dropdowns, messages .. 180-200 ms, ease-out
+ *   dialogs, form panels . 220-250 ms, ease-out
+ *   expand / collapse .... 300 ms, ease-out opening / ease-in closing
+ *                          (see Collapsible.jsx)
+ * Reduced-motion users get none of it (rule at the bottom of this file).
+ */
+
+/* --- Keyframes: dialog, panels, dropdowns --- */
+
+@keyframes ui-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ui-rise-in {
+    from { opacity: 0; transform: translateY(6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ui-pop-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* (Used via Tailwind: animate-[ui-fade-in_...], animate-[ui-pop-in_...].) */
+
+
+/* --- Skeleton shimmer ---
+ * Size, spacing and radius of the placeholders are Tailwind utilities (see
+ * Skeleton.jsx). Only the moving gradient lives here, because it needs
+ * keyframes. Reduced-motion users get a flat block (see the rule below).
+ */
+
+@keyframes ui-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.skeleton {
+    background-color: #efe9e1;
+    background-image: linear-gradient(
+        90deg,
+        #efe9e1 25%,
+        #f8f4ee 50%,
+        #efe9e1 75%
+    );
+    background-size: 200% 100%;
+    animation: ui-shimmer 1.4s ease-in-out infinite;
+}
+
+
+/* --- Respect "reduce motion" everywhere --- */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    /* No lifting or pressing movement. */
+    .btn-glass,
+    .btn-glass:hover,
+    .btn-glass:active {
+        transform: none !important;
+    }
+
+    /* A static placeholder instead of a moving one. */
+    .skeleton {
+        animation: none;
+        background-image: none;
+    }
+}
+
+
+/* The page color also shows in overscroll areas and behind short pages. */
+html {
+    background-color: var(--ui-page);
+}
+
+/*
+ * Room the search pill leaves on its right for the top-right controls: the
+ * profile shortcut alone (the default 90px), or the profile shortcut plus the
+ * Choose Child selector, which sets data-child-selector on <html> while it is
+ * shown (parents).
+ */
+html[data-child-selector] {
+    --search-reserve: 285px;
+}
+
+@media (max-width: 900px) {
+    html[data-child-selector] {
+        --search-reserve: 235px;
+    }
+}
+
+@media (max-width: 560px) {
+    html[data-child-selector] {
+        --search-reserve: 152px;
+    }
+}
+
+/*
+ * Site background: a soft, blurred-looking three-color gradient over the warm
+ * ivory page color. It is pure CSS (no image) and lives on a fixed layer BEHIND
+ * the page, so it covers the whole window however long the page is, never scrolls
+ * or repaints with the content, and nothing on the page is blurred.
+ * Pages must not paint their own opaque background over it (the layout, the admin
+ * pages and the auth pages are transparent for that reason).
+ *
+ * Two wallpapers are kept so they can be compared. To switch, change the two
+ * "--site-wallpaper*" lines in the :root block just below (or in devtools):
+ *   EXPERIMENT (active): the original hues #FF0055 / #FFFF69 / #00FFFF at about
+ *     half their saturation: dusty pink #BF406A (60%: two large washes), muted
+ *     yellow #D9D98F (30%) and soft cyan #40BFBF (10%, a small corner accent).
+ *     The shares come from each color's area and strength.
+ *   PREVIOUS: the earlier pastel pink / yellow / aqua / peach, saturated x1.5625.
+ */
+:root {
+    --site-wallpaper: var(--wallpaper-experiment);
+    --site-wallpaper-filter: none;
+
+    --wallpaper-experiment:
+        radial-gradient(ellipse 95% 85% at 0% 0%, rgba(191, 64, 106, 0.55) 0%, rgba(191, 64, 106, 0.32) 45%, rgba(191, 64, 106, 0) 100%),
+        radial-gradient(ellipse 80% 70% at 6% 104%, rgba(191, 64, 106, 0.4) 0%, rgba(191, 64, 106, 0.2) 45%, rgba(191, 64, 106, 0) 100%),
+        radial-gradient(ellipse 80% 70% at 100% 4%, rgba(217, 217, 143, 0.85) 0%, rgba(217, 217, 143, 0.5) 45%, rgba(217, 217, 143, 0) 100%),
+        radial-gradient(ellipse 55% 50% at 96% 104%, rgba(64, 191, 191, 0.6) 0%, rgba(64, 191, 191, 0.32) 45%, rgba(64, 191, 191, 0) 100%);
+
+    --wallpaper-previous:
+        radial-gradient(ellipse 70% 60% at 6% 8%, rgba(255, 150, 185, 0.24) 0%, rgba(255, 150, 185, 0) 100%),
+        radial-gradient(ellipse 65% 55% at 94% 10%, rgba(255, 248, 150, 0.34) 0%, rgba(255, 248, 150, 0) 100%),
+        radial-gradient(ellipse 75% 65% at 72% 98%, rgba(150, 235, 240, 0.28) 0%, rgba(150, 235, 240, 0) 100%),
+        radial-gradient(ellipse 60% 50% at 8% 92%, rgba(255, 215, 170, 0.16) 0%, rgba(255, 215, 170, 0) 100%);
+    --wallpaper-previous-filter: saturate(1.5625);
+}
+
+/* The wallpaper is the lowest layer of the page (z-index -3): glass-stack
+   containers (tailwind.css) draw their shadow at -2 and their glass at -1, so every
+   shadow is behind every glass surface and all of them are above the wallpaper. */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    background-color: var(--ui-page);
+    background-image: var(--site-wallpaper);
+    filter: var(--site-wallpaper-filter);
+}
+
+/* Admin dropdowns: a chevron with breathing room instead of the native arrow
+   that clings to the edge (unlayered so it beats the padding utilities). */
+.ui-select {
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b6560' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 16px;
+}
+
+/* --- Button colors ---
+   Color-only modifiers for btn-glass: each changes the --btn-* palette tokens (and
+   the ring) of one button and nothing else, so shape, the 80% surface, blur,
+   shadows and motion stay those of btn-glass. There are NO blue or gray buttons.
+   white = the default (manage, navigate, cancel, refresh, select, archive,
+   replace, send), green = create / save / publish, yellow = change / edit,
+   red = destructive / unpublish / log out. The three hues are muted versions of
+   a muted green, #FFFF69 yellow and #FF0055 red (no neon); labels are a dark
+   shade of the hue (all above 4.5:1). */
+
+.btn-green {
+    --btn-bg: 124 187 138;
+    --btn-bg-hover: 109 172 124;
+    --btn-text: #11301d;
+    --btn-border: rgba(124, 187, 138, 0.9);
+    --tp-ring: rgba(124, 187, 138, 0.9);
+}
+
+.btn-yellow {
+    --btn-bg: 236 226 128;
+    --btn-bg-hover: 224 213 112;
+    --btn-text: #3b3306;
+    --btn-border: rgba(236, 226, 128, 0.9);
+    --tp-ring: rgba(236, 226, 128, 0.9);
+}
+
+.btn-red {
+    --btn-bg: 224 112 130;
+    --btn-bg-hover: 212 98 117;
+    --btn-text: #3d0a14;
+    --btn-border: rgba(224, 112, 130, 0.9);
+    --tp-ring: rgba(224, 112, 130, 0.9);
+}
+
+/* White is the btn-glass default; the class exists so buttons say what they are
+   and so the default can never be overridden by an inherited hue. */
+.btn-white {
+    --btn-bg: 255 255 255;
+    --btn-bg-hover: 243 243 243;
+    --btn-text: #323232;
+    --btn-border: rgba(90, 90, 90, 0.35);
+    --tp-ring: rgba(70, 70, 70, 0.45);
+}
+
+/* Sidebar glow (nav-glow, tailwind.css): the global reduced-motion rule above
+   would make its fade instant; keep a short 0.2s fade, with no movement. */
+@media (prefers-reduced-motion: reduce) {
+    .nav-glow::before,
+    .nav-glow::after {
+        animation: none !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* Activity card glow (glow-card, tailwind.css): same exception as the sidebar glow.
+   The global rule above would make the fade instant; keep a short 0.2s fade and no
+   gradient movement (the 3px lift is removed in the card's own classes). */
+@media (prefers-reduced-motion: reduce) {
+    .glow-card::before {
+        animation: none !important;
+        transition-duration: 0.2s !important;
+    }
+}
