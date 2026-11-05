@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { makeChild, makeUser, mockApi, renderApp, settle, signIn } from './test/helpers.jsx'
@@ -36,12 +36,30 @@ function setup(user, routes = {}) {
 const codeBox = () => screen.getByLabelText('Verification code')
 
 describe('Sign-up routing follows the account state', () => {
-  it('sends a new unverified parent to the email code screen, from anywhere', async () => {
+  it('lets an unverified parent browse, with a reminder (they are not forced to the code screen)', async () => {
     setup(parent('verify_email'), { 'GET /email/code/status': status(540) })
     renderApp('/dashboard')
 
-    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
-    expect(screen.getByText('pat@example.com')).toBeInTheDocument()
+    const banner = await screen.findByTestId('verification-banner')
+    expect(banner).toHaveTextContent('Your email address is not verified')
+    expect(screen.queryByRole('heading', { name: 'Check your email' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Verify your email first' })).toBeInTheDocument()
+  })
+
+  it('does not show the reminder to a verified parent', async () => {
+    setup(parent('complete'))
+    renderApp('/dashboard')
+
+    expect(await screen.findByRole('heading', { level: 1, name: /Hello/ })).toBeInTheDocument()
+    expect(screen.queryByTestId('verification-banner')).not.toBeInTheDocument()
+  })
+
+  it('lets an unverified parent open the code screen later, and shows the reminder link to it', async () => {
+    setup(parent('verify_email'), { 'GET /email/code/status': status(540) })
+    renderApp('/activities')
+
+    const banner = await screen.findByTestId('verification-banner')
+    expect(within(banner).getByRole('link', { name: 'Verify now' })).toHaveAttribute('href', '/verify-code')
   })
 
   it('sends a verified parent without a child to the child profile form after login', async () => {
@@ -59,11 +77,11 @@ describe('Sign-up routing follows the account state', () => {
     expect(screen.queryByRole('heading', { name: 'Check your email' })).not.toBeInTheDocument()
   })
 
-  it('keeps an unverified parent off the child form', async () => {
+  it('keeps an unverified parent off the child form (they go to the dashboard, still unverified)', async () => {
     setup(parent('verify_email'), { 'GET /email/code/status': status(540) })
     renderApp('/create-child')
 
-    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
+    expect(await screen.findByTestId('verification-banner')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: "Your child's profile" })).not.toBeInTheDocument()
   })
 
@@ -321,14 +339,66 @@ describe('Child profile screen', () => {
 
   it('goes back to the email code screen if the server says the email is not verified', async () => {
     const user = userEvent.setup()
+    // Like the real server: after refusing the child it reports the account as unverified.
+    let refused = false
     await open({
-      'POST /children': { status: 403, body: { code: 'email_not_verified', message: 'Please verify your email address.' } },
+      'GET /user': () => ({ body: refused ? parent('verify_email') : parent('create_child') }),
+      'POST /children': () => {
+        refused = true
+
+        return { status: 403, body: { code: 'email_not_verified', message: 'Please verify your email address.' } }
+      },
       'GET /email/code/status': status(null),
     })
 
     await user.type(screen.getByLabelText("Child's name"), 'Mia')
     await user.click(screen.getByRole('button', { name: 'Finish sign-up' }))
 
-    expect(await screen.findByRole('heading', { name: 'Check your email' })).toBeInTheDocument()
+    // The server refused the child (email not verified): the parent lands where they can
+    // browse and verify, not on the child form.
+    expect(await screen.findByTestId('verification-banner')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: "Your child's profile" })).not.toBeInTheDocument()
+  })
+})
+
+describe('Verify later', () => {
+  it('leaves the account unverified and goes to the dashboard without verifying anything', async () => {
+    const user = userEvent.setup()
+    const api = setup(parent('verify_email'), { 'GET /email/code/status': status(540) })
+    renderApp('/verify-code')
+
+    await user.click(await screen.findByRole('button', { name: 'Verify later' }))
+
+    expect(await screen.findByTestId('verification-banner')).toBeInTheDocument()
+    expect(api.callsTo('POST', '/email/code/verify')).toHaveLength(0)
+    expect(api.callsTo('POST', '/children')).toHaveLength(0)
+  })
+
+  it('can be reached again later and a new code can be requested there', async () => {
+    const user = userEvent.setup()
+    const api = setup(parent('verify_email'), {
+      'GET /email/code/status': status(null),
+      'POST /email/code/resend': { body: { status: 'sent', delivered: true, message: 'A new code was sent.', expires_in: 600 } },
+    })
+    renderApp('/verify-code')
+
+    await user.click(await screen.findByRole('button', { name: 'Resend code' }))
+
+    expect(await screen.findByText('A new code was sent.')).toBeInTheDocument()
+    expect(api.callsTo('POST', '/email/code/resend')).toHaveLength(1)
+  })
+
+  it('shows the wait time when the server asks for a cooldown', async () => {
+    const user = userEvent.setup()
+    setup(parent('verify_email'), {
+      'GET /email/code/status': status(null),
+      'POST /email/code/resend': { status: 429, body: { status: 'cooldown', retry_after: 25, message: 'wait' } },
+    })
+    renderApp('/verify-code')
+
+    await user.click(await screen.findByRole('button', { name: 'Resend code' }))
+
+    expect(await screen.findByText('Please wait 25 seconds before asking for another code.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resend code (25s)' })).toBeDisabled()
   })
 })

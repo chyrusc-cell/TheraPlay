@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Download, LoaderCircle } from 'lucide-react';
+import { Check, Download, LoaderCircle } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { API_URL, apiRequest, getToken } from './api.js';
 import { ActivityDetailsSkeleton } from './Skeleton.jsx';
@@ -9,8 +9,10 @@ import { previewKind, typeLabel } from './attachmentTypes.js';
 import { holdSkeleton } from './minLoading.js';
 import { useChildren } from './childContext.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
-import { detailsCardClass, pageMain, smallActionClass } from './uiClasses.js';
+import { detailsCardClass, pageMain } from './uiClasses.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
+import { JournalForm, JournalHistory } from './ActivityJournal.jsx';
+import { VERIFY_CODE_PATH, isUnverifiedParent, useAuth } from './authContext.js';
 
 // Is this activity already completed for the logged-in parent? (Resolves with the
 // completed progress record, or null.) It reads the
@@ -53,6 +55,11 @@ const fetchIsCompleted = async (activityId, signal, childId) => {
     }
 };
 
+// The two header buttons share one height (their widths follow their labels).
+const headerButtonSize = 'h-10 shrink-0 cursor-pointer rounded-full px-5 text-[14px] font-bold whitespace-nowrap';
+const completeButtonClass = `${headerButtonSize} btn-glass btn-green disabled:cursor-not-allowed`;
+const undoButtonClass = `${headerButtonSize} border btn-glass btn-red disabled:cursor-not-allowed disabled:opacity-60`;
+
 const completeButtonBase =
     'cursor-pointer rounded-full p-3 text-[15px] btn-glass btn-green';
 
@@ -75,7 +82,11 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
     const params = useParams();
     const activityId = activityIdProp ?? params.activityId;
     // The globally selected child (completion is recorded for this child).
-    const { selectedChildId, status: childStatus, refreshChildren } = useChildren();
+    const { selectedChildId, selectedChild, status: childStatus, refreshChildren } = useChildren();
+    const { user } = useAuth();
+    const isParent = user?.role === 'parent';
+    const unverified = isUnverifiedParent(user);
+    const selectedChildName = selectedChild?.name;
     const navigate = useNavigate();
 
     const [activity, setActivity] = useState(null);
@@ -86,6 +97,15 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
     const [completionRecordId, setCompletionRecordId] = useState(null);
+    // The progress record whose session journal form is open (right after completing).
+    const [journalFormFor, setJournalFormFor] = useState(null);
+    // An existing entry being edited, or being deleted (asks first).
+    const [editingEntry, setEditingEntry] = useState(null);
+    const [deletingEntry, setDeletingEntry] = useState(null);
+    const [isDeletingEntry, setIsDeletingEntry] = useState(false);
+    const [journalEntries, setJournalEntries] = useState([]);
+    const [journalStatus, setJournalStatus] = useState('idle');
+    const [journalReloadKey, setJournalReloadKey] = useState(0);
     const [confirmingUndo, setConfirmingUndo] = useState(false);
     const [isUndoing, setIsUndoing] = useState(false);
     const [message, setMessage] = useState('');
@@ -159,6 +179,44 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
         return () => controller.abort();
     }, [activityId, childStatus, selectedChildId]);
 
+    // The selected child's saved journal entries for this activity (parents only).
+    useEffect(() => {
+        if (!isParent || !selectedChildId || childStatus !== 'ready') {
+            // Nothing to load (the journal section is not shown for this account/child).
+            return undefined;
+        }
+
+        const controller = new AbortController();
+
+        (async () => {
+            setJournalStatus('loading');
+
+            try {
+                const result = await apiRequest(
+                    `/activities/${activityId}/journal?child_id=${selectedChildId}`,
+                    { signal: controller.signal }
+                );
+
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                if (result.ok) {
+                    setJournalEntries(Array.isArray(result.data.data) ? result.data.data : []);
+                    setJournalStatus('ready');
+                } else {
+                    setJournalStatus('error');
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    setJournalStatus('error');
+                }
+            }
+        })();
+
+        return () => controller.abort();
+    }, [activityId, isParent, selectedChildId, childStatus, journalReloadKey]);
+
     // Token missing or rejected: clear it and send the user to login.
     const redirectToLogin = (text) => {
         ['theraplay_token', 'theraplay_user'].forEach((key) => {
@@ -211,6 +269,12 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
         setShowChildForm(false);
         setIsCompleted(true);
         setCompletionRecordId(data.data?.record?.id ?? null);
+
+        // A fresh completion invites the parent to rate it, but only when the activity has no journal entry yet (one per activity).
+        if (!data.already_completed && data.data?.record?.id && journalEntries.length === 0) {
+            setJournalFormFor(data.data.record.id);
+        }
+
         onCompleted?.(activityId);
         setMessage(data.message || 'Activity marked as completed.');
         return true;
@@ -243,6 +307,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
             setIsCompleted(false);
             setCompletionRecordId(null);
+            setJournalFormFor(null);
             onUndone?.(activityId);
             setMessage('Completion undone. This activity is no longer marked as completed.');
         } catch {
@@ -251,6 +316,34 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
         } finally {
             setIsUndoing(false);
             setConfirmingUndo(false);
+        }
+    };
+
+    const handleDeleteEntry = async () => {
+        if (!deletingEntry || isDeletingEntry) {
+            return;
+        }
+
+        setIsDeletingEntry(true);
+
+        try {
+            const result = await apiRequest(`/journal/${deletingEntry.id}`, { method: 'DELETE' });
+
+            // 404 = already gone, which is what the parent wanted.
+            if (result.ok || result.status === 404) {
+                setIsMessageError(false);
+                setMessage('Your journal entry was deleted.');
+                setJournalReloadKey((key) => key + 1);
+            } else {
+                setIsMessageError(true);
+                setMessage(result.data?.message || 'We could not delete this journal entry. Please try again.');
+            }
+        } catch {
+            setIsMessageError(true);
+            setMessage('We could not reach the server. Please try again.');
+        } finally {
+            setIsDeletingEntry(false);
+            setDeletingEntry(null);
         }
     };
 
@@ -417,6 +510,11 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
     const Title = embedded ? 'h3' : 'h1';
     const Section = embedded ? 'h4' : 'h2';
 
+    const showJournal = isParent && Boolean(selectedChildId) && !unverified;
+    const canAddEntry =
+        showJournal && isCompleted && Boolean(completionRecordId) && journalStatus === 'ready' &&
+        journalEntries.length === 0 && !journalFormFor;
+
     if (isLoading) {
 
         return (
@@ -517,14 +615,80 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                     <div>
 
-                        <Title className="mb-3 text-[28px] font-bold">
-                            {activity.title}
-                        </Title>
+                        <div className="mb-3 flex items-start justify-between gap-4">
+
+                            <Title className="text-[28px] font-bold">
+                                {activity.title}
+                            </Title>
+
+                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+
+                                {isCompleted ? (
+                                    <span className="inline-flex h-10 items-center gap-1.5 text-[14px] font-bold italic text-[#188038]">
+                                        Completed
+                                        <Check size={18} aria-hidden="true" />
+                                    </span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className={completeButtonClass}
+                                        onClick={handleComplete}
+                                        disabled={isSubmitting || showChildForm || unverified}
+                                        aria-describedby={unverified ? 'verify-to-complete' : undefined}
+                                    >
+                                        {isSubmitting ? 'Saving...' : 'Mark as Completed'}
+                                    </button>
+                                )}
+
+                                {isCompleted && completionRecordId && (
+                                    <button
+                                        type="button"
+                                        className={undoButtonClass}
+                                        onClick={() => setConfirmingUndo(true)}
+                                        disabled={isUndoing}
+                                    >
+                                        Undo completion
+                                    </button>
+                                )}
+
+                            </div>
+
+                        </div>
+
+                        {unverified && (
+                            <p id="verify-to-complete" className="mt-2 text-[13px] text-muted">
+                                Verify your email to mark activities as completed.{' '}
+                                <Link to={VERIFY_CODE_PATH} className="font-bold text-ink underline">
+                                    Verify now
+                                </Link>
+                            </p>
+                        )}
+
+                        <JournalForm
+                                    open={Boolean(journalFormFor || editingEntry)}
+                                    entry={editingEntry}
+                                    progressId={journalFormFor}
+                                    activityTitle={activity.title}
+                                    childName={selectedChildName}
+                                    onClose={() => {
+                                        setJournalFormFor(null);
+                                        setEditingEntry(null);
+                                    }}
+                                    onSaved={() => {
+                                        setMessage(editingEntry ? 'Your journal entry was updated.' : 'Your journal entry was saved.');
+                                        setJournalFormFor(null);
+                                        setEditingEntry(null);
+                                        setIsMessageError(false);
+                                        setJournalReloadKey((key) => key + 1);
+                                    }}
+                                />
+
+
 
                         <div className="mb-[30px] flex gap-2.5">
 
                             {activity.category && (
-                                <span className="rounded-[5px] bg-white px-2.5 py-[5px] text-[13px]">
+                                <span className="rounded-[5px] border border-black bg-white px-2.5 py-[5px] text-[13px]">
                                     {activity.category}
                                 </span>
                             )}
@@ -685,6 +849,22 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                         </section>
 
 
+                        {/* The parent's saved sessions for the selected child (newest first). */}
+
+                        {showJournal && (
+                            <JournalHistory
+                                entries={journalEntries}
+                                status={journalStatus}
+                                childName={selectedChildName}
+                                onRetry={() => setJournalReloadKey((key) => key + 1)}
+                                canAdd={canAddEntry}
+                                onAdd={() => setJournalFormFor(completionRecordId)}
+                                onEdit={(entry) => setEditingEntry(entry)}
+                                onDelete={(entry) => setDeletingEntry(entry)}
+                            />
+                        )}
+
+
                         {showChildForm && (
                             <form
                                 className="mb-4 flex flex-col gap-2 rounded-md border border-edge-strong p-4"
@@ -746,28 +926,17 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                             </form>
                         )}
 
-                        <button
-                            className={`${completeButtonBase} w-full`}
-                            onClick={handleComplete}
-                            disabled={isSubmitting || isCompleted || showChildForm}
-                        >
-                            {isSubmitting
-                                ? 'Saving...'
-                                : isCompleted
-                                    ? 'Completed'
-                                    : 'Mark as Completed'}
-                        </button>
-
-                        {isCompleted && completionRecordId && (
-                            <button
-                                type="button"
-                                className={`${smallActionClass} mt-3`}
-                                onClick={() => setConfirmingUndo(true)}
-                                disabled={isUndoing}
-                            >
-                                Undo completion
-                            </button>
-                        )}
+                        <ConfirmDialog
+                            open={deletingEntry !== null}
+                            title="Delete this journal entry?"
+                            message="This rating and note will be permanently deleted. The activity stays completed."
+                            confirmLabel="Delete entry"
+                            confirmVariant="danger"
+                            busyLabel="Deleting..."
+                            busy={isDeletingEntry}
+                            onConfirm={handleDeleteEntry}
+                            onCancel={() => setDeletingEntry(null)}
+                        />
 
                         <ConfirmDialog
                             open={confirmingUndo}

@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\EmailVerificationCode;
 use App\Support\MailDelivery;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,24 +42,67 @@ class ProfileController extends Controller
             'contact_number' => ['nullable', 'string', 'max:30'],
         ]);
 
-        // An account's email address is fixed once the account exists: the form may
-        // send the current address back, but any different one is refused.
-        if (isset($validated['email']) && trim($validated['email']) !== '' && mb_strtolower(trim($validated['email'])) !== mb_strtolower($user->email)) {
-            throw ValidationException::withMessages(['email' => 'Your email address cannot be changed.']);
+        // The email address is fixed once it is VERIFIED. While it is still
+        // unverified the owner may correct it (wrong address, typo): the new address
+        // must be valid and unused (any letter case), the old code stops working and
+        // a new one is sent to the new address. Verification is never skipped by this.
+        $requested = isset($validated['email']) ? trim($validated['email']) : '';
+        $emailChanged = $requested !== '' && mb_strtolower($requested) !== mb_strtolower($user->email);
+
+        if ($emailChanged) {
+            if ($user->hasVerifiedEmail()) {
+                throw ValidationException::withMessages(['email' => 'Your email address is verified and cannot be changed.']);
+            }
+
+            $this->assertUsableNewEmail($user, $requested);
+
+            $key = 'email-change:'.$user->id;
+
+            if (RateLimiter::tooManyAttempts($key, 5)) {
+                throw ValidationException::withMessages(['email' => 'You changed your email address too many times. Please try again later.']);
+            }
+
+            RateLimiter::hit($key, 3600);
         }
 
         $messages = ['Profile updated successfully.'];
         $delivered = null;
 
-        $user->update([
-            'name' => $validated['name'],
-            'contact_number' => $validated['contact_number'] ?? null,
-        ]);
+        DB::transaction(function () use ($user, $validated, $emailChanged, $requested) {
+            $user->update([
+                'name' => $validated['name'],
+                'contact_number' => $validated['contact_number'] ?? null,
+            ]);
 
-        // Changing the address is no longer possible, so a change requested before
-        // that rule existed must not complete later.
+            if ($emailChanged) {
+                // Still unverified: email_verified_at stays null on purpose.
+                $user->forceFill(['email' => $requested, 'email_verified_at' => null])->save();
+            }
+        });
+
+        // Any waiting (pending) change from the old flow must not complete later.
         if ($user->pendingEmail() !== null) {
             $user->clearPendingEmail();
+        }
+
+        if ($emailChanged) {
+            // The code for the old address is destroyed, then a new one goes to the new address.
+            EmailVerificationCode::forget($user);
+
+            try {
+                EmailVerificationCode::issue($user);
+                $delivered = MailDelivery::isConfigured();
+                $messages = [$delivered
+                    ? 'Email address updated. We sent a new verification code to it.'
+                    : 'Email address updated. Email delivery is not set up on this server, so no code was delivered.'];
+            } catch (Throwable $e) {
+                Log::warning('Verification code email could not be sent after an email change.', [
+                    'user_id' => $user->id,
+                    'error' => class_basename($e),
+                ]);
+                $delivered = false;
+                $messages = ['Email address updated, but we could not send the verification code. Use "Resend code" to try again.'];
+            }
         }
 
         return response()->json([
@@ -108,6 +154,25 @@ class ProfileController extends Controller
         }
 
         return response()->json(['message' => 'Your account has been deleted.']);
+    }
+
+    private function assertUsableNewEmail(User $user, string $email): void
+    {
+        $validator = Validator::make(['email' => $email], ['email' => ['email', 'max:255']]);
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages(['email' => $validator->errors()->first('email')]);
+        }
+
+        $lower = mb_strtolower($email);
+        $reserved = mb_strtolower(trim((string) config('theraplay.admin.email')));
+
+        $taken = $lower === $reserved
+            || User::query()->where('id', '!=', $user->id)->whereRaw('lower(email) = ?', [$lower])->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages(['email' => 'This email address cannot be used.']);
+        }
     }
 
     private function requirePassword(User $user, ?string $password, string $field = 'current_password'): void

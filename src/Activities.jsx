@@ -1,15 +1,14 @@
+import { Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { ActivityCardsSkeleton } from './Skeleton.jsx';
 import ActivityPicture from './ActivityPicture.jsx';
-import ActivityDetails from './ActivityDetails.jsx';
-import Modal from './Modal.jsx';
 import { useChildGate } from './useChildGate.jsx';
 import { holdSkeleton } from './minLoading.js';
 import { difficultyBadgeTw } from './uiHelpers.js';
 import { activityCardClass, activityGridClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
-import { filterSelect } from './adminClasses.js';
+import FilterDropdown from './FilterDropdown.jsx';
 
 // Which activities has the selected child completed? This reads the same saved
 // progress as the Progress page. Only a parent with a selected child has any:
@@ -67,15 +66,15 @@ const imagePlaceholders = [
     'bg-[#fbeedd]',
 ];
 
+// A completed activity's card is a green-tinted glass instead of the usual white one (only the
+// glass fill variable changes, so size, glow and hover are the same).
+const completedCardTone = '[--glass-bg:rgba(110,200,110,0.5)]';
+
 const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 
 // The difficulty levels the server accepts.
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard'];
 
-const filterLabelClass = 'text-[13px] font-bold text-muted';
-// The shared filter dropdown look (adminClasses.js), same as Manage Accounts.
-const filterSelectClass = filterSelect;
-const filterFieldClass = 'flex flex-col gap-1.5 phone:min-w-0 phone:flex-1';
 
 function Activities() {
     // Every parent sees ALL published activities (their child's conditions do
@@ -89,8 +88,6 @@ function Activities() {
     const [activities, setActivities] = useState([]);
     const [completedIds, setCompletedIds] = useState(new Set());
     const [progressFailed, setProgressFailed] = useState(false);
-    // The activity opened in the View Activity modal (null = closed).
-    const [openActivity, setOpenActivity] = useState(null);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
     const [isLoadingNow, setIsLoading] = useState(true);
@@ -238,47 +235,25 @@ function Activities() {
                     <>
                     <div className="mb-8 flex flex-wrap items-end gap-4">
 
-                        <div className={filterFieldClass}>
-                            <label className={filterLabelClass} htmlFor="activity-filter-category">
-                                Category
-                            </label>
-                            <div className="relative">
-                            <select
-                                id="activity-filter-category"
-                                className={filterSelectClass}
-                                value={selectedCategory}
-                                onChange={(event) => setSelectedCategory(event.target.value)}
-                            >
-                                <option value="all">All Categories</option>
-                                {categories.map((name) => (
-                                    <option key={name} value={name}>
-                                        {name}
-                                    </option>
-                                ))}
-                            </select>
-                            </div>
-                        </div>
+                        <FilterDropdown
+                            label="Category"
+                            value={selectedCategory}
+                            onChange={setSelectedCategory}
+                            options={[
+                                { value: 'all', label: 'All Categories' },
+                                ...categories.map((name) => ({ value: name, label: name })),
+                            ]}
+                        />
 
-                        <div className={filterFieldClass}>
-                            <label className={filterLabelClass} htmlFor="activity-filter-difficulty">
-                                Difficulty
-                            </label>
-                            <div className="relative">
-                            <select
-                                id="activity-filter-difficulty"
-                                className={filterSelectClass}
-                                value={selectedDifficulty}
-                                onChange={(event) => setSelectedDifficulty(event.target.value)}
-                            >
-                                <option value="all">All Difficulties</option>
-                                {DIFFICULTIES.map((level) => (
-                                    <option key={level} value={level}>
-                                        {level}
-                                    </option>
-                                ))}
-                            </select>
-                            </div>
-                        </div>
+                        <FilterDropdown
+                            label="Difficulty"
+                            value={selectedDifficulty}
+                            onChange={setSelectedDifficulty}
+                            options={[
+                                { value: 'all', label: 'All Difficulties' },
+                                ...DIFFICULTIES.map((level) => ({ value: level, label: level })),
+                            ]}
+                        />
 
                     </div>
 
@@ -304,7 +279,8 @@ function Activities() {
                     <div className={activityGridClass}>
                         {visibleActivities.map((activity) => (
                             <div
-                                className={activityCardClass}
+                                className={`${activityCardClass}${completedIds.has(activity.id) ? ' ' + completedCardTone : ''}`}
+                                data-completed={completedIds.has(activity.id) || undefined}
                                 key={activity.id}
                             >
                                 <div className="mb-5">
@@ -337,40 +313,25 @@ function Activities() {
                                         )}
 
                                         {completedIds.has(activity.id) && (
-                                            <span className="rounded-xl bg-success-bg px-2.5 py-[3px] text-xs font-bold text-success-text">
-                                                ✓ Completed
+                                            <span className="inline-flex items-center gap-1 text-xs font-bold italic text-[#0b6b28]">
+                                                Completed
+                                                <Check size={14} aria-hidden="true" />
                                             </span>
                                         )}
                                     </div>
 
-                                    <h2 className="mb-3 text-[20px] font-bold text-ink">
+                                    <h2 className={`mb-3 text-[20px] font-bold ${completedIds.has(activity.id) ? 'text-black' : 'text-ink'}`}>
                                         {activity.title}
                                     </h2>
 
-                                    <p className="mb-6 grow text-[14px] leading-[1.6] text-muted">
+                                    <p className={`mb-6 grow text-[14px] leading-[1.6] ${completedIds.has(activity.id) ? 'text-black' : 'text-muted'}`}>
                                         {activity.description ||
                                             'Explore this activity and its learning objectives.'}
                                     </p>
 
                                     <Link
                                         to={`/activities/${activity.id}`}
-                                        // A normal click opens the modal; ctrl/cmd/middle click and
-                                        // "open in new tab" still go to the real page.
-                                        onClick={(event) => {
-                                            if (
-                                                event.button !== 0 ||
-                                                event.metaKey ||
-                                                event.ctrlKey ||
-                                                event.shiftKey ||
-                                                event.altKey
-                                            ) {
-                                                return;
-                                            }
-
-                                            event.preventDefault();
-                                            setOpenActivity({ id: activity.id, title: activity.title });
-                                        }}
-                                        className="flex items-center gap-2 text-[14px] font-bold text-ink no-underline transition-colors duration-200 hover:text-muted"
+                                        className={`flex items-center gap-2 text-[14px] font-bold no-underline transition-colors duration-200 ${completedIds.has(activity.id) ? 'text-black hover:text-ink' : 'text-ink hover:text-muted'}`}
                                         aria-label={`View activity: ${activity.title}`}
                                     >
                                         View Activity
@@ -401,30 +362,6 @@ function Activities() {
                     </>
                 )}
             </div>
-
-            <Modal
-                open={openActivity !== null}
-                onClose={() => setOpenActivity(null)}
-                size="xl"
-                title="Activity details"
-            >
-                {openActivity && (
-                    <ActivityDetails
-                        activityId={openActivity.id}
-                        embedded
-                        onCompleted={(id) =>
-                            setCompletedIds((current) => new Set([...current, Number(id)]))
-                        }
-                        onUndone={(id) =>
-                            setCompletedIds((current) => {
-                                const next = new Set(current);
-                                next.delete(Number(id));
-                                return next;
-                            })
-                        }
-                    />
-                )}
-            </Modal>
         </div>
     );
 }

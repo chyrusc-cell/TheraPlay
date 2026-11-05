@@ -60,7 +60,21 @@ async function setup(routes = {}, { children = [mia, leo], user = makeUser('pare
 const titles = () => screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
 const waitForCards = () => screen.findByRole('link', { name: 'View activity: Memory Match' })
 const cardFor = (title) => screen.getByRole('heading', { name: title }).closest('.flex-col')
-const pick = (label, value) => userEvent.selectOptions(screen.getByLabelText(label), value)
+const filterButton = (label) => screen.getByRole('button', { name: new RegExp(`^${label}\\b`) })
+const pick = async (label, value) => {
+  const user = userEvent.setup()
+  await user.click(filterButton(label))
+  const text = value === 'all' ? (label === 'Category' ? 'All Categories' : 'All Difficulties') : value
+  await user.click(screen.getByRole('option', { name: text }))
+}
+const optionTexts = async (label) => {
+  const user = userEvent.setup()
+  await user.click(filterButton(label))
+  const texts = within(screen.getByRole('listbox', { name: label })).getAllByRole('option').map((o) => o.textContent)
+  await user.keyboard('{Escape}')
+  return texts
+}
+const expectFilter = (label, text) => expect(filterButton(label)).toHaveTextContent(text)
 
 describe('Activities: which activities a parent sees', () => {
   it('shows ALL published activities, whatever the selected child\'s conditions are', async () => {
@@ -105,10 +119,10 @@ describe('Activities: Category and Difficulty filters', () => {
     await setup()
     await waitForCards()
 
-    const options = within(screen.getByLabelText('Category')).getAllByRole('option').map((o) => o.textContent)
+    const options = await optionTexts('Category')
     expect(options).toEqual(['All Categories', 'Memory', 'Motor Skills'])
 
-    const levels = within(screen.getByLabelText('Difficulty')).getAllByRole('option').map((o) => o.textContent)
+    const levels = await optionTexts('Difficulty')
     expect(levels).toEqual(['All Difficulties', 'Easy', 'Medium', 'Hard'])
   })
 
@@ -117,14 +131,12 @@ describe('Activities: Category and Difficulty filters', () => {
     await waitForCards()
 
     for (const label of ['Category', 'Difficulty']) {
-      const select = screen.getByLabelText(label)
-      // Same shared filter look as Manage Accounts: the native arrow is replaced by
-      // the ui-select chevron, inset from the right edge, on the glass pill.
-      expect(select).toHaveClass('ui-select', 'btn-glass', 'rounded-full')
+      // Same glass pill as the Choose Child selector.
+      expect(filterButton(label)).toHaveClass('btn-glass', 'rounded-full')
     }
 
     await pick('Category', 'Memory')
-    expect(screen.getByLabelText('Category')).toHaveValue('Memory')
+    expectFilter('Category', 'Memory')
     expect(titles()).toEqual(['Memory Match', 'Memory Master'])
   })
 
@@ -164,11 +176,11 @@ describe('Activities: Category and Difficulty filters', () => {
     expect(titles()).toEqual(['Memory Match', 'Block Stacking'])
 
     await pick('Category', 'Motor Skills')
-    expect(screen.getByLabelText('Difficulty')).toHaveValue('Easy')
+    expectFilter('Difficulty', 'Easy')
     expect(titles()).toEqual(['Block Stacking'])
 
     await pick('Category', 'all')
-    expect(screen.getByLabelText('Difficulty')).toHaveValue('Easy')
+    expectFilter('Difficulty', 'Easy')
     expect(titles()).toEqual(['Memory Match', 'Block Stacking'])
   })
 
@@ -200,8 +212,8 @@ describe('Activities: Category and Difficulty filters', () => {
     await user.click(screen.getByRole('button', { name: 'Reset filters' }))
 
     expect(titles()).toHaveLength(4)
-    expect(screen.getByLabelText('Category')).toHaveValue('all')
-    expect(screen.getByLabelText('Difficulty')).toHaveValue('all')
+    expectFilter('Category', 'All Categories')
+    expectFilter('Difficulty', 'All Difficulties')
   })
 
   it('filters without sending any new request', async () => {
@@ -226,7 +238,18 @@ describe('Activities: the selected child decides completion, not visibility', ()
 
     expect(within(cardFor('Memory Match')).getByText(/Completed/)).toBeInTheDocument()
     expect(within(cardFor('Block Stacking')).queryByText(/Completed/)).not.toBeInTheDocument()
-    expect(screen.getAllByText('✓ Completed')).toHaveLength(1)
+    expect(screen.getAllByText('Completed')).toHaveLength(1)
+
+    // A completed activity has a green-tinted card; the others keep the normal white glass.
+    const outer = (title) => screen.getByRole('heading', { name: title }).closest('.glow-card')
+    expect(outer('Memory Match').className).toContain('--glass-bg:rgba(110,200,110')
+    expect(outer('Memory Match')).toHaveAttribute('data-completed', 'true')
+    expect(outer('Block Stacking').className).not.toContain('--glass-bg')
+    // Readable text on the gray card: black title and description, brighter green label.
+    expect(screen.getByRole('heading', { name: 'Memory Match' }).className).toContain('text-black')
+    expect(screen.getByRole('heading', { name: 'Block Stacking' }).className).not.toContain('text-black')
+    expect(screen.getByText('Completed').className).toContain('italic')
+    expect(screen.getByText('Completed').className).toContain('text-[#0b6b28]')
   })
 
   it('switching child moves the completed marks and never mixes the two children', async () => {
@@ -244,7 +267,7 @@ describe('Activities: the selected child decides completion, not visibility', ()
     await waitFor(() => expect(within(cardFor('Block Stacking')).getByText(/Completed/)).toBeInTheDocument())
 
     expect(within(cardFor('Memory Match')).queryByText(/Completed/)).not.toBeInTheDocument()
-    expect(screen.getAllByText('✓ Completed')).toHaveLength(1)
+    expect(screen.getAllByText('Completed')).toHaveLength(1)
     // The visible list did not change: same activities for either child.
     expect(titles()).toHaveLength(countBefore)
     // Completion was requested for each child by id (never for anyone else).
@@ -255,7 +278,7 @@ describe('Activities: the selected child decides completion, not visibility', ()
     await setup({ 'GET /progress?child_id=1': progress() })
     await waitForCards()
 
-    expect(screen.queryByText('✓ Completed')).not.toBeInTheDocument()
+    expect(screen.queryByText('Completed')).not.toBeInTheDocument()
   })
 
   it('lists not-completed activities first and completed ones last, each exactly once', async () => {
@@ -280,7 +303,7 @@ describe('Activities: the selected child decides completion, not visibility', ()
     await setup({ 'GET /progress?child_id=1': { status: 404, body: { message: 'Not found' } } })
     await waitForCards()
 
-    expect(screen.queryByText('✓ Completed')).not.toBeInTheDocument()
+    expect(screen.queryByText('Completed')).not.toBeInTheDocument()
     expect(titles()).toHaveLength(4)
     expect(screen.getByText(/could not load your completion status/)).toBeInTheDocument()
   })
@@ -292,7 +315,7 @@ describe('Activities: a parent with no child', () => {
     await waitForCards()
 
     expect(titles()).toHaveLength(4)
-    expect(screen.queryByText('✓ Completed')).not.toBeInTheDocument()
+    expect(screen.queryByText('Completed')).not.toBeInTheDocument()
     const urls = api.calls.map((c) => `${c.path}?${new URLSearchParams(c.query)}`).join(' ')
     expect(urls).not.toMatch(/child_id=(null|undefined|NaN|$|&)/)
   })
@@ -303,7 +326,7 @@ describe('Activities: loading, empty and error states', () => {
     await setup({ 'GET /activities': { body: { data: [] } } })
 
     expect(await screen.findByText('No activities are available right now.')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Category')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Category\b/ })).not.toBeInTheDocument()
   })
 
   it('shows an error when the activities cannot be loaded (parent with no child)', async () => {
@@ -389,7 +412,7 @@ describe('Activities: loading always ends, also after a failure', () => {
 
     expect(within(cardFor('Block Stacking')).getByText(/Completed/)).toBeInTheDocument()
     expect(within(cardFor('Memory Match')).queryByText(/Completed/)).not.toBeInTheDocument()
-    expect(screen.getAllByText('✓ Completed')).toHaveLength(1)
+    expect(screen.getAllByText('Completed')).toHaveLength(1)
   })
 
   it('ignores an answer for the previous child even if the browser still delivers it', async () => {

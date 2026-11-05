@@ -226,11 +226,21 @@ class EmailCodeTest extends TestCase
 
     // ---------------------------------------------------------------- resending
 
+    /** Pretends the 30-second resend cooldown has passed. */
+    private function skipCooldown(User $user): void
+    {
+        $key = "email-code:{$user->id}";
+        $entry = Cache::get($key);
+        $entry["issued_at"] = (int) $entry["issued_at"] - 60;
+        Cache::put($key, $entry, now()->addMinutes(10));
+    }
+
     public function test_a_new_code_invalidates_the_previous_one(): void
     {
         [$user, $token, $old] = $this->register();
 
         Notification::fake();
+        $this->skipCooldown($user);
         $this->as($token)->postJson('/api/email/code/resend')->assertOk()->assertJsonPath('status', 'sent');
         $new = $this->lastCode($user);
 
@@ -248,18 +258,21 @@ class EmailCodeTest extends TestCase
 
     public function test_resending_is_rate_limited_and_honest_about_delivery(): void
     {
-        [, $token] = $this->register();
+        [$user, $token] = $this->register();
 
         for ($i = 0; $i < 3; $i++) {
+            $this->skipCooldown($user);
             $this->as($token)->postJson('/api/email/code/resend')->assertOk();
         }
 
+        $this->skipCooldown($user);
         $this->as($token)->postJson('/api/email/code/resend')->assertStatus(429);
     }
 
     public function test_resend_does_not_claim_delivery_with_the_log_driver(): void
     {
-        [, $token] = $this->register();
+        [$user, $token] = $this->register();
+        $this->skipCooldown($user);
         config(['mail.default' => 'log']);
 
         $this->as($token)->postJson('/api/email/code/resend')
@@ -378,9 +391,10 @@ class EmailCodeTest extends TestCase
         Notification::assertSentTo($unverified, VerificationCodeNotification::class);
     }
 
-    public function test_the_email_stays_locked_after_registration(): void
+    public function test_the_email_is_locked_once_verified(): void
     {
-        [, $token] = $this->register();
+        [$user, $token] = $this->register();
+        $user->forceFill(['email_verified_at' => now()])->save();
 
         $this->as($token)->putJson('/api/profile', ['name' => 'Pat', 'email' => 'other@example.com'])
             ->assertStatus(422)->assertJsonValidationErrors('email');

@@ -17,7 +17,10 @@ class UndoCompletionTest extends TestCase
 
     private function parent(string $email): User
     {
-        return User::create(['name' => 'P', 'email' => $email, 'password' => 'password123', 'role' => 'parent']);
+        $user = User::create(['name' => 'P', 'email' => $email, 'password' => 'password123', 'role' => 'parent']);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
     }
 
     private function activity(string $title = 'Buttons'): Activity

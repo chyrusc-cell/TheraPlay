@@ -244,7 +244,7 @@ describe('routing: accounts that must verify their email first', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Verify your email' })).toBeInTheDocument()
     expect(screen.getByText(/We sent a verification link to/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Resend verification email' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resend code' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 1, name: 'Activities' })).not.toBeInTheDocument()
     await settle(api)
     expect(api.callsTo('GET', '/activities')).toHaveLength(0)

@@ -18,9 +18,13 @@ export function NoChildPrompt() {
             <div className={panelClass}>
                 <h2 className="mb-2 text-[20px] font-bold text-ink">Verify your email first</h2>
                 <p className="text-[14px] leading-[1.6] text-muted">
-                    Open the verification link we emailed to {user.email}. After that you can
+                    Enter the six-digit code we emailed to {user.email}. After that you can
                     create your child's profile. Check your spam folder if you cannot find it.
+                    In the meantime you can browse the activities.
                 </p>
+                <Link to="/verify-code" className={buttonClass}>
+                    Enter verification code
+                </Link>
             </div>
         );
     }

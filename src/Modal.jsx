@@ -213,30 +213,46 @@ function Modal({ open, onClose, title, busy = false, size = 'lg', children }) {
                 aria-labelledby={titleId}
                 aria-busy={busy || undefined}
                 tabIndex={-1}
-                className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[22px] border card-soft font-[Quicksand,sans-serif] transition-[opacity,transform] duration-200 ease-out ${sizes[size] || sizes.lg} ${
+                className={`relative flex max-h-[90vh] w-full flex-col overflow-hidden rounded-[22px] border card-soft modal-surface font-[Quicksand,sans-serif] transition-[opacity,transform] duration-200 ease-out ${sizes[size] || sizes.lg} ${
                     visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-2 scale-[0.98] opacity-0'
                 }`}
             >
 
-                <div className="flex shrink-0 items-center justify-between gap-4 border-b border-edge px-6 py-4 phone:px-4">
-
-                    <h2 id={titleId} className="min-w-0 text-[20px] font-bold text-ink [overflow-wrap:anywhere]">
-                        {shown.title}
-                    </h2>
-
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={busy}
-                        aria-label="Close"
-                        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border btn-glass text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        <X size={20} aria-hidden="true" />
-                    </button>
-
-                </div>
-
                 <div data-modal-body className="min-h-0 flex-1 overflow-y-auto p-6 phone:p-4">
+
+                    {/*
+                      The header sits at the top of the scrolling content (sticky, so the scrollbar
+                      stays beside it and is never covered) instead of being a separate bar: a layer behind the title blurs whatever scrolls under it
+                      (strongest at the very top, fading to no blur toward the content) and
+                      tints it from the panel colour to clear, so the header melts into the
+                      content with no hard edge or border.
+                    */}
+                    <div className="pointer-events-none sticky -top-6 z-20 -mx-6 -mt-6 mb-2 phone:-top-4 phone:-mx-4 phone:-mt-4">
+                        <div
+                            aria-hidden="true"
+                            data-modal-fade="top"
+                            className="absolute inset-x-0 top-0 -bottom-8 bg-gradient-to-b from-white/85 to-transparent backdrop-blur-[40px] [-webkit-mask-image:linear-gradient(to_bottom,black_45%,transparent)] [mask-image:linear-gradient(to_bottom,black_45%,transparent)]"
+                        />
+    
+                        <div className="pointer-events-auto relative flex items-center justify-between gap-4 px-6 py-4 phone:px-4">
+    
+                            <h2 id={titleId} className="min-w-0 text-[20px] font-bold text-ink [overflow-wrap:anywhere]">
+                                {shown.title}
+                            </h2>
+    
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={busy}
+                                aria-label="Close"
+                                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border btn-glass text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                <X size={20} aria-hidden="true" />
+                            </button>
+    
+                        </div>
+                    </div>
+    
                     {shown.children}
                 </div>
 

@@ -24,12 +24,21 @@ const inputClass =
 // the narrow rail, and on phones the pill sits just beside it. Its width is
 // capped at 460px and always leaves room on the right for the profile shortcut.
 const pillBase =
-    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_var(--search-reserve,90px)))] rounded-full border border-black/10 transition duration-200 motion-reduce:transition-none [--search-left:calc(var(--sidebar-offset)_+_(100vw_-_var(--sidebar-offset))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-offset-collapsed)_+_(100vw_-_var(--sidebar-offset-collapsed))_*_0.06)] phone:[--search-left:calc(var(--sidebar-offset-collapsed)_+_12px)]';
+    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_var(--search-reserve,90px)))] rounded-full border border-black/10 [--search-left:calc(var(--sidebar-offset)_+_(100vw_-_var(--sidebar-offset))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-offset-collapsed)_+_(100vw_-_var(--sidebar-offset-collapsed))_*_0.06)] phone:[--search-left:calc(var(--sidebar-offset-collapsed)_+_12px)]';
+
+// The pill's tint, shadow and blur live on their OWN layer behind the content (not on
+// the pill itself). A backdrop-filter on an ancestor makes it a "backdrop root", and
+// the suggestions dropdown inside the pill has its own backdrop blur, which would then
+// only see what is inside the pill (nothing) and lose its frosted glass effect as soon
+// as the pill gained its blur on scroll. With the blur on a sibling layer, the dropdown
+// always blurs the real page behind it, scrolled or not.
+const pillLayerBase =
+    'pointer-events-none absolute -inset-px -z-10 rounded-full transition duration-200 motion-reduce:transition-none';
 
 // At the top of the page the pill is only lightly tinted. After scrolling its
-// OWN background becomes more visible and blurs whatever passes behind it
+// background becomes more visible and blurs whatever passes behind it
 // (backdrop-blur blurs the background only, never the text or icons).
-const pillTop = 'bg-white/40 backdrop-blur-none';
+const pillTop = 'bg-white/40';
 const pillScrolled =
     'bg-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.08)] backdrop-blur-md';
 
@@ -210,8 +219,14 @@ function GlobalSearch() {
     return (
         <div
             ref={containerRef}
-            className={`${pillBase} ${scrolled ? pillScrolled : pillTop}`}
+            className={pillBase}
         >
+
+            <span
+                aria-hidden="true"
+                data-testid="search-pill-layer"
+                className={`${pillLayerBase} ${scrolled ? pillScrolled : pillTop}`}
+            />
 
             <Search
                 size={18}

@@ -24,7 +24,7 @@ class Stage4SecurityTest extends TestCase
     private function parent(string $email = 'p@example.com'): User
     {
         $user = User::create(['name' => 'Parent', 'email' => $email, 'password' => 'password123']);
-        $user->forceFill(['role' => 'parent'])->save();
+        $user->forceFill(['role' => 'parent', 'email_verified_at' => now()])->save();
 
         return $user;
     }

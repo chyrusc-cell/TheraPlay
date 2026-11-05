@@ -1,9 +1,8 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import Activities from './Activities.jsx'
 import Dashboard from './Dashboard.jsx'
-import { makeActivity, makeChild, makeUser, mockApi, renderWithProviders, settle, signIn } from './test/helpers.jsx'
+import { makeActivity, makeChild, makeUser, mockApi, renderApp, renderWithProviders, settle, signIn } from './test/helpers.jsx'
 
 vi.mock('./minLoading.js', () => ({ holdSkeleton: () => Promise.resolve() }))
 
@@ -53,7 +52,7 @@ describe('Undo: what the pages show afterwards', () => {
         body: { message: 'ok', data: { record: record(101, 1, 'not_started') } },
       },
     })
-    renderWithProviders(<Activities />, { route: '/activities' })
+    renderApp('/activities')
     await settle(api)
 
     await userEvent.click(await screen.findByRole('link', { name: 'View activity: Memory Match' }))
@@ -66,5 +65,40 @@ describe('Undo: what the pages show afterwards', () => {
 
     await waitFor(() => expect(api.callsTo('POST', '/progress/101/undo')).toHaveLength(1))
     expect(await screen.findByRole('button', { name: 'Mark as Completed' })).toBeInTheDocument()
+  })
+})
+
+describe('Activity navigation: a dedicated details page, no popup', () => {
+  const routes = () => ({
+    'GET /user': { body: makeUser('parent') },
+    'GET /children': { body: { data: [mia] } },
+    'GET /activities': { body: { data: [memory] } },
+    'GET /activities/1': { body: { data: { ...memory, objective: 'o', instructions: ['Step one'], materials: ['Cards'], resources: [] } } },
+    'GET /progress': { body: { data: { records: [] } } },
+  })
+
+  it('opens the page (not a dialog) from the card, and goes back to the list', async () => {
+    signIn()
+    const api = mockApi(routes())
+    renderApp('/activities')
+    await settle(api)
+
+    await userEvent.click(await screen.findByRole('link', { name: 'View activity: Memory Match' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Memory Match' })).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('link', { name: /Back to Activities/ }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Activities' })).toBeInTheDocument()
+  })
+
+  it('works when the address is opened directly (or refreshed)', async () => {
+    signIn()
+    const api = mockApi(routes())
+    renderApp('/activities/1')
+    await settle(api)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Memory Match' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Mark as Completed' })).toBeInTheDocument()
   })
 })

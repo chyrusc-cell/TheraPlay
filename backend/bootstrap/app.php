@@ -3,6 +3,7 @@
 use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\EnsureActivityNotArchived;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\EnsureVerifiedParent;
 use App\Http\Middleware\RequireVerifiedEmailWhenEnforced;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'activity.live' => EnsureActivityNotArchived::class,
+            'verified.parent' => EnsureVerifiedParent::class,
         ]);
 
         // Every API request: accounts that must verify their email are held back.

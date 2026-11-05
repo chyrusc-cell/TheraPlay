@@ -66,12 +66,14 @@ class ActivityCompletionController extends Controller
         if ($alreadyCompleted) {
             return response()->json([
                 'message' => 'This activity was already completed.',
+                'already_completed' => true,
                 'data' => ['record' => $this->format($record)],
             ]);
         }
 
         return response()->json([
             'message' => 'Activity marked as completed.',
+            'already_completed' => false,
             'data' => ['record' => $this->format($record)],
         ], $created ? 201 : 200);
     }

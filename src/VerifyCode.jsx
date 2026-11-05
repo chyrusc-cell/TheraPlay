@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import * as auth from './authClasses.js';
 import { apiRequest } from './api.js';
 import { useAuth } from './authContext.js';
@@ -32,6 +32,7 @@ function VerifyCode() {
 
     const { user, updateUser } = useAuth();
     const { state } = useLocation();
+    const navigate = useNavigate();
 
     const [code, setCode] = useState('');
     const [notice, setNotice] = useState(null);
@@ -141,7 +142,18 @@ function VerifyCode() {
             const result = await apiRequest('/email/code/resend', { method: 'POST' });
 
             if (result.status === 429) {
-                setNotice({ type: 'error', text: 'Please wait a minute before asking for another code.' });
+                const wait = Number(result.data?.retry_after);
+
+                if (wait > 0) {
+                    setCooldown(wait);
+                }
+
+                setNotice({
+                    type: 'error',
+                    text: wait > 0
+                        ? `Please wait ${wait} seconds before asking for another code.`
+                        : 'Please wait a minute before asking for another code.',
+                });
             } else if (!result.ok) {
                 setNotice({ type: 'error', text: result.data.message || 'We could not send a code right now. Please try again.' });
             } else if (result.data.status === 'already_verified') {
@@ -247,6 +259,26 @@ function VerifyCode() {
                 <p className="mb-2 text-center text-[12px] text-faint">
                     Check your spam folder if you cannot find the email. Asking for a new code makes the
                     earlier one stop working.
+                </p>
+
+                <button
+                    type="button"
+                    className="mb-2 w-full cursor-pointer rounded-full border-0 bg-transparent p-2 [font-family:inherit] text-[14px] font-bold text-ink underline"
+                    onClick={() => navigate('/dashboard', { replace: true })}
+                    disabled={isVerifying}
+                >
+                    Verify later
+                </button>
+
+                <p className="mb-1 text-center text-[12px] text-faint">
+                    You can look around TheraPlay without verifying, but creating a child profile,
+                    completing activities and saving notes need a verified email. A reminder stays
+                    on every page until you verify.
+                </p>
+
+                <p className="text-center text-[12px] text-faint">
+                    Wrong address?{' '}
+                    <Link to="/profile" className="font-bold text-ink underline">Change it in your profile</Link>.
                 </p>
 
             </form>

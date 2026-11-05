@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\ProgressController;
 use App\Http\Controllers\Api\ActivityCompletionController;
 use App\Http\Controllers\Api\ActivityUndoController;
 use App\Http\Controllers\Api\ChildController;
+use App\Http\Controllers\Api\ActivityJournalController;
+use App\Http\Controllers\Api\Admin\ActivityFeedbackController;
 use App\Http\Controllers\Api\LogoutController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\FeedbackController;
@@ -86,20 +88,38 @@ Route::get('/activities/{activity}/resources/{resource}/thumbnail', [ActivityMat
 // Progress belongs to a parent's own child, so only parents can record it.
 Route::post('/activities/{id}/complete', [ActivityCompletionController::class, 'store'])
     ->whereNumber('id')
-    ->middleware(['auth:sanctum', 'role:parent']);
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent']);
 
 // Undo an accidental completion: the record must belong to the parent's own child.
 Route::post('/progress/{progress}/undo', [ActivityUndoController::class, 'undo'])
     ->whereNumber('progress')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent']);
+
+// The session journal (1-5 rating + observations) for one completed session of the
+// parent's own child. Saving needs a verified parent; reading is the parent's own.
+Route::post('/progress/{progress}/journal', [ActivityJournalController::class, 'store'])
+    ->whereNumber('progress')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::put('/journal/{entry}', [ActivityJournalController::class, 'update'])
+    ->whereNumber('entry')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::delete('/journal/{entry}', [ActivityJournalController::class, 'destroy'])
+    ->whereNumber('entry')
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:journal']);
+
+Route::get('/activities/{id}/journal', [ActivityJournalController::class, 'index'])
+    ->whereNumber('id')
     ->middleware(['auth:sanctum', 'role:parent']);
 
 // A parent's own children (several per parent). Every route works only on the
 // logged-in parent's children; admins have none.
 Route::middleware(['auth:sanctum', 'role:parent'])->prefix('children')->group(function () {
     Route::get('/', [ChildController::class, 'index']);
-    Route::post('/', [ChildController::class, 'store']);
-    Route::put('/{child}', [ChildController::class, 'update'])->whereNumber('child');
-    Route::delete('/{child}', [ChildController::class, 'destroy'])->whereNumber('child');
+    Route::post('/', [ChildController::class, 'store'])->middleware('verified.parent');
+    Route::put('/{child}', [ChildController::class, 'update'])->whereNumber('child')->middleware('verified.parent');
+    Route::delete('/{child}', [ChildController::class, 'destroy'])->whereNumber('child')->middleware('verified.parent');
 });
 
 // The conditions parents can choose from (active ones; public, read-only).
@@ -146,7 +166,7 @@ Route::get('/contacts/{contact}/photo', [ContactController::class, 'photo'])
 
 // Only logged-in parents can send feedback.
 Route::post('/feedback', [FeedbackController::class, 'store'])
-    ->middleware(['auth:sanctum', 'role:parent', 'throttle:feedback']);
+    ->middleware(['auth:sanctum', 'role:parent', 'verified.parent', 'throttle:feedback']);
 
 // Admin-only management API. Order matters: authenticate first, then check role.
 Route::middleware(['auth:sanctum', 'role:admin'])
@@ -243,6 +263,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])
 
         Route::put('developer-team', [DeveloperTeamManagementController::class, 'update'])
             ->name('developer-team.update');
+
+        // Parents' session ratings and journal notes (read-only, paginated).
+        Route::get('activity-feedback', [ActivityFeedbackController::class, 'index'])
+            ->name('activity-feedback.index');
 
         // Feedback: view and delete.
         Route::get('feedback', [FeedbackManagementController::class, 'index'])

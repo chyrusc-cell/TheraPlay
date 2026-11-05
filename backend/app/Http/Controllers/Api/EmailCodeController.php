@@ -80,6 +80,17 @@ class EmailCodeController extends Controller
             ]);
         }
 
+        // Asking again right away is refused (the earlier code stays valid).
+        $wait = EmailVerificationCode::cooldownLeft($user);
+
+        if ($wait > 0) {
+            return response()->json([
+                'status' => 'cooldown',
+                'message' => "Please wait {$wait} seconds before asking for another code.",
+                'retry_after' => $wait,
+            ], 429, ['Retry-After' => $wait]);
+        }
+
         try {
             EmailVerificationCode::issue($user);
         } catch (Throwable $e) {

@@ -16,7 +16,7 @@ class ConfigurationAndLimitsTest extends TestCase
     private function user(string $role = 'parent'): User
     {
         $user = User::create(['name' => 'U', 'email' => $role.'@example.com', 'password' => 'password123']);
-        $user->forceFill(['role' => $role])->save();
+        $user->forceFill(['role' => $role, 'email_verified_at' => now()])->save();
 
         return $user;
     }

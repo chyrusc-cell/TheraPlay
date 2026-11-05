@@ -120,7 +120,7 @@ export const thead = 'phone-lg:sr-only';
 export const tbody = 'phone-lg:block';
 
 export const th =
-    'border-b border-edge bg-white p-4 text-left text-[13px] font-bold';
+    'border-b border-edge bg-white p-4 text-center align-middle text-[13px] font-bold';
 
 // A data row. The last row has no bottom line on desktop (its cells) and none
 // on phones (the row itself).
@@ -128,13 +128,13 @@ export const row =
     'transition-colors hover:bg-warm [&:last-child>td]:border-b-0 phone-lg:block phone-lg:border-b phone-lg:border-edge phone-lg:py-2 phone-lg:last:border-b-0';
 
 export const td =
-    'border-b border-edge p-4 text-left text-[14px] phone-lg:flex phone-lg:items-start phone-lg:justify-between phone-lg:gap-3 phone-lg:border-b-0 phone-lg:px-4 phone-lg:py-2 phone-lg:text-right phone-lg:[word-break:break-word] phone-lg:before:shrink-0 phone-lg:before:text-left phone-lg:before:text-[12px] phone-lg:before:font-bold phone-lg:before:text-muted phone-lg:before:content-[attr(data-label)]';
+    'border-b border-edge p-4 text-center align-middle text-[14px] phone-lg:flex phone-lg:items-start phone-lg:justify-between phone-lg:gap-3 phone-lg:border-b-0 phone-lg:px-4 phone-lg:py-2 phone-lg:text-right phone-lg:[word-break:break-word] phone-lg:before:shrink-0 phone-lg:before:text-left phone-lg:before:text-[12px] phone-lg:before:font-bold phone-lg:before:text-muted phone-lg:before:content-[attr(data-label)]';
 
 // The "nothing here yet" cell has no column label.
 export const tdEmpty =
-    'border-b border-edge p-4 text-left text-[14px] phone-lg:block phone-lg:border-b-0';
+    'border-b border-edge p-4 text-center align-middle text-[14px] phone-lg:block phone-lg:border-b-0';
 
-export const actions = 'flex flex-wrap gap-2 phone-lg:justify-end';
+export const actions = 'flex flex-wrap justify-center gap-2 phone-lg:justify-end';
 
 // ---------- Table cell details ----------
 
@@ -192,7 +192,7 @@ export const activityPicture =
 // Cancel then the primary action, right-aligned. On phones they stack, with
 // the primary action on top, full width.
 export const activityFormActions =
-    'sticky bottom-0 z-10 -mx-6 -mb-6 mt-4 flex justify-end gap-2.5 border-t border-white/30 bg-white/50 backdrop-blur-[35px] px-6 py-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full';
+    'sticky -bottom-6 z-10 -mx-6 -mb-6 mt-4 flex justify-end gap-2.5 px-6 pt-8 pb-4 before:pointer-events-none before:absolute before:inset-0 before:-z-10 before:bg-gradient-to-t before:from-white/85 before:to-transparent before:backdrop-blur-[40px] before:[-webkit-mask-image:linear-gradient(to_top,black_45%,transparent)] before:[mask-image:linear-gradient(to_top,black_45%,transparent)] phone:-bottom-4 phone:-mx-4 phone:-mb-4 phone:flex-col-reverse phone:px-4 phone:[&>button]:w-full';
 
 // ---------- Contact form layout (Manage Contacts) ----------
 

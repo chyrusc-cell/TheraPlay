@@ -35,7 +35,6 @@ const toFormValues = (user) => ({
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
     'mb-6 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
-const cardTitleClass = 'mb-[30px] text-[18px] font-bold text-ink';
 
 // Form fields: a floating label on the top border of each input.
 const fieldClass = 'relative mb-[30px] flex flex-col gap-2';
@@ -213,6 +212,11 @@ function Profile() {
                 body: JSON.stringify({
                     name,
                     contact_number: phone.trim() || null,
+                    // An email can be corrected only while it is unverified; a
+                    // verified address is fixed, so it is not sent.
+                    ...(emailEditable && email.trim() !== (savedUser?.email || '')
+                        ? { email: email.trim() }
+                        : {}),
                 }),
             });
 
@@ -237,6 +241,7 @@ function Profile() {
             }
 
             setSavedUser(data.user);
+            updateUser({ name: data.user.name, email: data.user.email, email_verified: data.user.email_verified });
             fillForm(data.user);
 
             // Keep the user copy saved at login in sync.
@@ -437,6 +442,9 @@ function Profile() {
         }
     };
 
+    // An unverified address may still be corrected; a verified one is fixed.
+    const emailEditable = savedUser?.email_verified === false;
+
     // The "Easy" badge colours from Manage Activities, smaller, with a green outline.
     const verifiedBadge = savedUser?.email_verified ? (
         <span
@@ -464,18 +472,8 @@ function Profile() {
     return (
         <div className="flex min-h-page flex-col">
             <div className={pageMainNarrow}>
-                <div className={`${pageHeader} flex items-center justify-between`}>
+                <div className={pageHeader}>
                     <h1 className={pageTitle}>My Profile</h1>
-
-                    {!isEditing && savedUser && (
-                        <button
-                            className={`${pillButtonClass} btn-yellow`}
-                            type="button"
-                            onClick={() => setIsEditing(true)}
-                        >
-                            Edit
-                        </button>
-                    )}
                 </div>
 
                 {/* Profile Avatar Card */}
@@ -576,7 +574,19 @@ function Profile() {
                 {/* Personal Information Card */}
                 <form onSubmit={handleSave}>
                     <div className={cardClass}>
-                        <h2 className={cardTitleClass}>Personal Information</h2>
+                        <div className="mb-[30px] flex items-center justify-between gap-3">
+                            <h2 className="text-[18px] font-bold text-ink">Personal Information</h2>
+
+                            {!isEditing && savedUser && (
+                                <button
+                                    className={`${pillButtonClass} btn-yellow`}
+                                    type="button"
+                                    onClick={() => setIsEditing(true)}
+                                >
+                                    Edit
+                                </button>
+                            )}
+                        </div>
 
                         {!isEditing ? (
                             <div className="grid grid-cols-2 gap-[30px] phone:grid-cols-1 phone:gap-5">
@@ -629,20 +639,20 @@ function Profile() {
                                 </div>
 
                                 <div className={fieldClass}>
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <label className={fieldLabelClass} htmlFor="email">Email Address</label>
-                                        {verifiedBadge}
-                                    </div>
-                                    <input className={`${fieldInputClass} ${readOnlyFieldClass}`}
+                                    <label className={fieldLabelClass} htmlFor="email">Email Address</label>
+                                    <input className={emailEditable ? fieldInputClass : `${fieldInputClass} ${readOnlyFieldClass}`}
                                         id="email"
                                         type="email"
                                         value={email}
-                                        disabled
-                                        readOnly
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        disabled={!emailEditable}
+                                        readOnly={!emailEditable}
                                         aria-describedby="email-fixed-hint"
                                     />
                                     <p id="email-fixed-hint" className="text-[12px] leading-[1.5] text-faint">
-                                        Your email address can't be changed.
+                                        {emailEditable
+                                            ? 'Your email is not verified yet, so you can correct it. We will send a new verification code to the new address.'
+                                            : "Your verified email address can't be changed."}
                                     </p>
                                 </div>
 

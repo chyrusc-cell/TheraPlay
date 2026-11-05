@@ -21,7 +21,7 @@ class AccountDeletionTest extends TestCase
     private function makeUser(string $email = 'me@example.com', string $role = 'parent'): User
     {
         $user = User::create(['name' => 'Pat Parent', 'email' => $email, 'password' => 'password123']);
-        $user->forceFill(['role' => $role])->save();
+        $user->forceFill(['role' => $role, 'email_verified_at' => now()])->save();
 
         return $user;
     }

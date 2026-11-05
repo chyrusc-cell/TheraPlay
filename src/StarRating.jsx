@@ -74,3 +74,25 @@ function StarRating({ value, onChange, disabled = false, label = 'Rating' }) {
 }
 
 export default StarRating;
+
+/*
+ * A read-only row of stars for a saved 1 to 5 rating. The rating is also written as
+ * text for screen readers ("Rated 4 out of 5"), so it never depends on color alone.
+ */
+export function StarDisplay({ value, size = 16 }) {
+    const rating = Math.max(0, Math.min(5, Number(value) || 0));
+
+    return (
+        <span className="inline-flex items-center gap-0.5" role="img" aria-label={`Rated ${rating} out of 5`}>
+            {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                    key={star}
+                    size={size}
+                    aria-hidden="true"
+                    className={star <= rating ? 'text-[#b26a00]' : 'text-faint'}
+                    fill={star <= rating ? 'currentColor' : 'none'}
+                />
+            ))}
+        </span>
+    );
+}

@@ -20,7 +20,7 @@ class FeedbackTest extends TestCase
             'password' => 'password123',
         ]);
 
-        $user->forceFill(['role' => $role])->save();
+        $user->forceFill(['role' => $role, 'email_verified_at' => now()])->save();
 
         return $user;
     }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import GatedOutlet from './GatedOutlet.jsx';
+import VerificationBanner from './VerificationBanner.jsx';
 import SessionWatcher from './SessionWatcher.jsx';
 import Sidebar from './Sidebar.jsx';
 import AuthProvider from './AuthProvider.jsx';
@@ -73,6 +74,7 @@ function Layout() {
                     <div className="h-topbar shrink-0" aria-hidden="true" />
 
                     <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
+                        <VerificationBanner />
                         <GatedOutlet />
                     </main>
                 </div>

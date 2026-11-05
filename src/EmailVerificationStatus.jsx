@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest, clearSession } from './api.js';
 
 const smallPillClass =
@@ -43,7 +43,7 @@ function EmailVerificationStatus({ user }) {
         setNotice(null);
 
         try {
-            const result = await apiRequest('/email/verification-notification', { method: 'POST' });
+            const result = await apiRequest(pending ? '/email/verification-notification' : '/email/code/resend', { method: 'POST' });
 
             if (result.status === 401) {
                 clearSession();
@@ -52,7 +52,7 @@ function EmailVerificationStatus({ user }) {
             }
 
             if (result.status === 429) {
-                setNotice({ type: 'error', text: 'Please wait a minute before asking for another email.' });
+                setNotice({ type: 'error', text: result.data?.message || 'Please wait a minute before asking for another email.' });
                 return;
             }
 
@@ -86,14 +86,21 @@ function EmailVerificationStatus({ user }) {
                 </p>
             ) : (
                 <p className="mb-3 text-[14px] leading-[1.5] text-ink">
-                    <strong>Your email address is not verified.</strong> Open the link in the
-                    verification email we sent to {user.email}.
+                    <strong>Your email address is not verified.</strong> Enter the six-digit code we
+                    emailed to {user.email}. Until then you can browse, but adding children, completing
+                    activities and saving notes are locked.
                 </p>
             )}
 
             <button type="button" className={smallPillClass} onClick={handleResend} disabled={isSending}>
-                {isSending ? 'Sending...' : 'Resend verification email'}
+                {isSending ? 'Sending...' : pending ? 'Resend verification email' : 'Resend code'}
             </button>
+
+            {!pending && (
+                <Link to="/verify-code" className={`${smallPillClass} ml-2 inline-block no-underline`}>
+                    Enter code
+                </Link>
+            )}
 
             {notice && (
                 <p

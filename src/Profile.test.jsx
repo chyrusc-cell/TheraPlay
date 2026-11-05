@@ -64,30 +64,30 @@ describe('Profile: email verification status', () => {
     await setup({ user: account({ email_verified: false }) })
 
     expect(await screen.findByText(/Your email address is not verified/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Resend verification email' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resend code' })).toBeInTheDocument()
   })
 
   it('resending says "sent" only when the server really delivered it', async () => {
     const user = userEvent.setup()
     const api = await setup({
       user: account({ email_verified: false }),
-      routes: { 'POST /email/verification-notification': { body: { message: 'A verification email has been sent.', delivered: true } } },
+      routes: { 'POST /email/code/resend': { body: { message: 'A verification email has been sent.', delivered: true } } },
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Resend verification email' }))
+    await user.click(await screen.findByRole('button', { name: 'Resend code' }))
 
     expect(await screen.findByText('A verification email has been sent.')).toBeInTheDocument()
-    expect(api.callsTo('POST', '/email/verification-notification')).toHaveLength(1)
+    expect(api.callsTo('POST', '/email/code/resend')).toHaveLength(1)
   })
 
   it('resending shows the server\'s warning when email delivery is not set up', async () => {
     const user = userEvent.setup()
     await setup({
       user: account({ email_verified: false }),
-      routes: { 'POST /email/verification-notification': { body: { message: 'Email delivery is not set up on this server yet.', delivered: false } } },
+      routes: { 'POST /email/code/resend': { body: { message: 'Email delivery is not set up on this server yet.', delivered: false } } },
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Resend verification email' }))
+    await user.click(await screen.findByRole('button', { name: 'Resend code' }))
 
     const note = await screen.findByText('Email delivery is not set up on this server yet.')
     expect(note).toHaveAttribute('role', 'status')
@@ -100,17 +100,17 @@ describe('Profile: email verification status', () => {
     await setup({
       user: account({ email_verified: false }),
       routes: {
-        'POST /email/verification-notification': () => {
+        'POST /email/code/resend': () => {
           n += 1
           return n === 1 ? { status: 429, body: {} } : { status: 503, body: { message: 'We could not send the verification email right now.' } }
         },
       },
     })
 
-    await user.click(await screen.findByRole('button', { name: 'Resend verification email' }))
+    await user.click(await screen.findByRole('button', { name: 'Resend code' }))
     expect(await screen.findByRole('alert')).toHaveTextContent('Please wait a minute')
 
-    await user.click(screen.getByRole('button', { name: 'Resend verification email' }))
+    await user.click(screen.getByRole('button', { name: 'Resend code' }))
     expect(await screen.findByText('We could not send the verification email right now.')).toBeInTheDocument()
   })
 
@@ -137,7 +137,7 @@ describe('Profile: the email address is fixed', () => {
     expect(email.className).toContain('bg-black/10')
     expect(email.className).toContain('cursor-not-allowed')
     expect(email).toHaveValue('parent@example.com')
-    expect(screen.getByText("Your email address can't be changed.")).toBeInTheDocument()
+    expect(screen.getByText("Your verified email address can't be changed.")).toBeInTheDocument()
 
     await user.type(email, 'x')
     expect(email).toHaveValue('parent@example.com')
@@ -276,5 +276,64 @@ describe('Profile: deleting the account', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Delete my account' }))
 
     expect(await screen.findByTestId('login-page')).toHaveTextContent('Please log in to continue.')
+  })
+})
+
+describe('Profile: an unverified email can be corrected', () => {
+  it('lets the person change it and sends the new address', async () => {
+    const user = userEvent.setup()
+    const api = await setup({
+      user: account({ email_verified: false }),
+      routes: {
+        'PUT /profile': {
+          body: {
+            message: 'Email address updated. We sent a new verification code to it.',
+            user: account({ email_verified: false, email: 'new@example.com' }),
+          },
+        },
+      },
+    })
+    await startEditing(user)
+
+    const email = screen.getByLabelText('Email Address')
+    expect(email).toBeEnabled()
+    expect(screen.getByText(/not verified yet, so you can correct it/)).toBeInTheDocument()
+
+    await user.clear(email)
+    await user.type(email, 'new@example.com')
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(api.callsTo('PUT', '/profile')).toHaveLength(1))
+    expect(api.callsTo('PUT', '/profile')[0].body.email).toBe('new@example.com')
+  })
+
+  it('does not send the email when it was not changed', async () => {
+    const user = userEvent.setup()
+    const api = await setup({
+      user: account({ email_verified: false }),
+      routes: { 'PUT /profile': { body: { message: 'ok', user: account({ email_verified: false }) } } },
+    })
+    await startEditing(user)
+
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(api.callsTo('PUT', '/profile')).toHaveLength(1))
+    expect(api.callsTo('PUT', '/profile')[0].body).not.toHaveProperty('email')
+  })
+
+  it('shows the server error when the new address is taken', async () => {
+    const user = userEvent.setup()
+    await setup({
+      user: account({ email_verified: false }),
+      routes: { 'PUT /profile': { status: 422, body: { errors: { email: ['This email address cannot be used.'] } } } },
+    })
+    await startEditing(user)
+
+    const email = screen.getByLabelText('Email Address')
+    await user.clear(email)
+    await user.type(email, 'taken@example.com')
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    expect(await screen.findByText('This email address cannot be used.')).toBeInTheDocument()
   })
 })

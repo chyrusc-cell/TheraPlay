@@ -141,6 +141,12 @@ a.btn-glass:hover {
     backdrop-filter: blur(var(--glass-blur));
 }
 
+/* Popup dialogs (Modal, ConfirmDialog): the glass panel is 80% opaque instead of the
+   usual 50%. Declared after .card-soft so it wins; only the background changes. */
+.modal-surface {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .card-soft,
     .glass-panel {

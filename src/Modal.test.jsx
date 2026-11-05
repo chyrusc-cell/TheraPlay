@@ -343,3 +343,21 @@ describe('Modal: page scrolling', () => {
     await waitFor(() => expect(document.body.style.overflow).not.toBe('hidden'))
   })
 })
+
+describe('Modal: header blends into the content', () => {
+  it('floats the header over the content with a blur that fades out, and no hard border', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    const dialog = await openModal(user)
+
+    const fade = dialog.querySelector('[data-modal-fade="top"]')
+    expect(fade).not.toBeNull()
+    expect(fade.className).toContain('backdrop-blur-[40px]')
+    expect(fade.className).toContain('mask-image:linear-gradient(to_bottom')
+    expect(dialog.innerHTML).not.toContain('border-b border-edge')
+    // The header is inside the scroller (sticky), so the scrollbar is never covered by it.
+    const body = dialog.querySelector('[data-modal-body]')
+    expect(body.contains(fade)).toBe(true)
+    expect(fade.parentElement.className).toContain('sticky')
+  })
+})

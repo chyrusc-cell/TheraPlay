@@ -59,6 +59,7 @@ class EmailVerificationCode
             'digest' => self::digest($user, $code),
             'expires_at' => now()->addMinutes($minutes)->getTimestamp(),
             'attempts' => 0,
+            'issued_at' => now()->getTimestamp(),
         ], now()->addMinutes($minutes));
 
         try {
@@ -68,6 +69,27 @@ class EmailVerificationCode
 
             throw $e;
         }
+    }
+
+    /** Minimum seconds between two codes for one account (a resend cooldown). */
+    public const RESEND_COOLDOWN = 30;
+
+    /** Destroys the current code (for example when the email address changes). */
+    public static function forget(User $user): void
+    {
+        Cache::forget(self::key($user));
+    }
+
+    /** Seconds still to wait before another code may be sent, or 0. */
+    public static function cooldownLeft(User $user): int
+    {
+        $entry = Cache::get(self::key($user));
+
+        if (! is_array($entry) || ! isset($entry['issued_at'])) {
+            return 0;
+        }
+
+        return max(0, self::RESEND_COOLDOWN - (now()->getTimestamp() - (int) $entry['issued_at']));
     }
 
     /** Seconds until the current code expires, or null when there is none. */

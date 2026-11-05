@@ -97,7 +97,7 @@ function ConfirmDialog({
             }}
         >
             <div
-                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-[22px] border card-soft p-7 font-[Quicksand,sans-serif]"
+                className="box-border w-full max-w-[380px] animate-[ui-rise-in_0.22s_ease-out] rounded-[22px] border card-soft modal-surface p-7 font-[Quicksand,sans-serif]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="confirm-dialog-title"

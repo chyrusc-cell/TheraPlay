@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog.jsx';
+import ActivityFeedbackSection from './ActivityFeedbackSection.jsx';
 import { API_URL, apiRequest, clearSession, getToken } from './api.js';
 import { SkeletonBlock, LinesSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
@@ -589,6 +590,8 @@ function ProfessionalDashboard() {
                     </section>
 
                 </div>
+
+                <ActivityFeedbackSection />
 
             </div>
 
