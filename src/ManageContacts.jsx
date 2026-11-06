@@ -10,6 +10,7 @@ import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
 import Modal from './Modal.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import DeveloperTeamEditor from './DeveloperTeamEditor.jsx';
 
 const emptyForm = {
@@ -464,6 +465,12 @@ function ManageContacts() {
     };
 
 
+    // The contact whose delete popup is open.
+    const deleteContact =
+        confirmingId === null
+            ? null
+            : contacts.find((contact) => contact.id === confirmingId) ?? null;
+
     return (
         <div className={ui.page}>
 
@@ -907,46 +914,6 @@ function ManageContacts() {
 
                                         <td className={ui.td} data-label="Actions">
 
-                                            {confirmingId === contact.id ? (
-
-                                                <div className={ui.actions}>
-
-                                                    <span className={ui.confirmText}>
-                                                        Delete this contact?
-                                                    </span>
-
-                                                    <button
-                                                        type="button"
-                                                        className={ui.deleteButton}
-                                                        onClick={() =>
-                                                            handleDelete(contact)
-                                                        }
-                                                        disabled={
-                                                            deletingId !== null
-                                                        }
-                                                    >
-                                                        {deletingId === contact.id
-                                                            ? 'Deleting...'
-                                                            : 'Yes, delete'}
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        className={ui.editButton}
-                                                        onClick={() =>
-                                                            setConfirmingId(null)
-                                                        }
-                                                        disabled={
-                                                            deletingId !== null
-                                                        }
-                                                    >
-                                                        Cancel
-                                                    </button>
-
-                                                </div>
-
-                                            ) : (
-
                                                 <div className={ui.actions}>
 
                                                     <button
@@ -980,8 +947,6 @@ function ManageContacts() {
                                                     </button>
 
                                                 </div>
-
-                                            )}
 
                                         </td>
 
@@ -1025,6 +990,22 @@ function ManageContacts() {
                 )}
 
             </div>
+
+            <ConfirmDialog
+                open={deleteContact !== null}
+                title="Delete this contact?"
+                message={
+                    deleteContact
+                        ? `"${deleteContact.name}" will be permanently removed from the contact list. This cannot be undone.`
+                        : ''
+                }
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                busyLabel="Deleting..."
+                busy={deletingId !== null}
+                onConfirm={() => handleDelete(deleteContact)}
+                onCancel={() => setConfirmingId(null)}
+            />
 
         </div>
     );

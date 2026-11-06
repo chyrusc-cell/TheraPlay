@@ -270,13 +270,13 @@ function VerifyCode() {
                     Verify later
                 </button>
 
-                <p className="mb-4 text-center text-[12px] leading-[1.6] text-faint">
+                <p className="mb-4 text-center text-[12px] leading-[1.7] text-faint">
                     You can look around TheraPlay without verifying, but creating a child profile,
                     completing activities and saving notes need a verified email. A reminder stays
                     on every page until you verify.
                 </p>
 
-                <p className="mb-6 text-center text-[12px] leading-[1.6] text-faint">
+                <p className="mb-6 text-center text-[12px] leading-[1.7] text-faint">
                     Wrong address?{' '}
                     <Link to="/profile" className="font-bold text-ink underline">Change it in your profile</Link>.
                 </p>

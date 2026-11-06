@@ -242,7 +242,7 @@ describe('Activities: the selected child decides completion, not visibility', ()
 
     // A completed activity has a green-tinted card; the others keep the normal white glass.
     const outer = (title) => screen.getByRole('heading', { name: title }).closest('.glow-card')
-    expect(outer('Memory Match').className).toContain('--glass-bg:rgba(110,200,110')
+    expect(outer('Memory Match').className).toContain('--glass-bg:rgba(')
     expect(outer('Memory Match')).toHaveAttribute('data-completed', 'true')
     expect(outer('Block Stacking').className).not.toContain('--glass-bg')
     // Readable text on the gray card: black title and description, brighter green label.

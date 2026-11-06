@@ -68,7 +68,7 @@ const imagePlaceholders = [
 
 // A completed activity's card is a green-tinted glass instead of the usual white one (only the
 // glass fill variable changes, so size, glow and hover are the same).
-const completedCardTone = '[--glass-bg:rgba(110,200,110,0.5)]';
+const completedCardTone = '[--glass-bg:rgba(64,134,64,0.5)]';
 
 const statusClass = 'px-5 py-10 text-center text-[15px] text-muted';
 

@@ -178,3 +178,24 @@ describe('Manage Contacts: Edit Development Team', () => {
     expect(screen.getByText('Dr. Ana Reyes')).toBeInTheDocument()
   })
 })
+
+describe('Manage Contacts: deleting', () => {
+  it('asks in a popup, deletes nothing on Cancel, and deletes after confirming', async () => {
+    const user = userEvent.setup()
+    const api = await setup({ 'DELETE /admin/contacts/1': { body: { message: 'Deleted.' } } })
+
+    await user.click(screen.getByRole('button', { name: 'Delete Dr. Ana Reyes' }))
+    const dialog = screen.getByRole('dialog', { name: 'Delete this contact?' })
+    expect(api.callsTo('DELETE', '/admin/contacts/1')).toHaveLength(0)
+
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(api.callsTo('DELETE', '/admin/contacts/1')).toHaveLength(0)
+
+    await user.click(screen.getByRole('button', { name: 'Delete Dr. Ana Reyes' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(api.callsTo('DELETE', '/admin/contacts/1')).toHaveLength(1))
+    expect(await screen.findByText('"Dr. Ana Reyes" deleted.')).toBeInTheDocument()
+  })
+})

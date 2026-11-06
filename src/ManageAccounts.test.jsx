@@ -476,10 +476,10 @@ describe('Manage Accounts: deleting', () => {
     await screen.findByText('Pat Parent')
 
     await user.click(screen.getByRole('button', { name: 'Delete Pat Parent' }))
-    expect(screen.getByText('Delete this account?')).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Delete this account?' })).toBeInTheDocument()
     expect(api.callsTo('DELETE', '/admin/users/2')).toHaveLength(0)
 
-    await user.click(within(rowFor('Pat Parent')).getByRole('button', { name: 'Yes, continue' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('"Pat Parent" was deleted.')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('Pat Parent')).not.toBeInTheDocument())
@@ -491,7 +491,7 @@ describe('Manage Accounts: deleting', () => {
     await screen.findByText('Pat Parent')
 
     await user.click(screen.getByRole('button', { name: 'Delete Pat Parent' }))
-    await user.click(within(rowFor('Pat Parent')).getByRole('button', { name: 'Cancel' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
 
     expect(api.callsTo('DELETE', '/admin/users/2')).toHaveLength(0)
     expect(screen.getByText('Pat Parent')).toBeInTheDocument()
@@ -512,7 +512,7 @@ describe('Manage Accounts: deleting', () => {
     await screen.findByText('Kim Kids')
 
     await user.click(screen.getByRole('button', { name: 'Delete Kim Kids' }))
-    await user.click(within(rowFor('Kim Kids')).getByRole('button', { name: 'Yes, continue' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('cannot be deleted')
     expect(screen.getByText('Kim Kids')).toBeInTheDocument()
@@ -525,7 +525,7 @@ describe('Manage Accounts: deleting', () => {
     const before = api.callsTo('GET', '/admin/users').length
 
     await user.click(screen.getByRole('button', { name: 'Delete Una Unverified' }))
-    await user.click(within(rowFor('Una Unverified')).getByRole('button', { name: 'Yes, continue' }))
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Delete' }))
 
     await waitFor(() => expect(api.callsTo('GET', '/admin/users').length).toBeGreaterThan(before))
   })

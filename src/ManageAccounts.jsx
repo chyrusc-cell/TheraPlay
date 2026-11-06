@@ -11,6 +11,7 @@ import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
 import { readOnlyFieldClass } from './uiClasses.js';
 import Modal from './Modal.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
 const emptyForm = {
     name: '',
@@ -505,26 +506,20 @@ function ManageAccounts() {
         const isBusy = busyId === account.id;
         const targetRole = account.role === 'admin' ? 'parent' : 'admin';
 
-        if (confirming?.id === account.id) {
-            const isDelete = confirming.type === 'delete';
-
+        // Deleting is confirmed in a popup (below); changing a role still
+        // confirms inside the row.
+        if (confirming?.id === account.id && confirming.type === 'role') {
             return (
                 <div className={ui.actions}>
 
                     <span className={ui.confirmText}>
-                        {isDelete
-                            ? 'Delete this account?'
-                            : `Make this account ${targetRole === 'admin' ? 'an admin' : 'a parent'}? They will be signed out.`}
+                        {`Make this account ${targetRole === 'admin' ? 'an admin' : 'a parent'}? They will be signed out.`}
                     </span>
 
                     <button
                         type="button"
-                        className={isDelete ? ui.deleteButton : ui.editButton}
-                        onClick={() =>
-                            isDelete
-                                ? handleDelete(account)
-                                : handleToggleRole(account)
-                        }
+                        className={ui.editButton}
+                        onClick={() => handleToggleRole(account)}
                         disabled={busyId !== null}
                     >
                         {isBusy ? 'Working...' : 'Yes, continue'}
@@ -588,6 +583,13 @@ function ManageAccounts() {
 
 
     const isEditing = editingId !== null;
+
+    // The account whose delete popup is open (looked up so the popup always
+    // shows the current name).
+    const deleteAccount =
+        confirming?.type === 'delete'
+            ? accounts.find((account) => account.id === confirming.id) ?? null
+            : null;
 
     // Two separate lists, split by the role the server reports. Each has its own
     // search (inside AccountsSection), so searching one never affects the other.
@@ -879,6 +881,22 @@ function ManageAccounts() {
                 )}
 
             </div>
+
+            <ConfirmDialog
+                open={deleteAccount !== null}
+                title="Delete this account?"
+                message={
+                    deleteAccount
+                        ? `"${deleteAccount.name}" (${deleteAccount.email}) will be permanently deleted. This cannot be undone.`
+                        : ''
+                }
+                confirmLabel="Delete"
+                confirmVariant="danger"
+                busyLabel="Deleting..."
+                busy={busyId !== null}
+                onConfirm={() => handleDelete(deleteAccount)}
+                onCancel={() => setConfirming(null)}
+            />
 
         </div>
     );

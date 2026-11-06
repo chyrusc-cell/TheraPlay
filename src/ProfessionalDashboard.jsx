@@ -324,9 +324,9 @@ function ProfessionalDashboard() {
 
                         {/* Statistics */}
 
-                        <section className="grid grid-cols-2 gap-5 phone:grid-cols-1">
+                        <section className="flex flex-wrap gap-5 phone:gap-3">
 
-                        <div className={cardClass}>
+                        <div className={`${cardClass} flex-1 phone:p-4`}>
 
                             <div className="mb-[5px] text-[30px] font-bold">
                                 {isLoading ? (
@@ -341,14 +341,14 @@ function ProfessionalDashboard() {
                                 ) : error ? '—' : activities.length}
                             </div>
 
-                            <div className="text-[14px] text-muted">
+                            <div className="whitespace-nowrap text-[14px] text-muted">
                                 Total Activities
                             </div>
 
                         </div>
 
 
-                        <div className={cardClass}>
+                        <div className={`${cardClass} flex-1 phone:p-4`}>
 
                             <div className="mb-[5px] text-[30px] font-bold">
                                 {usersLoading ? (
@@ -363,7 +363,7 @@ function ProfessionalDashboard() {
                                 ) : usersError ? '—' : userCount}
                             </div>
 
-                            <div className="text-[14px] text-muted">
+                            <div className="whitespace-nowrap text-[14px] text-muted">
                                 Total Users
                             </div>
 
