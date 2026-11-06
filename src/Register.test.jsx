@@ -52,8 +52,26 @@ describe('Register: account first, child profile only after verification', () =>
 
     const body = api.callsTo('POST', '/register')[0].body
     expect(body).toMatchObject({ email: 'pat@example.com', first_name: 'Pat' })
+    expect(body.phone).toBe('+63 917 000 0000')
     expect(body).not.toHaveProperty('child')
     expect(body).not.toHaveProperty('role')
+  })
+
+  it('does not register with a phone number that is not complete', async () => {
+    const user = userEvent.setup({ delay: null })
+    const api = setup({ status: 201, body: {} })
+
+    await user.type(screen.getByLabelText('First Name'), 'Pat')
+    await user.type(screen.getByLabelText('Last Name'), 'Parent')
+    await user.type(screen.getByLabelText('Email', { exact: true }), 'pat@example.com')
+    await user.type(screen.getByLabelText('Phone Number'), '9171')
+    await user.type(screen.getByLabelText('Password', { exact: true }), 'password123')
+    await user.type(screen.getByLabelText(/^Confirm/), 'password123')
+    await user.click(screen.getByRole('checkbox', { name: /I agree/ }))
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    expect(await screen.findByText(/10-digit mobile number/)).toBeInTheDocument()
+    expect(api.callsTo('POST', '/register')).toHaveLength(0)
   })
 
   it("stays on the form and shows the server's message when the address is already used", async () => {

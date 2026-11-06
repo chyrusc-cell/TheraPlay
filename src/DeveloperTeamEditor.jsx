@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { apiRequest, mapValidationErrors } from './api.js';
 import * as ui from './adminClasses.js';
+import PhoneInput from './PhoneInput.jsx';
+import { displayPhone, isCompletePhone } from './phoneFormat.js';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_PATTERN = /^[0-9+().\-\s]+$/;
 const MAX_ENTRIES = 10;
 
 const addButtonClass =
@@ -27,7 +28,7 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
     const [name, setName] = useState(team.name || '');
     const [description, setDescription] = useState(team.description || '');
     const [emails, setEmails] = useState(toRows(team.emails));
-    const [phones, setPhones] = useState(toRows(team.phones));
+    const [phones, setPhones] = useState(toRows((team.phones || []).map(displayPhone)));
 
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState({});
@@ -77,7 +78,12 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
 
         const nextErrors = {};
         const cleanEmails = check(emails, 'emails', 'email address', EMAIL_PATTERN);
-        const cleanPhones = check(phones, 'phones', 'phone number', PHONE_PATTERN);
+        // A phone number must be a complete mobile number; one saved earlier in another form
+        // (a landline, say) is accepted while it stays as it was.
+        const earlierPhones = (team.phones || []).map(displayPhone);
+        const cleanPhones = check(phones, 'phones', 'phone number', {
+            test: (row) => isCompletePhone(row) || earlierPhones.includes(row),
+        });
 
         if (!name.trim()) {
             nextErrors.name = 'Enter the team name.';
@@ -142,7 +148,7 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
         }
     };
 
-    const renderList = ({ id, label, type, placeholder, rows, setter, errorKey, addLabel, inputMode }) => (
+    const renderList = ({ id, label, type, placeholder, rows, setter, errorKey, addLabel, inputMode, isPhone = false }) => (
         <div className={ui.formGroup}>
 
             <span className={ui.label} id={`${id}-label`}>{label}</span>
@@ -150,6 +156,18 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
             <ul className="flex list-none flex-col gap-2" aria-labelledby={`${id}-label`}>
                 {rows.map((value, index) => (
                     <li className="flex items-center gap-2" key={index}>
+                        {isPhone ? (
+                            <div className="min-w-0 flex-1">
+                                <PhoneInput
+                                    className={ui.input}
+                                    id={`${id}-${index}`}
+                                    aria-label={`${label} ${index + 1}`}
+                                    value={value}
+                                    onChange={(next) => updateRow(setter, index, next)}
+                                    disabled={isSaving}
+                                />
+                            </div>
+                        ) : (
                         <input
                             className={`${ui.input} min-w-0 flex-1`}
                             id={`${id}-${index}`}
@@ -162,6 +180,7 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
                             onChange={(event) => updateRow(setter, index, event.target.value)}
                             disabled={isSaving}
                         />
+                        )}
                         {(rows.length > 1 || value !== '') && (
                             <button
                                 type="button"
@@ -254,7 +273,7 @@ function DeveloperTeamEditor({ team, onSaved, onCancel, onBusyChange, onUnauthor
                 label: 'Phone numbers',
                 type: 'tel',
                 inputMode: 'tel',
-                placeholder: '+63 917 123 4567',
+                isPhone: true,
                 rows: phones,
                 setter: setPhones,
                 errorKey: 'phones',

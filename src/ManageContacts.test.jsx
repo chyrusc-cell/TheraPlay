@@ -80,7 +80,7 @@ describe('Manage Contacts: header', () => {
       name: 'Dr. Ben Cruz',
       title: 'Speech Therapist',
       email: 'ben@example.com',
-      phone: '0917 000 1111',
+      phone: '+63 917 000 1111',
     })
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
@@ -101,8 +101,8 @@ describe('Manage Contacts: Edit Development Team', () => {
     expect(within(dialog).getByLabelText('Description (optional)')).toHaveValue('The team that builds TheraPlay.')
     expect(within(dialog).getByLabelText('Email addresses 1', { exact: true })).toHaveValue('team@example.com')
     expect(within(dialog).getByLabelText('Email addresses 2', { exact: true })).toHaveValue('support@example.com')
-    expect(within(dialog).getByLabelText('Phone numbers 1', { exact: true })).toHaveValue('+63 900 123 4567')
-    expect(within(dialog).getByLabelText('Phone numbers 2', { exact: true })).toHaveValue('+63 917 555 0100')
+    expect(within(dialog).getByLabelText('Phone numbers 1', { exact: true })).toHaveValue('900 123 4567')
+    expect(within(dialog).getByLabelText('Phone numbers 2', { exact: true })).toHaveValue('917 555 0100')
   })
 
   it('fetches the current saved details each time it opens (never a stale copy)', async () => {
@@ -131,7 +131,7 @@ describe('Manage Contacts: Edit Development Team', () => {
     await user.clear(name)
     await user.type(name, 'Dev Team')
     await user.click(within(dialog).getByRole('button', { name: 'Add another phone number' }))
-    await user.type(within(dialog).getByLabelText('Phone numbers 3', { exact: true }), '+63 922 000 0000')
+    await user.type(within(dialog).getByLabelText('Phone numbers 3', { exact: true }), '922 000 0000')
     await user.click(within(dialog).getByRole('button', { name: 'Save Changes' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
@@ -197,5 +197,77 @@ describe('Manage Contacts: deleting', () => {
 
     await waitFor(() => expect(api.callsTo('DELETE', '/admin/contacts/1')).toHaveLength(1))
     expect(await screen.findByText('"Dr. Ana Reyes" deleted.')).toBeInTheDocument()
+  })
+})
+
+describe('Manage Contacts: several titles', () => {
+  it('lets a professional have several titles, one per line, and keeps them when saving', async () => {
+    const user = userEvent.setup()
+    const api = await setup({
+      'POST /admin/contacts': ({ body }) => ({ status: 201, body: { data: { ...contact, id: 3, ...body }, message: 'ok' } }),
+    })
+
+    await user.click(screen.getByRole('button', { name: '+ Add Contact' }))
+    const dialog = await screen.findByRole('dialog')
+    const title = within(dialog).getByLabelText(/^Title/)
+
+    expect(title.tagName).toBe('TEXTAREA')
+    await user.type(within(dialog).getByLabelText(/^Name/), 'Dr. Cara Lim')
+    await user.type(title, 'Occupational Therapist{Enter}Sensory Integration Specialist')
+    await user.type(within(dialog).getByLabelText(/^Email/), 'cara@example.com')
+    await user.click(within(dialog).getByRole('button', { name: /Save|Add Contact/ }))
+
+    await waitFor(() => expect(api.callsTo('POST', '/admin/contacts')).toHaveLength(1))
+    expect(api.callsTo('POST', '/admin/contacts')[0].body.title).toBe('Occupational Therapist\nSensory Integration Specialist')
+  })
+
+  it('shows a saved multi-line title on separate lines in the table', async () => {
+    await setup({
+      'GET /admin/contacts': { body: { data: [{ ...contact, title: 'Occupational Therapist\nSensory Integration Specialist' }] } },
+    })
+
+    const cell = await screen.findByText(/Sensory Integration Specialist/)
+    expect(cell).toHaveClass('whitespace-pre-line')
+  })
+})
+
+describe('Manage Contacts: phone numbers', () => {
+  it('shows phone numbers as +63 912 345 6789 in the table', async () => {
+    await setup()
+
+    expect(await screen.findByText('+63 917 123 4567')).toBeInTheDocument()
+  })
+
+  it('uses the +63 field in the form, and will not save a number that is not complete', async () => {
+    const user = userEvent.setup()
+    const api = await setup({ 'POST /admin/contacts': { status: 201, body: { data: contact } } })
+
+    await user.click(screen.getByRole('button', { name: '+ Add Contact' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('+63')).toBeInTheDocument()
+
+    await user.type(within(dialog).getByLabelText(/^Name/), 'Dr. Dan Uy')
+    await user.type(within(dialog).getByLabelText(/^Title/), 'Therapist')
+    await user.type(within(dialog).getByLabelText(/^Phone/), '91234')
+    await user.click(within(dialog).getByRole('button', { name: /Save|Add Contact/ }))
+
+    expect(await within(dialog).findByText(/10-digit mobile number/)).toBeInTheDocument()
+    expect(api.callsTo('POST', '/admin/contacts')).toHaveLength(0)
+  })
+
+  it('keeps an older landline number untouched when the contact is edited without changing it', async () => {
+    const user = userEvent.setup()
+    const landline = { ...contact, phone: '(02) 8123-4567' }
+    const api = await setup({
+      'GET /admin/contacts': { body: { data: [landline] } },
+      'PUT /admin/contacts/1': ({ body }) => ({ body: { data: { ...landline, ...body }, message: 'ok' } }),
+    })
+
+    await user.click(await screen.findByRole('button', { name: 'Edit Dr. Ana Reyes' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: /Save|Update/ }))
+
+    await waitFor(() => expect(api.callsTo('PUT', '/admin/contacts/1')).toHaveLength(1))
+    expect(api.callsTo('PUT', '/admin/contacts/1')[0].body.phone).toBe('(02) 8123-4567')
   })
 })

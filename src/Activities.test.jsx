@@ -568,3 +568,62 @@ describe('Activities: card glass and hover glow', () => {
     expect(link.closest('.glow-card')).toBeInTheDocument()
   })
 })
+
+describe('Activities: Status (completed) filter', () => {
+  const statusOptions = async () => {
+    const user = userEvent.setup()
+    await user.click(filterButton('Status'))
+    const texts = within(screen.getByRole('listbox', { name: 'Status' })).getAllByRole('option').map((o) => o.textContent)
+    await user.keyboard('{Escape}')
+    return texts
+  }
+  const pickStatus = async (text) => {
+    const user = userEvent.setup()
+    await user.click(filterButton('Status'))
+    await user.click(screen.getByRole('option', { name: text }))
+  }
+
+  it('offers All, Completed and Not Completed to a parent with a selected child', async () => {
+    await setup({ 'GET /progress': progress(1, 3) })
+    await waitForCards()
+
+    expect(await statusOptions()).toEqual(['All Activities', 'Completed', 'Not Completed'])
+  })
+
+  it('shows only the selected child\'s completed activities, or only the not completed ones', async () => {
+    await setup({ 'GET /progress': progress(1, 3) })
+    await waitForCards()
+
+    await pickStatus('Completed')
+    expect(titles()).toEqual(['Memory Match', 'Block Stacking'])
+
+    await pickStatus('Not Completed')
+    expect(titles()).toEqual(['Memory Master', 'Free Play'])
+
+    await pickStatus('All Activities')
+    expect(titles()).toHaveLength(4)
+  })
+
+  it('works together with the other filters, and Reset filters clears it', async () => {
+    const user = userEvent.setup()
+    await setup({ 'GET /progress': progress(1, 3) })
+    await waitForCards()
+
+    await pickStatus('Completed')
+    await pick('Category', 'Motor Skills')
+    await pick('Difficulty', 'Hard')
+    expect(screen.getByText(/No activities match these filters/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Reset filters' }))
+    expect(titles()).toHaveLength(4)
+    expect(filterButton('Status')).toHaveTextContent('All Activities')
+  })
+
+  it('is not offered to a guest, who has no completed activities', async () => {
+    await setup({}, { user: null, signedIn: false, children: [] })
+    await waitForCards()
+
+    expect(screen.queryByRole('button', { name: /^Status\b/ })).not.toBeInTheDocument()
+    expect(titles()).toHaveLength(4)
+  })
+})

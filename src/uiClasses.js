@@ -29,8 +29,13 @@ export const activityCardClass =
 export const contactPanelClass =
     'rounded-2xl border border-edge bg-white p-6 card-soft phone:p-4';
 
+// A contact card is frosted glass built from two layers (glass-stack): its soft shadow sits
+// BEHIND every card's glass, so one card's shadow never lands on top of its neighbour. The
+// shadow is small, because the professional contacts scroll inside a box that clips
+// whatever sticks out of it. border-transparent + the inset keep the glass exactly as large
+// as the 1px-bordered card was.
 export const contactItemClass =
-    'rounded-lg border border-edge card-soft p-4';
+    'glass-stack border border-transparent [--glass-stack-inset:1px] [--glass-shadow:0_8px_20px_-8px_rgba(120,80,30,0.28)] p-4';
 
 // Activity details: image column + text column.
 export const detailsCardClass =

@@ -9,6 +9,8 @@ import {
 import { TableSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import * as ui from './adminClasses.js';
+import PhoneInput from './PhoneInput.jsx';
+import { displayPhone, isCompletePhone, PHONE_ERROR } from './phoneFormat.js';
 import Modal from './Modal.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import DeveloperTeamEditor from './DeveloperTeamEditor.jsx';
@@ -230,7 +232,7 @@ function ManageContacts() {
             name: contact.name || '',
             title: contact.title || '',
             email: contact.email || '',
-            phone: contact.phone || '',
+            phone: displayPhone(contact.phone),
             description: contact.description || '',
         });
         resetPhoto(contact.photo_url || null);
@@ -255,6 +257,18 @@ function ManageContacts() {
             phone: form.phone.trim() || null,
             description: form.description.trim() || null,
         };
+
+        // A phone number that was typed or changed must be a complete mobile number (a
+        // number saved earlier in another form, such as a landline, is kept as it is).
+        const savedPhone = editingId !== null
+            ? displayPhone(contacts.find((item) => item.id === editingId)?.phone)
+            : '';
+
+        if (payload.phone && payload.phone !== savedPhone && !isCompletePhone(payload.phone)) {
+            setFieldErrors({ phone: PHONE_ERROR });
+            setFormError('Please fix the highlighted fields.');
+            return;
+        }
 
         // Quick check for the "email or phone" rule. Laravel stays the
         // authority and repeats every check.
@@ -671,10 +685,10 @@ function ManageContacts() {
                                         Title / Specialty
                                     </label>
 
-                                    <input className={ui.input}
+                                    <textarea className={`${ui.activityTextarea} h-16`}
                                         id="contact-title"
-                                        type="text"
-                                        placeholder="e.g. Occupational Therapist"
+                                        placeholder={'e.g. Occupational Therapist\nDevelopmental Pediatrician'}
+                                        aria-describedby="contact-title-hint"
                                         value={form.title}
                                         maxLength={255}
                                         onChange={(event) =>
@@ -682,6 +696,10 @@ function ManageContacts() {
                                         }
                                         required
                                     />
+
+                                    <p id="contact-title-hint" className="mt-1 text-[12px] text-faint">
+                                        More than one title or specialty? Press Enter to put each on its own line.
+                                    </p>
 
                                     {fieldErrors.title && (
                                         <p className={ui.fieldError}>
@@ -724,15 +742,10 @@ function ManageContacts() {
                                         Phone (optional if an email is given)
                                     </label>
 
-                                    <input className={ui.input}
+                                    <PhoneInput className={ui.input}
                                         id="contact-phone"
-                                        type="tel"
-                                        placeholder="+63 917 123 4567"
                                         value={form.phone}
-                                        maxLength={30}
-                                        onChange={(event) =>
-                                            updateField('phone', event.target.value)
-                                        }
+                                        onChange={(value) => updateField('phone', value)}
                                     />
 
                                     {fieldErrors.phone && (
@@ -896,7 +909,7 @@ function ManageContacts() {
 
                                         </td>
 
-                                        <td className={ui.td} data-label="Title / Specialty">
+                                        <td className={`${ui.td} whitespace-pre-line`} data-label="Title / Specialty">
                                             {contact.title}
                                         </td>
 
@@ -907,7 +920,7 @@ function ManageContacts() {
                                             )}
 
                                             {contact.phone && (
-                                                <div>{contact.phone}</div>
+                                                <div>{displayPhone(contact.phone)}</div>
                                             )}
 
                                         </td>

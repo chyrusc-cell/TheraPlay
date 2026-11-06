@@ -285,4 +285,21 @@ class ProfessionalContactTest extends TestCase
         $this->getJson("/api/admin/contacts/{$contact->id}")->assertNotFound();
         $this->deleteJson("/api/admin/contacts/{$contact->id}")->assertNotFound();
     }
+
+    public function test_a_contact_can_have_several_titles_on_separate_lines(): void
+    {
+        Sanctum::actingAs($this->makeUser('admin@example.com', 'admin'));
+        $titles = "Occupational Therapist
+Sensory Integration Specialist";
+
+        $id = $this->postJson('/api/admin/contacts', $this->validPayload(['title' => $titles]))
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->assertSame($titles, ProfessionalContact::findOrFail($id)->title);
+
+        $this->getJson('/api/contacts')
+            ->assertOk()
+            ->assertJsonFragment(['title' => $titles]);
+    }
 }

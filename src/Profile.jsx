@@ -8,7 +8,10 @@ import EmailVerificationStatus from './EmailVerificationStatus.jsx';
 import DeleteAccountCard from './DeleteAccountCard.jsx';
 import SectionErrorBoundary from './SectionErrorBoundary.jsx';
 import { ProfileSkeleton } from './PageSkeletons.jsx';
-import { holdSkeleton } from './minLoading.js';import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
+import { holdSkeleton } from './minLoading.js';
+import { pageMainNarrow, pageHeader, pageTitle, readOnlyFieldClass } from './uiClasses.js';
+import PhoneInput from './PhoneInput.jsx';
+import { displayPhone, isCompletePhone, PHONE_ERROR } from './phoneFormat.js';
 
 // The database stores one "name", while this page shows first and last name.
 const splitName = (fullName = '') => {
@@ -28,7 +31,7 @@ const splitName = (fullName = '') => {
 const toFormValues = (user) => ({
     ...splitName(user.name),
     email: user.email || '',
-    phone: user.contact_number || '',
+    phone: displayPhone(user.contact_number),
 });
 
 // Card look as currently rendered (the old global .card rule was merged from the
@@ -39,7 +42,7 @@ const cardClass =
 // Form fields: a floating label on the top border of each input.
 const fieldClass = 'relative mb-[30px] flex flex-col gap-2';
 const fieldLabelClass =
-    'pointer-events-none absolute top-0 left-2.5 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-faint';
+    'pointer-events-none absolute top-0 left-2.5 z-10 -translate-y-1/2 bg-white px-1 text-[12px] font-medium text-faint';
 const fieldInputClass =
     'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
@@ -195,6 +198,13 @@ function Profile() {
 
         if (!name) {
             showMessage('Please enter your name.', true);
+            return;
+        }
+
+        // A phone number that was changed (or newly entered) must be a complete mobile number.
+        // A number saved earlier in another format is left alone unless it is edited.
+        if (phone.trim() && phone.trim() !== (savedUser?.contact_number || '') && !isCompletePhone(phone)) {
+            showMessage(PHONE_ERROR, true);
             return;
         }
 
@@ -610,7 +620,7 @@ function Profile() {
 
                                 <div className="flex flex-col gap-1.5">
                                     <span className="text-[12px] font-medium text-faint">Phone Number</span>
-                                    <span className="text-[15px] font-bold text-ink">{phone}</span>
+                                    <span className="text-[15px] font-bold text-ink">{displayPhone(phone)}</span>
                                 </div>
 
                             </div>
@@ -658,11 +668,10 @@ function Profile() {
 
                                 <div className={fieldClass}>
                                     <label className={fieldLabelClass} htmlFor="phone">Phone Number</label>
-                                    <input className={fieldInputClass}
+                                    <PhoneInput className={fieldInputClass}
                                         id="phone"
-                                        type="tel"
                                         value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
+                                        onChange={setPhone}
                                     />
                                 </div>
                             </div>

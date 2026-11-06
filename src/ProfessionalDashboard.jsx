@@ -326,7 +326,7 @@ function ProfessionalDashboard() {
 
                         <section className="flex flex-wrap gap-5 phone:gap-3">
 
-                        <div className={`${cardClass} flex-1 phone:p-4`}>
+                        <div className={`${cardClass} flex-1 text-center phone:p-4`}>
 
                             <div className="mb-[5px] text-[30px] font-bold">
                                 {isLoading ? (
@@ -348,7 +348,7 @@ function ProfessionalDashboard() {
                         </div>
 
 
-                        <div className={`${cardClass} flex-1 phone:p-4`}>
+                        <div className={`${cardClass} flex-1 text-center phone:p-4`}>
 
                             <div className="mb-[5px] text-[30px] font-bold">
                                 {usersLoading ? (

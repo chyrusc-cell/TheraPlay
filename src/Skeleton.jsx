@@ -48,12 +48,12 @@ export function SkeletonBlock({ className = '', style }) {
 }
 
 // Activity cards: same grid as the real list.
-export function ActivityCardsSkeleton({ count = 6 }) {
+export function ActivityCardsSkeleton({ count = 6, filters = 3 }) {
     return (
         <SkeletonStatus label="Loading activities...">
-            {/* The two filter dropdowns (label + rounded pill) of the real page. */}
+            {/* The filter dropdowns (label + rounded pill) of the real page: Category, Difficulty and, for a parent with a child, Status. */}
             <div className="mb-8 flex flex-wrap items-end gap-4">
-                {[0, 1].map((index) => (
+                {Array.from({ length: filters }, (_, i) => i).map((index) => (
                     <div className="flex flex-col gap-1.5 phone:min-w-0 phone:flex-1" key={index}>
                         <SkeletonBlock className="h-3.5 w-16" />
                         <SkeletonBlock className="h-[42px] w-full min-w-[180px] rounded-full phone:min-w-0" />
@@ -103,18 +103,23 @@ export function TableSkeleton({ label, columns, rows = 5 }) {
     );
 }
 
-// Contact cards: the same stacked cards as the real Contact Us list.
-export function ContactCardsSkeleton({ count = 3 }) {
+// Contact cards: the same stacked cards as the real Contact Us list (glass cards with
+// a round picture on the left and the details on the right). The side and bottom padding
+// matches the scrolling list, which leaves room for the cards' shadows.
+export function ContactCardsSkeleton({ count = 3, padded = true }) {
     return (
         <SkeletonStatus
             label="Loading contacts..."
-            className="flex flex-col gap-3"
+            className={`flex flex-col gap-3 ${padded ? 'px-1.5 pt-1 pb-3' : ''}`}
         >
             {Array.from({ length: count }, (_, index) => (
-                <div className={contactItemClass} key={index}>
-                    <SkeletonBlock className="mb-3 h-[18px] w-[60%]" />
-                    <SkeletonBlock className="mb-2.5 h-3.5 w-1/2" />
-                    <SkeletonBlock className="h-3.5" />
+                <div className={`${contactItemClass} flex items-start gap-4 phone:gap-3`} key={index}>
+                    <SkeletonBlock className="h-28 w-28 shrink-0 rounded-full phone:h-20 phone:w-20" />
+                    <div className="min-w-0 flex-1">
+                        <SkeletonBlock className="mb-3 h-[22px] w-[60%]" />
+                        <SkeletonBlock className="mb-2.5 h-3.5 w-1/2" />
+                        <SkeletonBlock className="h-3.5" />
+                    </div>
                 </div>
             ))}
         </SkeletonStatus>
@@ -143,11 +148,17 @@ export function ActivityDetailsSkeleton() {
                 <SkeletonBlock className="h-[220px] rounded-lg" />
 
                 <div>
-                    <SkeletonBlock className="mb-3.5 h-[30px] w-[55%]" />
+                    {/* Name, labels and the completion button. On phones they stack centered: name, labels, button. */}
+                    <div className="mb-6 phone-lg:flex phone-lg:flex-col phone-lg:items-center">
+                        <div className="mb-3 flex items-start justify-between gap-4 phone-lg:contents">
+                            <SkeletonBlock className="h-[30px] w-[55%] phone-lg:mb-3" />
+                            <SkeletonBlock className="h-10 w-[160px] shrink-0 rounded-xl phone-lg:order-2" />
+                        </div>
 
-                    <div className="mb-6 flex gap-2">
-                        <SkeletonBlock className="h-7 w-[90px] rounded-[14px]" />
-                        <SkeletonBlock className="h-7 w-[90px] rounded-[14px]" />
+                        <div className="flex gap-2 phone-lg:order-1 phone-lg:mb-4">
+                            <SkeletonBlock className="h-7 w-[90px] rounded-[5px]" />
+                            <SkeletonBlock className="h-7 w-[90px] rounded-[5px]" />
+                        </div>
                     </div>
 
                     <SkeletonBlock className="mb-2.5 h-3.5" />

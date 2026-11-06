@@ -14,6 +14,7 @@ import { ContactCardsSkeleton } from './Skeleton.jsx';
 import { holdSkeleton } from './minLoading.js';
 import StarRating from './StarRating.jsx';
 import { contactItemClass, contactPanelClass, pageMain, pageHeader, pageTitle, pageSubtitle } from './uiClasses.js';
+import { displayPhone, phoneLink } from './phoneFormat.js';
 
 // The feedback message length limit (the same limit the server enforces).
 const MESSAGE_MAX = 5000;
@@ -87,7 +88,7 @@ function ContactCard({ name, title, emails = [], phones = [], description, photo
                 </h3>
 
                 {title && (
-                    <p className="mt-0.5 text-[14px] font-medium text-muted [overflow-wrap:anywhere]">
+                    <p className="mt-0.5 text-[14px] font-medium whitespace-pre-line text-muted [overflow-wrap:anywhere]">
                         {title}
                     </p>
                 )}
@@ -109,8 +110,8 @@ function ContactCard({ name, title, emails = [], phones = [], description, photo
                             <li className="flex items-start gap-2" key={`phone-${phone}`}>
                                 <Phone size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-faint" />
                                 <span className="sr-only">Phone: </span>
-                                <a href={`tel:${phone.replace(/\s+/g, '')}`} className={detailLinkClass}>
-                                    {phone}
+                                <a href={`tel:${phoneLink(phone)}`} className={detailLinkClass}>
+                                    {displayPhone(phone)}
                                 </a>
                             </li>
                         ))}
@@ -481,11 +482,13 @@ function Contact() {
                 return;
             }
 
-            const gap = parseFloat(getComputedStyle(list).rowGap) || 0;
+            const listStyle = getComputedStyle(list);
+            const gap = parseFloat(listStyle.rowGap) || 0;
+            const padding = (parseFloat(listStyle.paddingTop) || 0) + (parseFloat(listStyle.paddingBottom) || 0);
             const first = cards[0].getBoundingClientRect().height;
             const second = cards[1].getBoundingClientRect().height;
 
-            setListMaxHeight(Math.ceil(first + gap + second + LIST_PEEK));
+            setListMaxHeight(Math.ceil(first + gap + second + padding + LIST_PEEK));
         };
 
         const observer = new ResizeObserver(measure);
@@ -562,10 +565,9 @@ function Contact() {
                             <ul
                                 ref={listRef}
                                 style={listMaxHeight ? { maxHeight: listMaxHeight } : undefined}
-                                // The list scrolls, so it clips whatever sticks out of it: the cards'
-                                // big soft glass shadow would be cut to a dark rectangle exactly the size
-                                // of this box. The cards inside it therefore have no outer shadow.
-                                className="flex list-none flex-col gap-3 overflow-y-auto pr-1 [&_article]:shadow-none"
+                                // The list scrolls, so it clips whatever sticks out of it. The padding leaves
+                                // room for the cards' small shadows (see contactItemClass) so they are not cut.
+                                className="flex list-none flex-col gap-3 overflow-y-auto px-1.5 pt-1 pb-3"
                                 aria-label="Professional contacts"
                                 tabIndex={0}
                             >
@@ -616,7 +618,7 @@ function Contact() {
 
                         {teamLoading ? (
 
-                            <ContactCardsSkeleton count={1} />
+                            <ContactCardsSkeleton count={1} padded={false} />
 
                         ) : teamError ? (
 

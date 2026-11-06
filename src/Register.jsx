@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as auth from './authClasses.js';
+import PhoneInput from './PhoneInput.jsx';
+import { isCompletePhone, PHONE_ERROR } from './phoneFormat.js';
 import { logo } from './brand.js';
 import { API_URL } from './api.js';
 
@@ -29,6 +31,12 @@ function Register() {
 
         if (password !== confirmPassword) {
             setMessage('Passwords do not match.');
+            setIsError(true);
+            return;
+        }
+
+        if (!isCompletePhone(phone)) {
+            setMessage(PHONE_ERROR);
             setIsError(true);
             return;
         }
@@ -157,14 +165,10 @@ function Register() {
                         </div>
 
                         <div className={auth.fieldInRow}>
-                            <input className={auth.input}
-                                type="tel"
+                            <PhoneInput className={auth.input}
                                 id="phone"
-                                placeholder=" "
                                 value={phone}
-                                onChange={(event) =>
-                                    setPhone(event.target.value)
-                                }
+                                onChange={setPhone}
                                 required
                             />
                             <label className={auth.label} htmlFor="phone">Phone Number</label>

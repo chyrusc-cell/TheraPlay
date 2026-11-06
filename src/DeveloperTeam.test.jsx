@@ -88,8 +88,8 @@ describe('Developer Team card: editing', () => {
     expect(within(dialog).getByLabelText('Description (optional)')).toHaveValue('The team that builds TheraPlay.')
     expect(within(dialog).getByLabelText('Email addresses 1', { exact: true })).toHaveValue('team@example.com')
     expect(within(dialog).getByLabelText('Email addresses 2', { exact: true })).toHaveValue('support@example.com')
-    expect(within(dialog).getByLabelText('Phone numbers 1', { exact: true })).toHaveValue('+63 900 123 4567')
-    expect(within(dialog).getByLabelText('Phone numbers 2', { exact: true })).toHaveValue('+63 917 555 0100')
+    expect(within(dialog).getByLabelText('Phone numbers 1', { exact: true })).toHaveValue('900 123 4567')
+    expect(within(dialog).getByLabelText('Phone numbers 2', { exact: true })).toHaveValue('917 555 0100')
   })
 
   it('saves the changes (all emails and phones), closes, and shows the new details on the card', async () => {
@@ -153,5 +153,29 @@ describe('Developer Team card: editing', () => {
 
     expect(api.callsTo('PUT', '/admin/developer-team')).toHaveLength(0)
     expect(screen.getByText('TheraPlay Development Team')).toBeInTheDocument()
+  })
+})
+
+describe('Developer Team card: phone numbers', () => {
+  it('shows the phone numbers as +63 900 123 4567', async () => {
+    await setup()
+
+    expect(await screen.findByText('+63 900 123 4567')).toBeInTheDocument()
+    expect(screen.getByText('+63 917 555 0100')).toBeInTheDocument()
+  })
+
+  it('will not save a phone number that is not complete', async () => {
+    const user = userEvent.setup()
+    const api = await setup()
+    await user.click(await screen.findByRole('button', { name: 'Edit Developer Team' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Edit Developer Team' })
+
+    const first = within(dialog).getByLabelText('Phone numbers 1', { exact: true })
+    await user.clear(first)
+    await user.type(first, '91234')
+    await user.click(within(dialog).getByRole('button', { name: 'Save Changes' }))
+
+    expect(await within(dialog).findByText('Enter a valid phone number.')).toBeInTheDocument()
+    expect(api.callsTo('PUT', '/admin/developer-team')).toHaveLength(0)
   })
 })

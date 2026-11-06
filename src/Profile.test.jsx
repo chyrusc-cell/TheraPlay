@@ -337,3 +337,59 @@ describe('Profile: an unverified email can be corrected', () => {
     expect(await screen.findByText('This email address cannot be used.')).toBeInTheDocument()
   })
 })
+
+describe('Profile: phone number', () => {
+  const saved = { body: { message: 'Profile updated successfully.', user: makeUser('parent') } }
+
+  it('shows the +63 prefix with the saved number in the same format, and saves a changed number as +63 912 345 6789', async () => {
+    const user = userEvent.setup()
+    const api = await setup({ routes: { 'PUT /profile': saved } })
+    await startEditing(user)
+
+    const phone = screen.getByLabelText('Phone Number')
+    expect(screen.getByText('+63')).toBeInTheDocument()
+    expect(phone).toHaveValue('917 000 0000')
+
+    await user.clear(phone)
+    await user.type(phone, '0912 345 6789')
+    expect(phone).toHaveValue('912 345 6789')
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(api.callsTo('PUT', '/profile')).toHaveLength(1))
+    expect(api.callsTo('PUT', '/profile')[0].body.contact_number).toBe('+63 912 345 6789')
+  })
+
+  it('does not save a number that is not complete', async () => {
+    const user = userEvent.setup()
+    const api = await setup({ routes: { 'PUT /profile': saved } })
+    await startEditing(user)
+
+    const phone = screen.getByLabelText('Phone Number')
+    await user.clear(phone)
+    await user.type(phone, '91234')
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    expect(await screen.findByText(/10-digit mobile number/)).toBeInTheDocument()
+    expect(api.callsTo('PUT', '/profile')).toHaveLength(0)
+  })
+
+  it('can clear the phone number', async () => {
+    const user = userEvent.setup()
+    const api = await setup({ routes: { 'PUT /profile': saved } })
+    await startEditing(user)
+
+    await user.clear(screen.getByLabelText('Phone Number'))
+    await user.click(screen.getByRole('button', { name: 'Save Changes' }))
+
+    await waitFor(() => expect(api.callsTo('PUT', '/profile')).toHaveLength(1))
+    expect(api.callsTo('PUT', '/profile')[0].body.contact_number).toBeNull()
+  })
+})
+
+describe('Profile: phone number display', () => {
+  it('shows a saved number as +63 912 345 6789 even if it was saved in an older format', async () => {
+    await setup()
+
+    expect(await screen.findByText('+63 917 000 0000')).toBeInTheDocument()
+  })
+})

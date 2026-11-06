@@ -337,13 +337,13 @@ function Dashboard() {
                             <h2 className={cardTitleClass}>Streak</h2>
                         </div>
                         <div className={cardBodyClass}>
-                            <div className="mb-4 flex items-start justify-between">
+                            <div className="mb-4 flex items-start justify-center text-center">
                                 <div>
                                     <p className="text-[28px] leading-none font-bold text-ink">{streak}</p>
                                     <span className="text-[13px] font-medium text-muted">Day practice streak</span>
                                 </div>
                             </div>
-                            <p className="mb-3 text-[12px] font-medium text-faint">This week • {formatWeekRange(weekStart)}</p>
+                            <p className="mb-3 text-center text-[12px] font-medium text-faint">This week • {formatWeekRange(weekStart)}</p>
 
                             <div className="flex gap-2">
                                 {DAY_LETTERS.map((letter, index) => (
@@ -371,12 +371,12 @@ function Dashboard() {
                     </div>
                     <div className={cardBodyClass}>
                         <div className="mb-5 flex gap-4 tablet-sm:flex-col">
-                            <div className="flex-1 rounded-lg border card-soft p-5">
+                            <div className="flex-1 rounded-lg border card-soft p-5 text-center">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Activities this week</span>
                                 <p className="mb-1 text-[24px] font-bold text-ink">{completedThisWeek}</p>
                                 <span className="text-[12px] text-faint">completed this week</span>
                             </div>
-                            <div className="flex-1 rounded-lg border card-soft p-5">
+                            <div className="flex-1 rounded-lg border card-soft p-5 text-center">
                                 <span className="mb-2 block text-[13px] font-medium text-muted">Skills practiced</span>
                                 <p className="mb-1 text-[24px] font-bold text-ink">{skills.length}</p>
                                 <span className="text-[12px] text-faint">
@@ -387,7 +387,7 @@ function Dashboard() {
                             </div>
                         </div>
                         <div className="border-t border-edge pt-4">
-                            <Link to="/progress" className="flex items-center justify-between gap-3 pr-1 text-[13px] font-bold text-ink no-underline">
+                            <Link to="/progress" className="flex items-center justify-center gap-3 text-[13px] font-bold text-ink no-underline">
                                 View detailed progress report
                                 <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>

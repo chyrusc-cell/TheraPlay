@@ -79,7 +79,7 @@ const getLongestStreak = (completed) => {
 const cardClass =
     'min-w-0 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft phone:p-3';
 const cardHeaderClass = 'px-6 pt-5 pb-2.5 phone:px-2 phone:pt-3';
-const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5 phone:px-2 phone:pt-3 phone:pb-3';
+const cardHeaderRuleClass = 'px-6 pt-5 pb-5 phone:px-2 phone:pt-3 phone:pb-3';
 const cardTitleClass = 'text-[16px] font-bold text-ink';
 const cardBodyClass = 'px-6 pt-5 pb-6 phone:px-2 phone:pt-4 phone:pb-3';
 const statusClass = 'text-[14px] font-medium text-muted';
@@ -425,13 +425,13 @@ function Progress() {
                             </div>
 
                             <div className={cardBodyClass}>
-                                <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+                                <div className="mb-4 flex flex-wrap items-end justify-around gap-x-4 gap-y-3 text-center">
                                     <div>
                                         <p className={bigNumberClass}>{completedThisWeek}</p>
                                         <span className={bigLabelClass}>activities completed this week</span>
                                     </div>
 
-                                    <div className="text-right">
+                                    <div className="text-center">
                                         <p className={bigNumberClass}>{completionRate}%</p>
                                         <span className={bigLabelClass}>of started activities completed</span>
                                     </div>
@@ -445,7 +445,7 @@ function Progress() {
                                 </div>
 
                                 <div className="flex gap-4 phone:gap-2">
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4 phone:p-3">
+                                    <div className="flex flex-1 flex-col items-center gap-1 rounded-lg border card-soft p-4 text-center phone:p-3">
                                         <span className="text-[12px] font-medium text-muted">
                                             Active days this week
                                         </span>
@@ -454,7 +454,7 @@ function Progress() {
                                         </span>
                                     </div>
 
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4 phone:p-3">
+                                    <div className="flex flex-1 flex-col items-center gap-1 rounded-lg border card-soft p-4 text-center phone:p-3">
                                         <span className="text-[12px] font-medium text-muted">
                                             Longest streak
                                         </span>
@@ -556,20 +556,20 @@ function Progress() {
                             </div>
 
                             <div className={cardBodyClass}>
-                                <div className="mb-4 flex items-start justify-between">
+                                <div className="mb-4 flex items-start justify-center text-center">
                                     <div>
                                         <p className="text-[24px] leading-[1.2] font-bold text-ink">{completed.length}</p>
                                         <span className={bigLabelClass}>activities completed in total</span>
                                     </div>
                                 </div>
 
-                                <p className="mb-4 text-[13px] font-medium text-muted">
+                                <p className="mb-4 text-center text-[13px] font-medium text-muted">
                                     Latest activity
                                 </p>
 
                                 <div className="flex flex-col gap-3">
                                     {recent.length === 0 ? (
-                                        <p className={statusClass}>
+                                        <p className={`${statusClass} text-center`}>
                                             Activities you start or complete will
                                             appear here.
                                         </p>
@@ -603,7 +603,7 @@ function Progress() {
                                                         )}
                                                     </div>
 
-                                                    <div className="min-w-0 flex-1">
+                                                    <div className="min-w-0 flex-1 text-center">
                                                         <h3 className="mb-1 text-[13px] font-bold text-ink [overflow-wrap:anywhere]">
                                                             {record.activity_title ||
                                                                 'Activity'}

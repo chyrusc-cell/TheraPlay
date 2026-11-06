@@ -90,6 +90,8 @@ function Activities() {
     const [progressFailed, setProgressFailed] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [selectedDifficulty, setSelectedDifficulty] = useState('all');
+    // all | completed | todo (for the selected child; only offered when there is one).
+    const [selectedStatus, setSelectedStatus] = useState('all');
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -187,6 +189,11 @@ function Activities() {
         [activities]
     );
 
+    // "Completed" only means something for a selected child whose progress loaded;
+    // otherwise the status choice is ignored (and its dropdown is hidden).
+    const statusFilterAvailable = Boolean(selectedChildId) && !progressFailed;
+    const activeStatus = statusFilterAvailable ? selectedStatus : 'all';
+
     const visibleActivities = useMemo(
         () =>
             orderedActivities.filter(
@@ -194,14 +201,17 @@ function Activities() {
                     (selectedCategory === 'all' ||
                         activity.category === selectedCategory) &&
                     (selectedDifficulty === 'all' ||
-                        activity.difficulty === selectedDifficulty)
+                        activity.difficulty === selectedDifficulty) &&
+                    (activeStatus === 'all' ||
+                        (activeStatus === 'completed') === completedIds.has(activity.id))
             ),
-        [orderedActivities, selectedCategory, selectedDifficulty]
+        [orderedActivities, selectedCategory, selectedDifficulty, activeStatus, completedIds]
     );
 
     const resetFilters = () => {
         setSelectedCategory('all');
         setSelectedDifficulty('all');
+        setSelectedStatus('all');
     };
 
     return (
@@ -254,6 +264,20 @@ function Activities() {
                                 ...DIFFICULTIES.map((level) => ({ value: level, label: level })),
                             ]}
                         />
+
+                        {/* Only for a parent with a selected child, since "completed" is per child. */}
+                        {statusFilterAvailable && (
+                            <FilterDropdown
+                                label="Status"
+                                value={selectedStatus}
+                                onChange={setSelectedStatus}
+                                options={[
+                                    { value: 'all', label: 'All Activities' },
+                                    { value: 'completed', label: 'Completed' },
+                                    { value: 'todo', label: 'Not Completed' },
+                                ]}
+                            />
+                        )}
 
                     </div>
 
