@@ -36,7 +36,7 @@ export const listError =
 // ---------- Buttons ----------
 
 export const addButton =
-    'cursor-pointer rounded-xl px-[18px] py-[11px] text-[14px] btn-glass btn-green';
+    'cursor-pointer rounded-full px-[18px] py-[11px] text-[14px] btn-glass btn-green';
 
 export const saveButton =
     'cursor-pointer rounded-xl px-[18px] py-2.5 text-[14px] btn-glass btn-green';
@@ -44,9 +44,13 @@ export const saveButton =
 export const cancelButton =
     'cursor-pointer rounded-xl border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
+// The Refresh button in the page headers (a pill, like the other header actions).
+export const refreshButton =
+    'cursor-pointer rounded-full border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+
 // Management / navigation actions (Manage Conditions, Manage Categories, Edit Development Team).
 export const manageButton =
-    'cursor-pointer rounded-xl border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-full border btn-glass btn-white px-[18px] py-2.5 text-[14px] text-ink enabled:hover:bg-hover';
 
 // Small buttons inside table rows and file lists.
 export const editButton =

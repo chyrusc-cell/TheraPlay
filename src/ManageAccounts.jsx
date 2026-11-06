@@ -621,7 +621,7 @@ function ManageAccounts() {
 
                         <button
                             type="button"
-                            className={ui.cancelButton}
+                            className={ui.refreshButton}
                             onClick={() => reload(true)}
                             disabled={isLoading}
                         >
