@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a Cloudflare Quick Tunnel the request reaches PHP from cloudflared on this
+        // same machine, with the real scheme/host/client address in X-Forwarded-* headers.
+        // Trusting ONLY loopback makes url() produce https links (pictures, downloads) and
+        // the rate limiters see real client addresses; a remote client cannot forge them.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'activity.live' => EnsureActivityNotArchived::class,

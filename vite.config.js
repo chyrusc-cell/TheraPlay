@@ -8,7 +8,14 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const apiUrl = env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 
+  // Cloudflare Quick Tunnel hostnames (https://<random>.trycloudflare.com) may open the dev
+  // and preview servers. Vite refuses unknown Host headers otherwise. Nothing else is
+  // allowed beyond Vite's own localhost defaults (see TUNNEL.md).
+  const tunnelHosts = ['.trycloudflare.com']
+
   return {
+    server: { allowedHosts: tunnelHosts },
+    preview: { allowedHosts: tunnelHosts },
     plugins: [
       react(),
       tailwindcss(),
