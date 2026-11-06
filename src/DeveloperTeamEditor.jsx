@@ -8,7 +8,7 @@ const PHONE_PATTERN = /^[0-9+().\-\s]+$/;
 const MAX_ENTRIES = 10;
 
 const addButtonClass =
-    'inline-flex cursor-pointer items-center gap-1.5 rounded-full border btn-glass btn-green px-3 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'inline-flex cursor-pointer items-center gap-1.5 rounded-xl border btn-glass btn-green px-3 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 const removeButtonClass =
     'flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border btn-glass btn-red text-muted enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 

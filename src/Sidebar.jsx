@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import {
     House,
@@ -9,13 +8,10 @@ import {
     ClipboardList,
     Contact,
     Users,
-    Mail,
-    LogOut
+    Mail
 } from 'lucide-react';
 
 import { useAuth } from './authContext.js';
-import { API_URL, clearSession } from './api.js';
-import ConfirmDialog from './ConfirmDialog.jsx';
 
 import { logo } from './brand.js';
 
@@ -23,7 +19,7 @@ import { logo } from './brand.js';
 // readers (sr-only) and the icon is centered. Active and inactive links are
 // written out in full so no two classes set the same property.
 const linkCommon =
-    'flex items-center gap-3 rounded-xl px-[14px] py-[11px] text-[15px] whitespace-nowrap no-underline tablet:justify-center tablet:rounded-2xl tablet:px-[6px]';
+    'flex items-center gap-3 rounded-xl px-[14px] py-[11px] text-[15px] whitespace-nowrap no-underline tablet:justify-center tablet:rounded-2xl tablet:px-[6px] phone:px-[11px] phone:py-[13px]';
 
 const linkClass = ({ isActive }) =>
     isActive
@@ -33,60 +29,14 @@ const linkClass = ({ isActive }) =>
 const labelClass = 'tablet:sr-only';
 
 function Sidebar() {
-    const navigate = useNavigate();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
     // The role comes from the server (GET /api/user), not from the browser.
     // Hiding links is only a convenience: Laravel enforces access.
     const { status, user } = useAuth();
     const isAdmin = user?.role === 'admin';
 
-    const handleLogout = async () => {
-        if (isLoggingOut) {
-            return;
-        }
-
-        setIsLoggingOut(true);
-
-        // Same storage that Login.jsx writes to.
-        const token =
-            localStorage.getItem('theraplay_token') ||
-            sessionStorage.getItem('theraplay_token');
-
-        let message = 'You have been logged out.';
-
-        try {
-            if (token) {
-                const response = await fetch(`${API_URL}/logout`, {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-
-                // 401 means the token was already invalid, which is fine.
-                if (!response.ok && response.status !== 401) {
-                    message =
-                        'You were logged out on this device, but the server could not end the session.';
-                }
-            }
-        } catch {
-            message =
-                'You were logged out on this device, but the server could not be reached to end the session.';
-        }
-
-        // Always clear the browser's copy so the user is logged out here.
-        // (This also forgets the selected child.)
-        clearSession();
-
-        navigate('/login', { replace: true, state: { message } });
-    };
-
     return (
-        <aside className="fixed top-sidebar-gap bottom-sidebar-gap left-sidebar-gap z-[100] flex w-sidebar flex-col overflow-y-auto rounded-[24px] border card-soft px-5 py-[30px] tablet:rounded-[20px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5">
-            <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0">
+        <aside className="fixed top-sidebar-gap bottom-sidebar-gap left-sidebar-gap z-[100] flex w-sidebar flex-col overflow-y-auto rounded-[24px] border card-soft px-5 py-[30px] tablet:rounded-[20px] tablet:w-sidebar-rail tablet:items-center tablet:px-2 tablet:py-5 phone:top-auto phone:right-sidebar-gap phone:h-16 phone:w-auto phone:flex-row phone:items-center phone:justify-center phone:overflow-visible phone:rounded-[22px] phone:px-3 phone:py-1">
+            <div className="mb-10 px-[15px] tablet:mb-7 tablet:w-full tablet:p-0 phone:hidden">
                 <img
                     src={logo}
                     alt="TheraPlay"
@@ -101,7 +51,7 @@ function Sidebar() {
                 />
             </div>
 
-            <nav className="flex flex-col gap-2 tablet:w-full" aria-label="Main navigation">
+            <nav className="flex flex-col gap-2 tablet:w-full phone:w-auto phone:flex-1 phone:flex-row phone:justify-around phone:gap-0" aria-label="Main navigation">
                 {isAdmin && (
                     <>
                         <NavLink
@@ -203,32 +153,6 @@ function Sidebar() {
                 </>
                 )}
             </nav>
-
-            <div className="mt-auto pt-5 tablet:w-full">
-                <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-transparent px-[15px] py-3 text-left transition-colors tablet:rounded-2xl [font-family:inherit] text-[15px] font-medium whitespace-nowrap text-danger-text enabled:hover:bg-danger-bg enabled:hover:text-danger-text tablet:justify-center tablet:px-2"
-                    title="Log Out"
-                    onClick={() => setShowLogoutConfirm(true)}
-                    disabled={isLoggingOut}
-                >
-                    <LogOut size={20} aria-hidden="true" className="shrink-0" />
-                    <span className={labelClass}>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
-                </button>
-            </div>
-
-            {/* Logging out only starts after the user confirms here. */}
-            <ConfirmDialog
-                open={showLogoutConfirm}
-                title="Log out?"
-                message="Are you sure you want to log out of TheraPlay?"
-                confirmLabel="Log Out"
-                confirmVariant="danger"
-                busyLabel="Logging out..."
-                busy={isLoggingOut}
-                onConfirm={handleLogout}
-                onCancel={() => setShowLogoutConfirm(false)}
-            />
         </aside>
     );
 }

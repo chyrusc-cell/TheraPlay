@@ -24,7 +24,7 @@ const inputClass =
 // the narrow rail, and on phones the pill sits just beside it. Its width is
 // capped at 460px and always leaves room on the right for the profile shortcut.
 const pillBase =
-    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_var(--search-reserve,90px)))] rounded-full border border-black/10 [--search-left:calc(var(--sidebar-offset)_+_(100vw_-_var(--sidebar-offset))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-offset-collapsed)_+_(100vw_-_var(--sidebar-offset-collapsed))_*_0.06)] phone:[--search-left:calc(var(--sidebar-offset-collapsed)_+_12px)]';
+    'fixed top-2 left-[var(--search-left)] z-40 w-[min(460px,calc(100vw_-_var(--search-left)_-_var(--search-reserve,90px)))] rounded-full border border-black/10 [--search-left:calc(var(--sidebar-offset)_+_(100vw_-_var(--sidebar-offset))_*_0.1)] tablet:[--search-left:calc(var(--sidebar-offset-collapsed)_+_(100vw_-_var(--sidebar-offset-collapsed))_*_0.06)] phone:[--search-left:12px]';
 
 // The pill's tint, shadow and blur live on their OWN layer behind the content (not on
 // the pill itself). A backdrop-filter on an ancestor makes it a "backdrop root", and

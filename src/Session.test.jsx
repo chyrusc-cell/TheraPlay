@@ -221,7 +221,8 @@ describe('guest-only pages: a logged-in person is sent to their own dashboard', 
 
 describe('logging out', () => {
   const logOut = async (user) => {
-    await user.click(screen.getByRole('button', { name: 'Log Out' }))
+    await user.click(screen.getByRole('button', { name: 'Open profile menu' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }))
     const dialog = await screen.findByRole('dialog', { name: 'Log out?' })
     await user.click(within(dialog).getByRole('button', { name: 'Log Out' }))
   }
@@ -297,7 +298,8 @@ describe('logging out', () => {
 
 describe('after logging out: protected pages stay closed', () => {
   const logOutNow = async (user) => {
-    await user.click(screen.getByRole('button', { name: 'Log Out' }))
+    await user.click(screen.getByRole('button', { name: 'Open profile menu' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }))
     const dialog = await screen.findByRole('dialog', { name: 'Log out?' })
     await user.click(within(dialog).getByRole('button', { name: 'Log Out' }))
     await loginHeading()

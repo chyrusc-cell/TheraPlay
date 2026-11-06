@@ -56,12 +56,12 @@ const fetchIsCompleted = async (activityId, signal, childId) => {
 };
 
 // The two header buttons share one height (their widths follow their labels).
-const headerButtonSize = 'h-10 shrink-0 cursor-pointer rounded-full px-5 text-[14px] font-bold whitespace-nowrap';
+const headerButtonSize = 'h-10 shrink-0 cursor-pointer rounded-xl px-5 text-[14px] font-bold whitespace-nowrap';
 const completeButtonClass = `${headerButtonSize} btn-glass btn-green disabled:cursor-not-allowed`;
 const undoButtonClass = `${headerButtonSize} border btn-glass btn-red disabled:cursor-not-allowed disabled:opacity-60`;
 
 const completeButtonBase =
-    'cursor-pointer rounded-full p-3 text-[15px] btn-glass btn-green';
+    'cursor-pointer rounded-xl p-3 text-[15px] btn-glass btn-green';
 
 const messageBase = 'mt-3 text-[14px] font-medium';
 
@@ -906,7 +906,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                                 <div className="mt-1 flex gap-3 phone:flex-col">
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border btn-glass btn-white px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-xl border btn-glass btn-white px-5 py-3 text-[15px] text-ink enabled:hover:bg-hover"
                                         onClick={handleChildCancel}
                                         disabled={isSubmitting}
                                     >

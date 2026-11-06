@@ -33,7 +33,7 @@ function VerificationBanner() {
                 <div className="flex shrink-0 flex-wrap gap-2">
                     <Link
                         to={VERIFY_CODE_PATH}
-                        className="cursor-pointer rounded-full px-4 py-1.5 text-[13px] font-bold text-ink no-underline btn-glass btn-green"
+                        className="cursor-pointer rounded-xl px-4 py-1.5 text-[13px] font-bold text-ink no-underline btn-glass btn-green"
                     >
                         Verify now
                     </Link>
@@ -41,7 +41,7 @@ function VerificationBanner() {
                     {pathname !== '/profile' && (
                         <Link
                             to="/profile"
-                            className="cursor-pointer rounded-full px-4 py-1.5 text-[13px] font-bold text-ink no-underline btn-glass btn-white"
+                            className="cursor-pointer rounded-xl px-4 py-1.5 text-[13px] font-bold text-ink no-underline btn-glass btn-white"
                         >
                             Change email
                         </Link>

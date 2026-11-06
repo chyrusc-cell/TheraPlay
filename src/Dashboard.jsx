@@ -313,7 +313,7 @@ function Dashboard() {
                                             'Explore this activity and its learning objectives.'}
                                     </p>
                                     <button
-                                        className="cursor-pointer rounded-full px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white"
+                                        className="cursor-pointer rounded-xl px-5 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white"
                                         type="button"
                                         onClick={() =>
                                             navigate(`/activities/${featured.id}`)

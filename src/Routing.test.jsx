@@ -268,7 +268,8 @@ describe('routing: accounts that must verify their email first', () => {
 describe('routing: logging out', () => {
   async function openLogout(user) {
     await screen.findByRole('heading', { level: 1, name: 'Hello, Pat Parent!' })
-    await user.click(screen.getByRole('button', { name: 'Log Out' }))
+    await user.click(screen.getByRole('button', { name: 'Open profile menu' }))
+    await user.click(screen.getByRole('menuitem', { name: 'Logout' }))
     return screen.findByRole('dialog', { name: 'Log out?' })
   }
 

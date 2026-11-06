@@ -10,7 +10,7 @@ const PER_PAGE = 10;
 
 const cardClass = 'rounded-[10px] border border-edge bg-white card-soft p-[25px] phone:p-4';
 const pillClass =
-    'cursor-pointer rounded-full border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-xl border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 /*
  * Admin dashboard: the parents' session ratings and journal notes, newest first,

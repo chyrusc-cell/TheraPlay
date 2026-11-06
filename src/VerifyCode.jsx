@@ -249,7 +249,7 @@ function VerifyCode() {
 
                 <button
                     type="button"
-                    className="mb-3 w-full cursor-pointer rounded-full border btn-glass btn-white p-3 [font-family:inherit] text-[15px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mb-3 w-full cursor-pointer rounded-xl border btn-glass btn-white p-3 [font-family:inherit] text-[15px] font-bold text-ink disabled:cursor-not-allowed disabled:opacity-60"
                     onClick={handleResend}
                     disabled={isSending || isVerifying || cooldown > 0}
                 >
@@ -263,7 +263,7 @@ function VerifyCode() {
 
                 <button
                     type="button"
-                    className="mb-6 w-full cursor-pointer rounded-full border-0 bg-transparent p-2 [font-family:inherit] text-[14px] font-bold text-ink underline"
+                    className="mb-6 w-full cursor-pointer rounded-xl border-0 bg-transparent p-2 [font-family:inherit] text-[14px] font-bold text-ink underline"
                     onClick={() => navigate('/dashboard', { replace: true })}
                     disabled={isVerifying}
                 >

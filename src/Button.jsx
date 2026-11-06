@@ -32,7 +32,7 @@ const sizes = {
 };
 
 const base =
-    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-full [font-family:inherit] font-bold disabled:cursor-not-allowed disabled:opacity-60';
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl [font-family:inherit] font-bold disabled:cursor-not-allowed disabled:opacity-60';
 
 // Color only: the look is always btn-glass, the variant picks its hue (ui.css).
 const tones = {

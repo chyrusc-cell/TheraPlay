@@ -486,7 +486,7 @@ function ProfessionalDashboard() {
 
                                     <button
                                         type="button"
-                                        className="cursor-pointer rounded-full border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
+                                        className="cursor-pointer rounded-xl border btn-glass btn-white px-4 py-2 text-[13px] text-ink enabled:hover:bg-hover"
                                         onClick={retryFeedback}
                                     >
                                         Try again
@@ -552,7 +552,7 @@ function ProfessionalDashboard() {
                                                 <div className="mt-2 flex justify-end">
                                                     <button
                                                         type="button"
-                                                        className="cursor-pointer rounded-full border btn-glass btn-red px-3 py-1 text-[12px]"
+                                                        className="cursor-pointer rounded-xl border btn-glass btn-red px-3 py-1 text-[12px]"
                                                         onClick={() => {
                                                             setDeleteError('');
                                                             setDeleting(item);

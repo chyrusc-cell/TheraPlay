@@ -67,13 +67,13 @@ export const showPassword =
 // ---------- Buttons ----------
 
 export const loginButton =
-    'mb-4 w-full cursor-pointer rounded-full p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
+    'mb-4 w-full cursor-pointer rounded-xl p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
 
 export const submitButton =
-    'mb-10 w-full cursor-pointer rounded-full p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
+    'mb-10 w-full cursor-pointer rounded-xl p-3.5 [font-family:inherit] text-[16px] font-bold btn-glass btn-green';
 
 export const registerButton =
-    'mb-5 w-full cursor-pointer rounded-full p-4 [font-family:inherit] text-[15px] font-bold btn-glass btn-green';
+    'mb-5 w-full cursor-pointer rounded-xl p-4 [font-family:inherit] text-[15px] font-bold btn-glass btn-green';
 
 // ---------- Messages ----------
 

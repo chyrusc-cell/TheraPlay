@@ -10,11 +10,11 @@ import Modal from './Modal.jsx';
 const cardClass =
     'mb-6 overflow-hidden rounded-2xl border border-edge bg-white p-[30px] card-soft phone:p-5';
 const pillClass =
-    'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-xl border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 const primaryClass =
-    'cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white border disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-xl px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-white border disabled:cursor-not-allowed disabled:opacity-60';
 const cancelClass =
-    'cursor-pointer rounded-full border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-xl border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 const emptyForm = { name: '', dateOfBirth: '', conditionIds: [] };
 

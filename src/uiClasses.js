@@ -54,7 +54,7 @@ export const pageSubtitle = 'mt-2 text-[15px] font-medium text-muted';
 
 // A small white glass action inside a card row (for example "Undo").
 export const smallActionClass =
-    'shrink-0 cursor-pointer rounded-full border btn-glass btn-white px-3 py-1 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'shrink-0 cursor-pointer rounded-xl border btn-glass btn-white px-3 py-1 [font-family:inherit] text-[12px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 // A value that is shown but cannot be edited (the email address of an account):
 // darker than the editable fields, a not-allowed cursor, and still fully readable.

@@ -44,10 +44,10 @@ const fieldInputClass =
     'w-full rounded-xl border border-edge-strong px-3.5 py-3 [font-family:inherit] text-[15px] font-medium text-ink transition-[border-color] focus:border-accent';
 
 const pillButtonClass =
-    'cursor-pointer rounded-full border btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
+    'cursor-pointer rounded-xl border btn-glass px-6 py-2 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover';
 
 const smallPillClass =
-    'cursor-pointer rounded-full border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
+    'cursor-pointer rounded-xl border btn-glass px-4 py-1.5 [font-family:inherit] text-[13px] font-bold text-ink enabled:hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60';
 
 // Picture rules (the server checks again, from the file's real content).
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -669,29 +669,30 @@ function Profile() {
                         )}
 
                         {!isEditing && <EmailVerificationStatus user={savedUser} />}
+
+                        {/* Edit action buttons, inside the card */}
+                        {isEditing && (
+                            <div className="mt-[30px] flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
+                                <button
+                                    type="button"
+                                    className="cursor-pointer rounded-xl border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
+                                    onClick={handleCancel}
+                                    disabled={isSaving}
+                                >
+                                    Cancel
+                                </button>
+    
+                                <button
+                                    type="submit"
+                                    className="cursor-pointer rounded-xl px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green"
+                                    disabled={isSaving}
+                                >
+                                    {isSaving ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {/* Edit Action Buttons */}
-                    {isEditing && (
-                        <div className="mt-2 mb-10 flex justify-end gap-4 phone:flex-col-reverse phone:[&>button]:w-full">
-                            <button
-                                type="button"
-                                className="cursor-pointer rounded-full border btn-glass btn-white px-6 py-2.5 [font-family:inherit] text-[14px] font-bold text-ink enabled:hover:bg-hover"
-                                onClick={handleCancel}
-                                disabled={isSaving}
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                type="submit"
-                                className="cursor-pointer rounded-full px-6 py-2.5 [font-family:inherit] text-[14px] font-bold btn-glass btn-green"
-                                disabled={isSaving}
-                            >
-                                {isSaving ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </div>
-                    )}
                 </form>
 
                 {/* The parent's children (parents only; shows nothing for admins) */}
