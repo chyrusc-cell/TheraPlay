@@ -17,9 +17,6 @@
 // Login, Forgot/Reset Password and Verify Email: a frosted-glass card on the left.
 // The panel is a frosted-glass card floating on the left; the right stays open
 // (on Login it shows the photo, see loginBackground in brand.js).
-export const pageBg =
-    'flex min-h-screen items-center bg-cover bg-center bg-no-repeat px-[6vw] py-8 phone:px-4 phone:py-6';
-
 // Login: the same card, 20% larger and closer to the left edge.
 export const loginPageBg =
     'flex min-h-screen items-center bg-cover bg-center bg-no-repeat px-[3vw] py-8 phone:px-4 phone:py-6';
@@ -39,10 +36,7 @@ export const registerContainer =
 // ---------- Headings ----------
 
 export const logoRow = 'mb-[60px] flex items-center justify-center gap-2.5';
-export const logoRowLeft = 'mb-[60px] flex items-center gap-2.5';
 export const logoImage = 'block h-11 w-auto';
-export const logoTitle = 'text-[24px] font-bold text-ink';
-export const logoTitleLogin = 'text-[24px] font-bold';
 
 export const headerText = 'mb-10';
 export const headerTextLogin = 'mb-[30px]';

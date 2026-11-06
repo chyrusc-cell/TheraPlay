@@ -77,10 +77,6 @@ export const neutralRowButton =
 
 // ---------- Form ----------
 
-export const formCard =
-    'mb-[25px] animate-[ui-rise-in_0.25s_ease-out] rounded-[10px] border border-edge bg-white card-soft p-[25px] phone:p-4';
-
-export const formTitle = 'mb-5 text-[20px] font-bold';
 export const formGroup = 'mb-[18px] flex flex-col';
 export const label = 'mb-[7px] text-[14px] font-bold';
 
@@ -90,11 +86,6 @@ export const input =
 // Dropdowns: the native arrow sits flush against the edge, so ui-select (ui.css)
 // swaps it for a chevron with room on its right.
 export const select = `${input} ui-select`;
-
-// Filter dropdowns (All Roles, ...): the same rounded glass pill as the Choose
-// Child control and the Activities filters. The select stays a native select.
-export const filterSelect =
-    'ui-select w-full min-w-[180px] cursor-pointer rounded-full border btn-glass py-2 pl-4 [font-family:inherit] text-[14px] font-medium text-ink phone:min-w-0';
 
 export const textarea =
     'resize-y rounded-xl border border-edge-strong p-[11px] [font-family:inherit] text-[14px]';
@@ -146,8 +137,6 @@ const badge = 'inline-block rounded-md px-2.5 py-1 text-xs font-bold leading-[1.
 
 export const badgePublished = `${badge} bg-success-bg text-success`;
 export const badgeDraft = `${badge} bg-white text-muted`;
-export const badgeAdmin = `${badge} bg-accent-soft text-accent-hover`;
-export const badgeParent = `${badge} bg-white text-muted`;
 
 export const youTag =
     'ml-2 rounded-[10px] bg-white px-[7px] py-0.5 text-[11px] font-bold text-muted';
@@ -184,10 +173,6 @@ export const activityTextarea =
 
 // Category + Difficulty side by side; stacked on phones.
 export const activityPairRow = 'grid grid-cols-2 gap-3 phone:grid-cols-1';
-
-// The picture area. Pictures are not uploadable yet, so this is a placeholder.
-export const activityPicture =
-    'flex h-52 items-center justify-center rounded-[10px] border border-dashed border-edge-strong bg-white px-4 text-center text-[13px] leading-[1.5] text-faint';
 
 // Cancel then the primary action, right-aligned. On phones they stack, with
 // the primary action on top, full width.

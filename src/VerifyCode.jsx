@@ -256,27 +256,27 @@ function VerifyCode() {
                     {isSending ? 'Sending...' : cooldown > 0 ? `Resend code (${cooldown}s)` : 'Resend code'}
                 </button>
 
-                <p className="mb-2 text-center text-[12px] text-faint">
+                <p className="mb-5 text-center text-[12px] leading-[1.6] text-faint">
                     Check your spam folder if you cannot find the email. Asking for a new code makes the
                     earlier one stop working.
                 </p>
 
                 <button
                     type="button"
-                    className="mb-2 w-full cursor-pointer rounded-full border-0 bg-transparent p-2 [font-family:inherit] text-[14px] font-bold text-ink underline"
+                    className="mb-6 w-full cursor-pointer rounded-full border-0 bg-transparent p-2 [font-family:inherit] text-[14px] font-bold text-ink underline"
                     onClick={() => navigate('/dashboard', { replace: true })}
                     disabled={isVerifying}
                 >
                     Verify later
                 </button>
 
-                <p className="mb-1 text-center text-[12px] text-faint">
+                <p className="mb-4 text-center text-[12px] leading-[1.6] text-faint">
                     You can look around TheraPlay without verifying, but creating a child profile,
                     completing activities and saving notes need a verified email. A reminder stays
                     on every page until you verify.
                 </p>
 
-                <p className="text-center text-[12px] text-faint">
+                <p className="mb-6 text-center text-[12px] leading-[1.6] text-faint">
                     Wrong address?{' '}
                     <Link to="/profile" className="font-bold text-ink underline">Change it in your profile</Link>.
                 </p>
