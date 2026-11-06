@@ -615,13 +615,16 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
                     <div>
 
-                        <div className="mb-3 flex items-start justify-between gap-4">
+                        {/* On phones the order is: name, labels, then the completion buttons. */}
+                        <div className="phone-lg:mb-[30px] phone-lg:flex phone-lg:flex-col">
 
-                            <Title className="text-[28px] font-bold">
+                        <div className="mb-3 flex items-start justify-between gap-4 phone-lg:contents">
+
+                            <Title className="text-[28px] font-bold phone-lg:mb-3 phone-lg:text-center">
                                 {activity.title}
                             </Title>
 
-                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 phone-lg:order-2 phone-lg:justify-center">
 
                                 {isCompleted ? (
                                     <span className="inline-flex h-10 items-center gap-1.5 text-[14px] font-bold italic text-[#188038]">
@@ -656,7 +659,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                         </div>
 
                         {unverified && (
-                            <p id="verify-to-complete" className="mt-2 text-[13px] text-muted">
+                            <p id="verify-to-complete" className="mt-2 text-[13px] text-muted phone-lg:order-3 phone-lg:mt-3">
                                 Verify your email to mark activities as completed.{' '}
                                 <Link to={VERIFY_CODE_PATH} className="font-bold text-ink underline">
                                     Verify now
@@ -685,7 +688,7 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
 
 
 
-                        <div className="mb-[30px] flex gap-2.5">
+                        <div className="mb-[30px] flex gap-2.5 phone-lg:order-1 phone-lg:mb-4 phone-lg:justify-center">
 
                             {activity.category && (
                                 <span className="rounded-[5px] border border-black bg-white px-2.5 py-[5px] text-[13px]">
@@ -696,6 +699,8 @@ function ActivityDetails({ activityId: activityIdProp, embedded = false, onCompl
                             <span className={difficultyBadgeTw(activity.difficulty)}>
                                 {activity.difficulty}
                             </span>
+
+                        </div>
 
                         </div>
 

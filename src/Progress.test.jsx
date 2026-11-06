@@ -328,3 +328,56 @@ describe('Progress: undo a completion', () => {
     expect(api.callsTo('POST', '/progress/1/undo')).toHaveLength(1)
   })
 })
+
+describe('Progress: Skills Practiced', () => {
+  const six = ['Executive Function', 'Fine Motor Skills', 'Functioning Skills', 'Handwriting', 'Sensory', 'Visual']
+  const published = [
+    { id: 1, title: 'Memory Match', category: 'Sensory' },
+    { id: 2, title: 'Sort Shapes', category: 'Sensory' },
+    { id: 3, title: 'Trace Lines', category: 'Handwriting' },
+    { id: 4, title: 'Find It', category: 'Visual' },
+    { id: 5, title: 'Copy Letters', category: 'Handwriting' },
+  ]
+
+  it('lists all six categories with finished / total • percent', async () => {
+    const miaDone = [record(1, 'Memory Match', 'Sensory'), record(3, 'Trace Lines', 'Handwriting'), record(5, 'Copy Letters', 'Handwriting')]
+    await setup({
+      'GET /activities': { body: { data: published } },
+      'GET /progress?child_id=1': { body: { data: { records: miaDone } } },
+    })
+    await screen.findByText('Progress for Mia')
+
+    for (const name of six) {
+      expect(screen.getByText(name)).toBeInTheDocument()
+    }
+
+    // The figures sit in separate fixed-width columns, so read the whole text of the cell.
+    const row = (title) => screen.getByTitle(title).textContent.replace(/\s+/g, '')
+
+    expect(row('1 of 2 activities finished')).toBe('1/2activities•50%') // Sensory
+    expect(row('2 of 2 activities finished')).toBe('2/2activities•100%') // Handwriting
+    expect(row('0 of 1 activities finished')).toBe('0/1activities•0%') // Visual
+    expect(screen.getAllByTitle('0 of 0 activities finished')).toHaveLength(3) // categories with no activities yet
+  })
+
+  it('does not count a finished activity that is no longer published', async () => {
+    const records = [record(1, 'Memory Match', 'Sensory'), record(99, 'Gone', 'Sensory')]
+    await setup({
+      'GET /activities': { body: { data: published } },
+      'GET /progress?child_id=1': { body: { data: { records } } },
+    })
+    await screen.findByText('Progress for Mia')
+
+    expect(screen.getByTitle('1 of 2 activities finished')).toBeInTheDocument()
+  })
+
+  it('still shows the six categories with finished counts when the activity list cannot be loaded', async () => {
+    await setup({ 'GET /activities': { status: 500, body: {} } })
+    await screen.findByText('Progress for Mia')
+
+    for (const name of six) {
+      expect(screen.getByText(name)).toBeInTheDocument()
+    }
+    expect(screen.getAllByText('0 finished').length).toBeGreaterThanOrEqual(6)
+  })
+})

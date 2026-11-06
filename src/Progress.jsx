@@ -9,6 +9,16 @@ import ConfirmDialog from './ConfirmDialog.jsx';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// The six fixed activity categories (admins cannot add, rename or delete them).
+const CATEGORY_NAMES = [
+    'Executive Function',
+    'Fine Motor Skills',
+    'Functioning Skills',
+    'Handwriting',
+    'Sensory',
+    'Visual',
+];
+
 // "2026-10-21" in the viewer's local time, used to group records by day.
 const dayKey = (date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -67,11 +77,11 @@ const getLongestStreak = (completed) => {
 // Card look as currently rendered (the old global .card rule was merged from the
 // Dashboard, Progress and Profile stylesheets).
 const cardClass =
-    'min-w-0 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft';
-const cardHeaderClass = 'px-6 pt-5 pb-2.5';
-const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5';
+    'min-w-0 overflow-hidden rounded-xl border border-edge bg-white p-[30px] card-soft phone:p-3';
+const cardHeaderClass = 'px-6 pt-5 pb-2.5 phone:px-2 phone:pt-3';
+const cardHeaderRuleClass = 'border-b border-edge px-6 pt-5 pb-5 phone:px-2 phone:pt-3 phone:pb-3';
 const cardTitleClass = 'text-[16px] font-bold text-ink';
-const cardBodyClass = 'px-6 pt-5 pb-6';
+const cardBodyClass = 'px-6 pt-5 pb-6 phone:px-2 phone:pt-4 phone:pb-3';
 const statusClass = 'text-[14px] font-medium text-muted';
 const bigNumberClass = 'text-[28px] leading-[1.2] font-bold text-ink';
 const bigLabelClass = 'text-[13px] font-medium text-muted';
@@ -90,6 +100,8 @@ function Progress() {
     const [settledChildId, setSettledChildId] = useState(undefined);
 
     const [records, setRecords] = useState([]);
+    // The published activities (for the totals per category). null = could not be loaded.
+    const [activityList, setActivityList] = useState(null);
     const [isLoadingNow, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -201,6 +213,16 @@ function Progress() {
                 setIsLoading(true);
                 setError('');
 
+                // The totals come from the public activity list; if it cannot be loaded the
+                // page still works and shows only the finished counts.
+                const activitiesRequest = fetch(`${API_URL}/activities`, {
+                    headers: { Accept: 'application/json' },
+                    signal: controller.signal,
+                })
+                    .then((res) => (res.ok ? res.json() : null))
+                    .then((body) => (Array.isArray(body?.data) ? body.data : null))
+                    .catch(() => null);
+
                 const response = await fetch(`${API_URL}/progress${selectedChildId ? `?child_id=${selectedChildId}` : ""}`, {
                     headers: {
                         Accept: 'application/json',
@@ -208,6 +230,7 @@ function Progress() {
                     },
                     signal: controller.signal,
                 });
+                const loadedActivities = await activitiesRequest;
 
                 if (response.status === 401) {
                     redirectToLogin();
@@ -230,6 +253,7 @@ function Progress() {
                         ? result.data.records
                         : []
                 );
+                setActivityList(loadedActivities);
             } catch (err) {
                 if (err.name === 'AbortError') {
                     return;
@@ -320,12 +344,31 @@ function Progress() {
         : 0;
     const longestStreak = getLongestStreak(completed);
 
-    const skillCounts = {};
-    completed.forEach((r) => {
-        const name = r.category || 'Uncategorized';
-        skillCounts[name] = (skillCounts[name] || 0) + 1;
+    // Skills practiced: for every category, the activities this child finished out of the
+    // published activities in that category. A finished activity that is no longer
+    // published (unpublished or archived) is not counted, so it never exceeds the total.
+    const categoryOf = new Map((activityList || []).map((a) => [a.id, a.category]));
+    const finishedByCategory = {};
+    const totalByCategory = {};
+    (activityList || []).forEach((a) => {
+        if (a.category) {
+            totalByCategory[a.category] = (totalByCategory[a.category] || 0) + 1;
+        }
     });
-    const skills = Object.entries(skillCounts).sort((a, b) => b[1] - a[1]);
+    completed.forEach((r) => {
+        const name = activityList ? categoryOf.get(r.activity_id) : r.category;
+        if (name) {
+            finishedByCategory[name] = (finishedByCategory[name] || 0) + 1;
+        }
+    });
+    const skills = [
+        ...CATEGORY_NAMES,
+        ...Object.keys({ ...totalByCategory, ...finishedByCategory }).filter((name) => !CATEGORY_NAMES.includes(name)),
+    ].map((name) => {
+        const finished = finishedByCategory[name] || 0;
+        const total = totalByCategory[name] || 0;
+        return { name, finished, total, percent: total ? Math.round((finished / total) * 100) : 0 };
+    });
 
     // A completion that was undone (not_started) is no longer activity to show.
     const shownRecords = records.filter((r) => r.status !== 'not_started');
@@ -401,8 +444,8 @@ function Progress() {
                                     ></div>
                                 </div>
 
-                                <div className="flex gap-4">
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4">
+                                <div className="flex gap-4 phone:gap-2">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4 phone:p-3">
                                         <span className="text-[12px] font-medium text-muted">
                                             Active days this week
                                         </span>
@@ -411,7 +454,7 @@ function Progress() {
                                         </span>
                                     </div>
 
-                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4">
+                                    <div className="flex flex-1 flex-col gap-1 rounded-lg border card-soft p-4 phone:p-3">
                                         <span className="text-[12px] font-medium text-muted">
                                             Longest streak
                                         </span>
@@ -431,38 +474,37 @@ function Progress() {
                             </div>
 
                             <div className={cardBodyClass}>
-                                {skills.length === 0 ? (
-                                    <p className={statusClass}>
-                                        No completed activities yet.
-                                    </p>
-                                ) : (
-                                    skills.map(([name, count]) => {
-                                        const percent = Math.round(
-                                            (count / completed.length) * 100
-                                        );
-
-                                        return (
-                                            <div className="mb-5 last:mb-0" key={name}>
-                                                <div className="mb-2 flex items-center justify-between text-[14px] font-medium text-ink">
-                                                    <span>{name}</span>
-                                                    <span className="text-[12px] font-bold text-muted">
-                                                        {count}{' '}
-                                                        {count === 1
-                                                            ? 'activity'
-                                                            : 'activities'}{' '}
-                                                        • {percent}%
+                                {skills.map(({ name, finished, total, percent }) => (
+                                    <div className="mb-5 last:mb-0" key={name}>
+                                        <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[14px] font-medium text-ink">
+                                            <span>{name}</span>
+                                            <span
+                                                className="text-[12px] font-bold text-muted"
+                                                title={activityList ? `${finished} of ${total} activities finished` : undefined}
+                                            >
+                                                {activityList ? (
+                                                    // Fixed-width columns, so the slashes line up in every row.
+                                                    <span className="inline-flex items-baseline whitespace-nowrap tabular-nums">
+                                                        <span className="w-[3ch] text-right">{finished}</span>
+                                                        <span className="px-1">/</span>
+                                                        <span className="w-[3ch] text-left">{total}</span>
+                                                        <span className="ml-1">activities</span>
+                                                        <span className="mx-1.5">•</span>
+                                                        <span className="w-[4ch] text-right">{percent}%</span>
                                                     </span>
-                                                </div>
-                                                <div className={barTrackClass}>
-                                                    <div
-                                                        className={barFillClass}
-                                                        style={{ width: `${percent}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                )}
+                                                ) : (
+                                                    `${finished} finished`
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className={barTrackClass}>
+                                            <div
+                                                className={barFillClass}
+                                                style={{ width: `${percent}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -476,18 +518,18 @@ function Progress() {
                             </div>
 
                             <div className={cardBodyClass}>
-                                <div className="mb-[30px] flex items-center justify-between text-[13px] font-medium text-muted">
+                                <div className="mb-[30px] flex flex-wrap items-center justify-between gap-2 text-[13px] font-medium text-muted phone:mb-5">
                                     <span>Activities completed per day</span>
                                     <span className="rounded-xl bg-white px-2.5 py-1 text-[11px] font-bold text-ink">
                                         {completedThisWeek} total
                                     </span>
                                 </div>
 
-                                <div className="flex h-40 items-end justify-between pt-5">
+                                <div className="flex h-40 items-end justify-between gap-1 pt-5">
                                     {DAY_LABELS.map((label, index) => (
                                         <div className="flex h-full flex-col items-center justify-end gap-3" key={label}>
                                             <div
-                                                className={`w-6 rounded-t-md ${
+                                                className={`w-6 rounded-t-md phone:w-4 ${
                                                     dailyCounts[index] > 0
                                                         ? 'bg-accent-2'
                                                         : 'bg-transparent'
@@ -498,8 +540,8 @@ function Progress() {
                                                     }%`,
                                                 }}
                                             ></div>
-                                            <span className="text-[11px] font-medium text-muted">
-                                                {label} • {dailyCounts[index]}
+                                            <span className="text-center text-[11px] font-medium text-muted phone:text-[10px]">
+<span className="phone:hidden"> • </span><span className="phone:block">{dailyCounts[index]}</span>
                                             </span>
                                         </div>
                                     ))}
@@ -541,7 +583,7 @@ function Progress() {
 
                                             return (
                                                 <div
-                                                    className="flex items-start gap-3 rounded-lg border card-soft p-4"
+                                                    className="flex items-start gap-3 rounded-lg border card-soft p-4 phone:gap-2 phone:p-3"
                                                     key={record.id}
                                                 >
                                                     <div
